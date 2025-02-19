@@ -5,4 +5,6 @@
 // App building components
 export { Navigator } from "./components/app/Navigator";
 
+export { type MenuProps } from "./components/app/Navigator-utils";
+
 // Utils
