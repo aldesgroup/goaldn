@@ -24,6 +24,7 @@ export function Navigator(props: { menu: MenuProps }) {
 								component={menuItem.component}
 								options={{
 									tabBarIcon: menuItem.icon && menuItem.icon,
+									headerShown: !menuItem.isStack,
 								}}
 							/>
 						))}

@@ -2,6 +2,7 @@ interface menuEntry {
 	name: string;
 	component: React.ComponentType<any>;
 	icon?: (props: { size: number; color: string }) => React.ReactNode;
+	isStack: boolean;
 }
 
 interface menuWindowsConfig {
