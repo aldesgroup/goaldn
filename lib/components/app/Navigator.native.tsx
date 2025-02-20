@@ -8,8 +8,8 @@ import { MenuProps } from "./Navigator-utils";
 
 const BottomTab = createBottomTabNavigator();
 
-// TODO do better?
-LogBox.ignoreLogs(["findHostInstance_DEPRECATED"]); // Hides warning
+// Hides warning when Strict Mode is active, in dev mode
+LogBox.ignoreLogs(["findHostInstance_DEPRECATED"]);
 
 export function Navigator(props: { menu: MenuProps }) {
 	return (
