@@ -6,9 +6,9 @@ import {
 } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
 import React from "react";
+import "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { MenuProps } from "./Navigator-utils";
-import { Text } from "react-native";
 
 const Sidebar = createDrawerNavigator();
 
@@ -24,8 +24,8 @@ const CustomDrawerContent = (props: { menu: MenuProps } & any) => (
 
 export function Navigator(menuProps: { menu: MenuProps }) {
 	return (
-		<NavigationContainer>
-			<SafeAreaProvider>
+		<SafeAreaProvider>
+			<NavigationContainer>
 				<Sidebar.Navigator
 					drawerContent={(props: DrawerContentComponentProps) => (
 						<CustomDrawerContent {...props} menu={menuProps.menu} />
@@ -41,6 +41,7 @@ export function Navigator(menuProps: { menu: MenuProps }) {
 							margin: 0,
 							height: 56,
 						},
+						swipeEnabled: false,
 					}}
 				>
 					{menuProps.menu.entries.map((menuItem) => (
@@ -50,11 +51,12 @@ export function Navigator(menuProps: { menu: MenuProps }) {
 							component={menuItem.component}
 							options={{
 								drawerIcon: menuItem.icon && menuItem.icon,
+								headerShown: !menuItem.isStack,
 							}}
 						/>
 					))}
 				</Sidebar.Navigator>
-			</SafeAreaProvider>
-		</NavigationContainer>
+			</NavigationContainer>
+		</SafeAreaProvider>
 	);
 }
