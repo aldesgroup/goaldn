@@ -10,4 +10,6 @@ export { type MenuProps } from "./components/app/Navigator-utils";
 
 // Utils
 export { cn } from "./utils/cn";
+export * from "./utils/icons";
 export * from "./utils/ble";
+export * from "./utils/misc";

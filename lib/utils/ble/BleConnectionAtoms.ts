@@ -1,31 +1,24 @@
 // atoms.js - Jotai atoms for BLE state management
 import { atom } from "jotai";
-import { BleManager, Device } from "react-native-ble-plx";
+import BleManager, { Peripheral } from "react-native-ble-manager";
 
 // Create a singleton instance of BleManager that persists across component lifecycles
-let bleManagerInstance: BleManager | null = null;
+let started = false;
 
 export const getBleManager = () => {
-	if (!bleManagerInstance) {
-		bleManagerInstance = new BleManager();
+	if (!started) {
+		BleManager.start();
+		started = true;
 	}
-	return bleManagerInstance;
-};
 
-// Cleanup function to be called on unmount
-export const destroyBleManager = () => {
-	if (bleManagerInstance) {
-		bleManagerInstance.destroy();
-		bleManagerInstance = null;
-		console.log("Ble manager destroyed");
-	}
+	return BleManager;
 };
 
 // Stores the BLE manager instance
-export const bleManagerAtom = atom<BleManager>(getBleManager());
+export const bleManagerAtom = atom<typeof BleManager>(getBleManager());
 
 // Stores the currently connected device
-export const connectedDeviceAtom = atom<Device | null>(null);
+export const connectedDeviceAtom = atom<Peripheral | null>(null);
 
 // Stores connection status
 export const isConnectedAtom = atom(false);

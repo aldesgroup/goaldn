@@ -2,6 +2,7 @@ import { atom, useAtom } from "jotai";
 import { Alert, Linking, Platform } from "react-native";
 import { check, PERMISSIONS, request, RESULTS } from "react-native-permissions";
 import { getBleManager } from "./BleConnectionAtoms";
+import { BleState } from "react-native-ble-manager";
 
 // Jotai atom for permission state
 export const permissionsGrantedAtom = atom(false);
@@ -115,9 +116,9 @@ export const checkBluetoothEnabled = async () => {
 	if (Platform.OS === "android" && Platform.Version >= 31) {
 		try {
 			const bleManager = getBleManager();
-			const btState = await bleManager.state();
+			const btState = await bleManager.checkState();
 
-			if (btState !== "PoweredOn") {
+			if (btState !== BleState.On) {
 				showBluetoothAlert();
 				return false;
 			}

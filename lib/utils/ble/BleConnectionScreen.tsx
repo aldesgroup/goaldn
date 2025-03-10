@@ -1,30 +1,16 @@
-import {
-	ActivityIndicator,
-	FlatList,
-	PermissionsAndroid,
-	Platform,
-	Text,
-	TouchableOpacity,
-	View,
-} from "react-native";
-import { CloseIcon } from "../icons";
-import { Button } from "../../components/ui/button";
-import { useEffect, useRef, useState } from "react";
 import { useAtom } from "jotai";
-import {
-	bleManagerAtom,
-	connectedDeviceAtom,
-	isConnectedAtom,
-	destroyBleManager,
-} from "./BleConnectionAtoms";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { CloseIcon } from "../icons";
+import { bleManagerAtom, connectedDeviceAtom, isConnectedAtom } from "./BleConnectionAtoms";
 
 // Import permission utilities
 import {
-	permissionsGrantedAtom,
 	checkAndRequestBlePermissions,
 	checkBluetoothEnabled,
+	permissionsGrantedAtom,
 } from "./blePermissions";
-import { Device } from "react-native-ble-plx";
+import { BleDisconnectPeripheralEvent, Peripheral } from "react-native-ble-manager";
 
 // these are options that can be used when configuring this screen with react-navigation/native-stack
 //@ts-ignore
@@ -43,27 +29,47 @@ export function bleConnectionScreenOptions({ navigation }) {
 
 //@ts-ignore
 export function BleConnectionScreen({ navigation }) {
+	// --------------------------------------------------------------------------------------------
+	// --- external, shared state
+	// --------------------------------------------------------------------------------------------
 	const [bleManager] = useAtom(bleManagerAtom);
 	const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
-	const [, setIsConnected] = useAtom(isConnectedAtom);
+	const [isConnected, setIsConnected] = useAtom(isConnectedAtom);
 	const [, setPermissionsGranted] = useAtom(permissionsGrantedAtom);
 
+	// --------------------------------------------------------------------------------------------
+	// internal state
+	// --------------------------------------------------------------------------------------------
 	const [isScanning, setIsScanning] = useState(false);
-	const [devices, setDevices] = useState<Device[]>([]);
+	const [connectingDevice, setConnectingDevice] = useState<string | null>(null);
+	const [devices, setDevices] = useState<Peripheral[]>([]);
 	const [error, setError] = useState("");
 	const [permissionStatus, setPermissionStatus] = useState("checking");
 
-	// this won't be reset went the component is unmounted
+	// --------------------------------------------------------------------------------------------
+	// internal, but peristent, state
+	// --------------------------------------------------------------------------------------------
 	const isScanStarted = useRef<boolean | null>(false);
 
+	// --------------------------------------------------------------------------------------------
+	// effects
+	// --------------------------------------------------------------------------------------------
 	useEffect(() => {
 		// Check permissions when component mounts
 		checkPermissions();
 
 		// Start scanning right away - NOPE, not for now
 		if (!isScanStarted.current) {
-			startScan();
+			startOrStopScan();
 		}
+
+		// This BLE manager starts operations, that we have to listen to, to handle their result
+		const listeners: any[] = [
+			bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
+			bleManager.onStopScan(() => setIsScanning(false)),
+			bleManager.onConnectPeripheral(handleConnectPeripheral),
+			bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
+		];
 
 		// No cleanup here - BleManager is now a singleton
 		// that persists throughout the application lifecycle
@@ -72,14 +78,68 @@ export function BleConnectionScreen({ navigation }) {
 		// };
 		return () => {
 			if (!isScanStarted.current) {
-				bleManager.stopDeviceScan().then(() => {
+				bleManager.stopScan().then(() => {
 					console.log("Scanning has been stopped!");
 					setIsScanning(false);
 				});
 			}
+
+			// stopping the listening
+			for (const listener of listeners) {
+				listener.remove();
+			}
 		};
 	}, []);
 
+	// --------------------------------------------------------------------------------------------
+	// utils - handlers for the listeners
+	// --------------------------------------------------------------------------------------------
+	const handleDiscoverPeripheral = (peripheral: Peripheral) => {
+		// only considering the devices with a name
+		if (peripheral.name) {
+			// Add device to list if it exists, has a name, and put the desired ones on top
+			// Add device to the list, then apply filtering and sorting
+			setDevices((prevDevices) => {
+				// Check if device is already in the list
+				const isDuplicate = prevDevices.some((d) => d.id === peripheral.id);
+
+				if (isDuplicate) {
+					return prevDevices;
+				}
+
+				// Create new array with the current device
+				const updatedDevices = [...prevDevices, peripheral];
+
+				// 1) Filter out devices with no name
+				// 2 & 3) Sort devices - put "MyPrefix_" devices first, then sort alphabetically
+				return updatedDevices
+					.filter((d: Peripheral) => d.name) // Remove unnamed devices
+					.sort((a, b: Peripheral) => {
+						const aHasPrefix = (a.name || "").startsWith("Aldes");
+						const bHasPrefix = (b.name || "").startsWith("Aldes");
+
+						// If one has prefix and the other doesn't, prioritize the one with prefix
+						if (aHasPrefix && !bHasPrefix) return -1;
+						if (!aHasPrefix && bHasPrefix) return 1;
+
+						// Otherwise sort alphabetically
+						return (a.name || "").localeCompare(b.name || "");
+					});
+			});
+		}
+	};
+
+	const handleConnectPeripheral = (event: any) => {
+		console.log(`[handleConnectPeripheral][${event.peripheral}] connected.`);
+	};
+
+	const handleDisconnectedPeripheral = (event: BleDisconnectPeripheralEvent) => {
+		console.debug(`[handleDisconnectedPeripheral][${event.peripheral}] disconnected.`);
+	};
+
+	// --------------------------------------------------------------------------------------------
+	// utils - the rest
+	// --------------------------------------------------------------------------------------------
 	const checkPermissions = async () => {
 		setPermissionStatus("checking");
 		try {
@@ -97,25 +157,19 @@ export function BleConnectionScreen({ navigation }) {
 		}
 	};
 
-	const startScan = async () => {
+	const startOrStopScan = async () => {
 		try {
 			isScanStarted.current = true;
 
 			setError("");
 
 			if (isScanning) {
+				await bleManager.stopScan();
+				setIsScanning(false);
 				return;
 			}
 
 			console.log("device scanning will start");
-
-			// Check permissions before scanning
-			const hasPermissions = await checkAndRequestBlePermissions();
-			if (!hasPermissions) {
-				setError("Required permissions not granted");
-				setPermissionStatus("denied");
-				return;
-			}
 
 			// Check if Bluetooth is enabled (Android 12+ only)
 			const isBluetoothEnabled = await checkBluetoothEnabled();
@@ -128,54 +182,9 @@ export function BleConnectionScreen({ navigation }) {
 			setDevices([]);
 			setIsScanning(true);
 
+			// Scanning
 			try {
-				bleManager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
-					if (error) {
-						setError(error.message);
-						setIsScanning(false);
-						return;
-					}
-
-					// Add device to list if it exists, has a name, and put the desired ones on top
-					if (device) {
-						// Add device to the list, then apply filtering and sorting
-						setDevices((prevDevices) => {
-							// Check if device is already in the list
-							const isDuplicate = prevDevices.some((d) => d.id === device.id);
-
-							if (isDuplicate) {
-								return prevDevices;
-							}
-
-							// Create new array with the current device
-							const updatedDevices = [...prevDevices, device];
-
-							// 1) Filter out devices with no name
-							// 2 & 3) Sort devices - put "MyPrefix_" devices first, then sort alphabetically
-							return updatedDevices
-								.filter((d: Device) => d.name) // Remove unnamed devices
-								.sort((a, b: Device) => {
-									const aHasPrefix = (a.name || "").startsWith("Aldes");
-									const bHasPrefix = (b.name || "").startsWith("Aldes");
-
-									// If one has prefix and the other doesn't, prioritize the one with prefix
-									if (aHasPrefix && !bHasPrefix) return -1;
-									if (!aHasPrefix && bHasPrefix) return 1;
-
-									// Otherwise sort alphabetically
-									return (a.name || "").localeCompare(b.name || "");
-								});
-						});
-					}
-				});
-
-				// Stop scanning after 10 seconds
-				setTimeout(() => {
-					console.log("trying to stop the scanning");
-					bleManager.stopDeviceScan();
-					console.log("scanning stopped!");
-					setIsScanning(false);
-				}, 10000);
+				bleManager.scan([], 30, false);
 			} catch (scanErr) {
 				if (scanErr instanceof Error) {
 					setError(`Error while scanning for BLE devices: ${scanErr.message}`);
@@ -189,45 +198,77 @@ export function BleConnectionScreen({ navigation }) {
 		}
 	};
 
-	const connectToDevice = async (device: Device) => {
+	const connectToDevice = async (device?: Peripheral) => {
 		try {
+			// First, let's reset the situation a bit
+			await bleManager.stopScan();
+			setError("");
+			setIsScanning(false);
 			setIsConnected(false);
 
-			// Disconnect current device if any
+			// Keeping track of the currently connected device, if any
+			let lastConnectedDevice = null;
+
+			// Disconnecting the current device if any
 			if (connectedDevice) {
-				await bleManager.cancelDeviceConnection(connectedDevice.id);
+				console.log("Dropping the connection to: " + connectedDevice.id);
+
+				// we'll probably need this
+				lastConnectedDevice = connectedDevice;
+
+				// to show something is going on
+				setConnectingDevice(connectedDevice.id);
+
+				// actually disconnecting
+				await bleManager.disconnect(connectedDevice.id);
+
+				// we're done
+				setConnectingDevice(null);
+				setConnectedDevice(null);
 			}
 
-			// Connect to the selected device
-			const connectedDeviceResult = await device.connect();
+			// Connecting to a new one, if any
+			if (device) {
+				setConnectingDevice(device.id);
 
-			// Discover services and characteristics
-			await connectedDeviceResult.discoverAllServicesAndCharacteristics();
+				// Connect to the selected device
+				await bleManager.connect(device.id);
 
-			// Update connected state
-			setConnectedDevice(connectedDeviceResult);
-			setIsConnected(true);
+				// Update connected state
+				setConnectedDevice(device);
+				setIsConnected(true);
 
-			// Go back to the previous screen
-			navigation.goBack();
+				// Go back to the previous screen
+				navigation.goBack();
+			} else {
+				// we've just disconnected without connecting to a new device
+				// this should make our device disappear
+				if (lastConnectedDevice) {
+					setDevices((prevDevices) => [...prevDevices, lastConnectedDevice]);
+				}
+			}
 
 			return true;
 		} catch (connErr) {
 			if (connErr instanceof Error) {
 				setError(`Error while connecting to a BLE device: ${connErr.message}`);
 			} else {
-				console.log("Unknown error while connecting to a BLE device:", connErr);
+				// console.log("Unknown error while connecting to a BLE device:", connErr);
+				setError("Unknown error while connecting to a BLE device:" + connErr);
 			}
 			setIsConnected(false);
+			setConnectedDevice(null);
 			return false;
+		} finally {
+			setConnectingDevice(null);
 		}
 	};
 
 	interface deviceItemProps {
-		item: Device;
+		item: Peripheral;
 	}
 
-	const renderDeviceItem = ({ item }: deviceItemProps) => {
+	const RenderDeviceItem = ({ item }: deviceItemProps) => {
 		const device = item;
 		const isDeviceConnected =
 			(connectedDevice && connectedDevice.id === device.id) || undefined;
@@ -246,12 +287,22 @@ export function BleConnectionScreen({ navigation }) {
 					className={`px-4 py-2 rounded-lg ${
 						isDeviceConnected ? "bg-green-500" : "bg-blue-500"
 					}`}
-					onPress={() => connectToDevice(device)}
-					disabled={isDeviceConnected}
+					onPress={() =>
+						isDeviceConnected ? connectToDevice() : connectToDevice(device)
+					}
 				>
-					<Text className="text-white font-medium">
-						{isDeviceConnected ? "Connected" : "Connect"}
-					</Text>
+					{connectingDevice === device.id ? (
+						<View>
+							<Text className="text-white font-medium">
+								{isDeviceConnected ? "Disconnecting..." : "Connecting..."}
+							</Text>
+							<ActivityIndicator size="small" color="white" />
+						</View>
+					) : (
+						<Text className="text-white font-medium">
+							{isDeviceConnected ? "Disconnect" : "Connect"}
+						</Text>
+					)}
 				</TouchableOpacity>
 			</View>
 		);
@@ -276,11 +327,13 @@ export function BleConnectionScreen({ navigation }) {
 				</TouchableOpacity>
 			)}
 
+			{connectedDevice && <RenderDeviceItem item={connectedDevice} />}
+
 			<View className="flex-1">
 				<FlatList
 					data={Object.values(devices)}
 					keyExtractor={(item) => item.id}
-					renderItem={renderDeviceItem}
+					renderItem={RenderDeviceItem}
 					contentContainerClassName="pb-4"
 					ListEmptyComponent={
 						<View className="flex-1 items-center justify-center py-8">
@@ -297,8 +350,9 @@ export function BleConnectionScreen({ navigation }) {
 			<View className="pt-4 border-t border-gray-200">
 				<TouchableOpacity
 					className="py-3 rounded-lg items-center justify-center"
-					onPress={startScan}
-					disabled={isScanning || permissionStatus === "checking"}
+					onPress={startOrStopScan}
+					// disabled={isScanning || permissionStatus === "checking"}
+					disabled={permissionStatus === "checking"}
 				>
 					{isScanning ? (
 						<View className="flex-row items-center">
