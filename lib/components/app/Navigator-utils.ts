@@ -1,8 +1,10 @@
+import { RouteConfigComponent } from "@react-navigation/native";
+import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+
 interface menuEntry {
 	name: string;
 	component: React.ComponentType<any>;
 	icon?: (props: { size: number; color: string }) => React.ReactNode;
-	isStack: boolean;
 }
 
 interface menuWindowsConfig {
@@ -12,9 +14,16 @@ interface menuWindowsConfig {
 export interface MenuProps {
 	entries: menuEntry[];
 	windows?: menuWindowsConfig;
-	// menuClass?: string;
-	// entryClass?: string;
-	// labelClass?: string;
-	// activeClass?: string;
-	// onEntryClick?: () => void;
+}
+
+interface screenItemProps {
+	name: string;
+	component: RouteConfigComponent<any, any>;
+	options: NativeStackNavigationOptions;
+	headerRight?: React.ReactNode;
+}
+
+export interface ScreensProps {
+	navigation: any;
+	items: screenItemProps[];
 }

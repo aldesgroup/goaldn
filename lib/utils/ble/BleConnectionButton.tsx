@@ -2,6 +2,7 @@ import { Button, ButtonProps } from "../../components/ui/button";
 import { BluetoothIcon } from "../icons";
 import { Text } from "react-native";
 import { cn } from "../cn";
+import { Txt } from "../../components/ui/txt";
 
 interface BleConnectionButtonProps {
 	label?: string;
@@ -18,7 +19,7 @@ export function BleConnectionButton({
 }: BleConnectionButtonProps & ButtonProps) {
 	return (
 		<Button className={cn("flex-row gap-4 bg-aldes-button", buttonClass)} {...props}>
-			<Text className={cn("font-bold text-white", textClass)}>{label}</Text>
+			<Txt className={cn("font-bold text-white", textClass)}>{label}</Txt>
 			<BluetoothIcon />
 		</Button>
 	);

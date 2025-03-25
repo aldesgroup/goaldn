@@ -1,6 +1,7 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { cn } from "../cn";
+import { cn } from "../../utils/cn";
+import { Txt } from "../ui/txt";
 
 /**
  * HexKeyboard - A reusable component for inputting hexadecimal characters using NativeWind
@@ -37,9 +38,9 @@ export function HexKeyboard(props: {
 					onPress={() => props.onKeyPress(key)}
 					activeOpacity={0.3}
 				>
-					<Text className={cn("text-xl font-bold text-slate-400", props.keyTextClass)}>
+					<Txt raw className={cn("text-xl font-bold text-slate-400", props.keyTextClass)}>
 						{key}
-					</Text>
+					</Txt>
 				</TouchableOpacity>
 			))}
 		</View>

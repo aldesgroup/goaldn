@@ -22,3 +22,6 @@ export const connectedDeviceAtom = atom<Peripheral | null>(null);
 
 // Stores connection status
 export const isConnectedAtom = atom(false);
+
+// Stores the bonding requirement
+export const isBondingRequiredAtom = atom(false);

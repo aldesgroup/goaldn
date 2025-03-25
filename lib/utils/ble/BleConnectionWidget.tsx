@@ -1,15 +1,16 @@
 import { useAtom } from "jotai";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
-import { connectedDeviceAtom, isConnectedAtom } from "./BleConnectionAtoms";
+import { TouchableOpacity } from "react-native";
+import { Txt } from "../../components/ui/txt";
 import { cn } from "../cn";
+import { isConnectedAtom } from "./BleConnectionAtoms";
 
 export function BleConnectionWidget(props: { onPress?: () => void }) {
 	const [isConnected] = useAtom(isConnectedAtom);
 
 	return (
 		<TouchableOpacity className="flex-row" onPress={props.onPress}>
-			<Text
+			<Txt
 				className={cn(
 					"py-1 px-2",
 					isConnected
@@ -18,7 +19,7 @@ export function BleConnectionWidget(props: { onPress?: () => void }) {
 				)}
 			>
 				{isConnected ? "Connected" : "Not connected"}
-			</Text>
+			</Txt>
 		</TouchableOpacity>
 	);
 }

@@ -1,20 +1,28 @@
 import { useAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, TouchableOpacity, View } from "react-native";
 import { CloseIcon } from "../icons";
-import { bleManagerAtom, connectedDeviceAtom, isConnectedAtom } from "./BleConnectionAtoms";
+import {
+	bleManagerAtom,
+	connectedDeviceAtom,
+	isBondingRequiredAtom,
+	isConnectedAtom,
+} from "./BleConnectionAtoms";
 
 // Import permission utilities
+import { BleDisconnectPeripheralEvent, Peripheral } from "react-native-ble-manager";
+import { Txt } from "../../components/ui/txt";
+import { useHideTabBar } from "../hooks";
 import {
 	checkAndRequestBlePermissions,
 	checkBluetoothEnabled,
 	permissionsGrantedAtom,
 } from "./blePermissions";
-import { BleDisconnectPeripheralEvent, Peripheral } from "react-native-ble-manager";
+import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
 // these are options that can be used when configuring this screen with react-navigation/native-stack
 //@ts-ignore
-export function bleConnectionScreenOptions({ navigation }) {
+export function bleConnectionScreenOptions({ navigation }): NativeStackNavigationOptions {
 	return {
 		// to differ from "normal" navigation (slide-in effect, with back arrow)
 		animation: "fade_from_bottom",
@@ -34,7 +42,8 @@ export function BleConnectionScreen({ navigation }) {
 	// --------------------------------------------------------------------------------------------
 	const [bleManager] = useAtom(bleManagerAtom);
 	const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
-	const [isConnected, setIsConnected] = useAtom(isConnectedAtom);
+	const [isBondingRequired] = useAtom(isBondingRequiredAtom);
+	const [_, setIsConnected] = useAtom(isConnectedAtom);
 	const [, setPermissionsGranted] = useAtom(permissionsGrantedAtom);
 
 	// --------------------------------------------------------------------------------------------
@@ -54,6 +63,7 @@ export function BleConnectionScreen({ navigation }) {
 	// --------------------------------------------------------------------------------------------
 	// effects
 	// --------------------------------------------------------------------------------------------
+	useHideTabBar();
 	useEffect(() => {
 		// Check permissions when component mounts
 		checkPermissions();
@@ -71,12 +81,9 @@ export function BleConnectionScreen({ navigation }) {
 			bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
 		];
 
-		// No cleanup here - BleManager is now a singleton
-		// that persists throughout the application lifecycle
-		// return () => {
-		// 		destroyBleManager();
-		// };
 		return () => {
+			// No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
+			// but at least scanning should be stopped
 			if (!isScanStarted.current) {
 				bleManager.stopScan().then(() => {
 					console.log("Scanning has been stopped!");
@@ -112,19 +119,21 @@ export function BleConnectionScreen({ navigation }) {
 
 				// 1) Filter out devices with no name
 				// 2 & 3) Sort devices - put "MyPrefix_" devices first, then sort alphabetically
-				return updatedDevices
-					.filter((d: Peripheral) => d.name) // Remove unnamed devices
-					.sort((a, b: Peripheral) => {
-						const aHasPrefix = (a.name || "").startsWith("Aldes");
-						const bHasPrefix = (b.name || "").startsWith("Aldes");
+				return (
+					updatedDevices
+						// .filter((d: Peripheral) => d.name) // Remove unnamed devices
+						.sort((a, b: Peripheral) => {
+							const aHasPrefix = (a.name || "").startsWith("Aldes");
+							const bHasPrefix = (b.name || "").startsWith("Aldes");
 
-						// If one has prefix and the other doesn't, prioritize the one with prefix
-						if (aHasPrefix && !bHasPrefix) return -1;
-						if (!aHasPrefix && bHasPrefix) return 1;
+							// If one has prefix and the other doesn't, prioritize the one with prefix
+							if (aHasPrefix && !bHasPrefix) return -1;
+							if (!aHasPrefix && bHasPrefix) return 1;
 
-						// Otherwise sort alphabetically
-						return (a.name || "").localeCompare(b.name || "");
-					});
+							// Otherwise sort alphabetically
+							return (a.name || "").localeCompare(b.name || "");
+						})
+				);
 			});
 		}
 	};
@@ -234,6 +243,24 @@ export function BleConnectionScreen({ navigation }) {
 				// Connect to the selected device
 				await bleManager.connect(device.id);
 
+				// Making its services available
+				await bleManager.retrieveServices(device.id);
+
+				// Bonding if necessary
+				if (isBondingRequired) {
+					// Detecting if bonding has already been done
+					const bondedPeripherals = await bleManager.getBondedPeripherals();
+					const alreadyBonded = bondedPeripherals.some(
+						(bondedDevice) => bondedDevice.id === device.id
+					);
+
+					// nope, let's do this
+					if (!alreadyBonded) {
+						await bleManager.createBond(device.id);
+						console.log("Bonding '" + device.name + "' successful");
+					}
+				}
+
 				// Update connected state
 				setConnectedDevice(device);
 				setIsConnected(true);
@@ -242,9 +269,10 @@ export function BleConnectionScreen({ navigation }) {
 				navigation.goBack();
 			} else {
 				// we've just disconnected without connecting to a new device
-				// this should make our device disappear
+				// this should make our device disappear;
+				// so we're cheating here and doing as if we've just re-discovered our old device
 				if (lastConnectedDevice) {
-					setDevices((prevDevices) => [...prevDevices, lastConnectedDevice]);
+					handleDiscoverPeripheral(lastConnectedDevice);
 				}
 			}
 
@@ -276,11 +304,15 @@ export function BleConnectionScreen({ navigation }) {
 		return (
 			<View className="flex-row items-center justify-between py-3 px-4 border-b border-gray-200">
 				<View className="flex-1 mr-4">
-					<Text className="text-base font-medium text-gray-800">
+					<Txt raw className="text-base font-medium text-gray-800">
 						{device.name || "Unnamed Device"}
-					</Text>
-					<Text className="text-sm text-gray-500">{device.id}</Text>
-					<Text className="text-xs text-gray-400">RSSI: {device.rssi}</Text>
+					</Txt>
+					<Txt raw className="text-sm text-gray-500">
+						{device.id}
+					</Txt>
+					<Txt raw className="text-xs text-gray-400">
+						RSSI: {device.rssi}
+					</Txt>
 				</View>
 
 				<TouchableOpacity
@@ -293,26 +325,27 @@ export function BleConnectionScreen({ navigation }) {
 				>
 					{connectingDevice === device.id ? (
 						<View>
-							<Text className="text-white font-medium">
+							<Txt className="text-white font-medium">
 								{isDeviceConnected ? "Disconnecting..." : "Connecting..."}
-							</Text>
+							</Txt>
 							<ActivityIndicator size="small" color="white" />
 						</View>
 					) : (
-						<Text className="text-white font-medium">
+						<Txt className="text-white font-medium">
 							{isDeviceConnected ? "Disconnect" : "Connect"}
-						</Text>
+						</Txt>
 					)}
 				</TouchableOpacity>
 			</View>
 		);
 	};
 
+	// TODO handle error... cf. theo3.gg... neverthrow.. ?
 	return (
 		<View className="flex-1 p-4 bg-white">
 			{error && (
 				<View className="mb-4 p-3 bg-red-100 rounded-lg">
-					<Text className="text-red-800">{error}</Text>
+					<Txt className="text-red-800">{error}</Txt>
 				</View>
 			)}
 
@@ -321,9 +354,9 @@ export function BleConnectionScreen({ navigation }) {
 					className="mb-4 p-3 bg-yellow-100 rounded-lg"
 					onPress={checkPermissions}
 				>
-					<Text className="text-yellow-800">
+					<Txt className="text-yellow-800">
 						Bluetooth permissions required. Tap to grant permissions.
-					</Text>
+					</Txt>
 				</TouchableOpacity>
 			)}
 
@@ -337,11 +370,11 @@ export function BleConnectionScreen({ navigation }) {
 					contentContainerClassName="pb-4"
 					ListEmptyComponent={
 						<View className="flex-1 items-center justify-center py-8">
-							<Text className="text-gray-500">
+							<Txt className="text-gray-500">
 								{isScanning
 									? "Scanning for devices..."
 									: "No devices found. Tap Scan to begin."}
-							</Text>
+							</Txt>
 						</View>
 					}
 				/>
@@ -357,10 +390,10 @@ export function BleConnectionScreen({ navigation }) {
 					{isScanning ? (
 						<View className="flex-row items-center">
 							<ActivityIndicator size="small" color="black" />
-							<Text className="text-black font-medium ml-2">Scanning...</Text>
+							<Txt className="text-black font-medium ml-2">Scanning...</Txt>
 						</View>
 					) : (
-						<Text className="text-black font-medium">Scan for Devices</Text>
+						<Txt className="text-black font-medium">Scan for Devices</Txt>
 					)}
 				</TouchableOpacity>
 			</View>
