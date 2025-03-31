@@ -12,6 +12,7 @@ export * from "./components/misc";
 // Utils
 export * from "./utils/ble";
 export * from "./utils/cn";
+export * from "./utils/fields";
 export * from "./utils/hooks";
 export * from "./utils/i18n";
 export * from "./utils/icons";
