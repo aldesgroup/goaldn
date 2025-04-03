@@ -73,8 +73,12 @@ const translateKeyAtRoutes = (language: string, label: string, routes?: string[]
 	// Testing the label with current route, or one of its parents
 	if (routes) {
 		for (let i = routes.length - 1; i >= 0; i--) {
+			// what's the current namespace?
+			let ns = routes[i];
+			ns[0] === "_" && (ns = ns.slice(1));
+
 			// trying to get the translation for the current namespace
-			translation = i18n.t(key, { lng: language, ns: routes[i], defaultValue: "" });
+			translation = i18n.t(key, { lng: language, ns: ns, defaultValue: "" });
 
 			// Quitting the loop if we've found a translation!
 			if (translation !== "") {
@@ -120,6 +124,7 @@ export const useTranslator = () => {
 
 	const translate = (label: string) => {
 		const state = navigation.getState();
+
 		if (state && state.type === "tab") {
 			// if we're viewing a screen that's not part of a stack, but directly on the menu
 			return translateKeyAtRoutes(language, label, [state.routeNames[state.index]]);

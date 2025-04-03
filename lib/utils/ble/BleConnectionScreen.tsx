@@ -1,39 +1,28 @@
 import { useAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, TouchableOpacity, View } from "react-native";
-import { CloseIcon } from "../icons";
+import { BleDisconnectPeripheralEvent, Peripheral } from "react-native-ble-manager";
+import { CloseIconOption, CombineOptions } from "../../components/app/Navigator-options";
+import { Txt } from "../../components/ui/txt";
+import { useHideTabBar } from "../hooks";
 import {
 	bleManagerAtom,
 	connectedDeviceAtom,
 	isBondingRequiredAtom,
 	isConnectedAtom,
 } from "./BleConnectionAtoms";
-
-// Import permission utilities
-import { BleDisconnectPeripheralEvent, Peripheral } from "react-native-ble-manager";
-import { Txt } from "../../components/ui/txt";
-import { useHideTabBar } from "../hooks";
 import {
 	checkAndRequestBlePermissions,
 	checkBluetoothEnabled,
 	permissionsGrantedAtom,
 } from "./blePermissions";
-import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
 // these are options that can be used when configuring this screen with react-navigation/native-stack
 //@ts-ignore
-export function bleConnectionScreenOptions({ navigation }): NativeStackNavigationOptions {
-	return {
-		// to differ from "normal" navigation (slide-in effect, with back arrow)
-		animation: "fade_from_bottom",
-		headerRight: () => (
-			<TouchableOpacity className="" onPress={() => navigation.goBack()}>
-				<CloseIcon color="grey" />
-			</TouchableOpacity>
-		),
-		headerBackVisible: false,
-	};
-}
+export const bleScreenOptions = CombineOptions(
+	CloseIconOption(),
+	({ navigation }: { navigation: any }) => ({ animation: "fade_from_bottom" })
+);
 
 //@ts-ignore
 export function BleConnectionScreen({ navigation }) {

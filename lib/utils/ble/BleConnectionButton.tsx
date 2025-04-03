@@ -12,14 +12,14 @@ interface BleConnectionButtonProps {
 
 // @ts-ignor
 export function BleConnectionButton({
-	label = "Connect via Bluetooth",
+	label = "Connect using Bluetooth",
 	buttonClass,
 	textClass,
 	...props
 }: BleConnectionButtonProps & ButtonProps) {
 	return (
-		<Button className={cn("flex-row gap-4 bg-aldes-button", buttonClass)} {...props}>
-			<Txt className={cn("font-bold text-white", textClass)}>{label}</Txt>
+		<Button className={cn("flex-row gap-4", buttonClass)} {...props}>
+			<Txt className={cn(textClass)}>{label}</Txt>
 			<BluetoothIcon />
 		</Button>
 	);

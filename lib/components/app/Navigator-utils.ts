@@ -1,5 +1,6 @@
 import { RouteConfigComponent } from "@react-navigation/native";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import { OptionFunction } from "./Navigator-options";
 
 interface menuEntry {
 	name: string;
@@ -19,8 +20,7 @@ export interface MenuProps {
 interface screenItemProps {
 	name: string;
 	component: RouteConfigComponent<any, any>;
-	options: NativeStackNavigationOptions;
-	headerRight?: React.ReactNode;
+	options: OptionFunction;
 }
 
 export interface ScreensProps {
