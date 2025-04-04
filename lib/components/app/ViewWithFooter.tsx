@@ -1,9 +1,9 @@
+import {useNavigation} from '@react-navigation/native';
 import {ScrollView, View} from 'react-native';
 import {cn} from '../../utils/cn';
+import {ArrowLeftIcon, ArrowRightIcon} from '../../utils/icons';
 import {Button, buttonVariantsType, textColorForVariant} from '../ui/button-custom';
 import {Txt} from '../ui/txt';
-import {useNavigation} from '@react-navigation/native';
-import {ArrowLeftIcon, ArrowRightIcon} from '../../utils/icons';
 
 interface viewWithFooterProps {
     children: React.ReactNode;
@@ -35,7 +35,6 @@ export function ViewWithFooter({
     const leftButtonOnPressAction = props.leftButtonOnPress || (() => navigation.goBack());
     const LeftButtonIcon = leftButtonIcon || (() => <></>);
     const RightButtonIcon = rightButtonIcon || (() => <></>);
-    console.log('color = ', textColorForVariant(leftButtonVariant, props.leftButtonDisabled));
 
     return (
         // Anchoring the footer
@@ -57,7 +56,7 @@ export function ViewWithFooter({
                 <Button variant={rightButtonVariant} onPress={props.rightButtonOnPress} disabled={props.rightButtonDisabled}>
                     <View className="flex-row items-center gap-3">
                         <Txt>{rightButtonLabel}</Txt>
-                        <RightButtonIcon color="red" />
+                        <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} />
                     </View>
                 </Button>
             </View>

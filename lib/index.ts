@@ -21,4 +21,4 @@ export * from './utils/i18n';
 export * from './utils/icons';
 
 // Styling
-export {initColors} from './styles/theme';
+export {initThemeColors} from './styles/theme';

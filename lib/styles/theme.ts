@@ -17,7 +17,7 @@ const themeColors = {
 
 type colorsType = typeof themeColors;
 
-export const initColors = (colors: colorsType) => {
+export const initThemeColors = (colors: colorsType) => {
     console.log('setting the colors');
     themeColors.foreground = colors.foreground;
     themeColors.primary = colors.primary;
@@ -34,7 +34,6 @@ export const initColors = (colors: colorsType) => {
     themeColors.border = colors.border;
     themeColors.background = colors.background;
     Object.freeze(themeColors);
-    return themeColors;
 };
 
 export const getColors: () => colorsType = () => themeColors;

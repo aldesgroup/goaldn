@@ -90,16 +90,15 @@ export type {ButtonProps};
 
 export type buttonVariantsType = keyof typeof buttonVariantsConfig.variants.variant;
 export const textColorForVariant = (variant: buttonVariantsType, disabled?: boolean) => {
-    const colors = getColors();
     if (disabled) {
-        return colors.mutedForeground;
+        return getColors().mutedForeground;
     }
     switch (variant) {
         case 'destructive':
-            return colors.destructiveForeground;
+            return getColors().destructiveForeground;
         case 'secondary':
-            return colors.secondaryForeground;
+            return getColors().secondaryForeground;
         default:
-            return colors.primaryForeground;
+            return getColors().primaryForeground;
     }
 };
