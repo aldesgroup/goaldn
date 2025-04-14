@@ -1,8 +1,7 @@
 import {Button, ButtonProps} from '../../components/ui/button';
-import {BluetoothIcon} from '../icons';
-import {Text} from 'react-native';
+import {Txt} from '../../components/ui/custom/txt';
 import {cn} from '../cn';
-import {Txt} from '../../components/ui/txt';
+import {Bluetooth} from 'lucide-react-native';
 
 interface BleConnectionButtonProps {
     label?: string;
@@ -15,7 +14,7 @@ export function BleConnectionButton({label = 'Connect using Bluetooth', buttonCl
     return (
         <Button className={cn('flex-row gap-4', buttonClass)} {...props}>
             <Txt className={cn(textClass)}>{label}</Txt>
-            <BluetoothIcon color={'white'} />
+            <Bluetooth color={'white'} size={18} />
         </Button>
     );
 }

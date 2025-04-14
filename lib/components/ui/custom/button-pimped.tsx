@@ -1,9 +1,9 @@
 import {cva, type VariantProps} from 'class-variance-authority';
 import * as React from 'react';
 import {Pressable} from 'react-native';
-import {TextClassContext} from '../../components/ui/text';
-import {cn} from '../../utils/cn';
-import {getColors} from '../../styles/theme';
+import {TextClassContext} from '../../../components/ui/text';
+import {cn} from '../../../utils/cn';
+import {getColors} from '../../../styles/theme';
 
 export const buttonVariantsConfig = {
     variants: {

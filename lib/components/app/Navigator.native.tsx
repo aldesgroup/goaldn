@@ -1,15 +1,14 @@
-import { BottomTabNavigationProp, createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
-import {
-	createNativeStackNavigator,
-	NativeStackNavigationOptions,
-} from "@react-navigation/native-stack";
-import React from "react";
-import { LogBox } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useInitAndSyncLanguage, useTranslator } from "../../utils/i18n";
-import { MenuProps, ScreensProps } from "./Navigator-utils";
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {DefaultTheme, NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator, NativeStackNavigationOptions} from '@react-navigation/native-stack';
+import React from 'react';
+import {LogBox} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {getColors} from '../../styles/theme';
+import {useInitAndSyncLanguage, useTranslator} from '../../utils/i18n';
+import {MenuProps, ScreensProps} from './Navigator-utils';
+import {FileQuestion} from 'lucide-react-native';
 
 // ------------------------------------------------------------------------------------------------
 // --- Global navigation
@@ -18,57 +17,70 @@ import { MenuProps, ScreensProps } from "./Navigator-utils";
 const BottomTab = createBottomTabNavigator();
 
 // Hides warning when Strict Mode is active, in dev mode
-LogBox.ignoreLogs(["findHostInstance_DEPRECATED"]);
+LogBox.ignoreLogs(['findHostInstance_DEPRECATED']);
 
-function MenuNavigator(props: { menu: MenuProps }) {
-	// shared state
-	const navigation = useNavigation<BottomTabNavigationProp<any>>();
+function MenuNavigator(props: {menu: MenuProps}) {
+    // shared stat
 
-	// utils
-	const translate = useTranslator();
+    // utils
+    const translate = useTranslator();
 
-	// effects
+    // effects
 
-	// view
-	return (
-		<BottomTab.Navigator>
-			{props.menu.entries.map((menuItem, index) => {
-				const { translation, missing } = translate(menuItem.name);
+    // view
+    return (
+        <BottomTab.Navigator>
+            {props.menu.entries.map(menuItem => {
+                const {translation, missing} = translate(menuItem.name);
 
-				return (
-					<BottomTab.Screen
-						key={menuItem.name}
-						name={menuItem.name}
-						component={menuItem.component}
-						options={{
-							tabBarIcon: menuItem.icon && menuItem.icon,
-							headerShown: false,
-							title: translation,
-							tabBarLabelStyle: missing && { color: "red" },
-							headerTitle: translation,
-							headerTintColor: (missing && "red") || "black",
-						}}
-					/>
-				);
-			})}
-		</BottomTab.Navigator>
-	);
+                return (
+                    <BottomTab.Screen
+                        key={menuItem.name}
+                        name={menuItem.name}
+                        component={menuItem.component}
+                        options={{
+                            tabBarIcon: ({focused, color, size}) => {
+                                const IconComponent = menuItem.icon;
+                                return <IconComponent color={color} size={size} />;
+                            },
+                            headerShown: false,
+                            title: translation,
+                            tabBarLabelStyle: missing && {color: 'red'},
+                            headerTitle: translation,
+                            headerTintColor: (missing && 'red') || 'black',
+                        }}
+                    />
+                );
+            })}
+        </BottomTab.Navigator>
+    );
 }
 
-export function MainNavigator(props: { menu: MenuProps }) {
-	// effects
-	useInitAndSyncLanguage();
+export function MainNavigator(props: {menu: MenuProps}) {
+    // shared state
+    const colors = getColors();
+    const theme = {
+        ...DefaultTheme,
+        colors: {
+            ...DefaultTheme.colors,
+            background: colors.background,
+            border: colors.border,
+        },
+    };
 
-	// view
-	return (
-		<GestureHandlerRootView>
-			<SafeAreaProvider>
-				<NavigationContainer>
-					<MenuNavigator menu={props.menu} />
-				</NavigationContainer>
-			</SafeAreaProvider>
-		</GestureHandlerRootView>
-	);
+    // effects
+    useInitAndSyncLanguage();
+
+    // view
+    return (
+        <GestureHandlerRootView className="bg-background">
+            <SafeAreaProvider>
+                <NavigationContainer theme={theme}>
+                    <MenuNavigator menu={props.menu} />
+                </NavigationContainer>
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
+    );
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -76,45 +88,39 @@ export function MainNavigator(props: { menu: MenuProps }) {
 // ------------------------------------------------------------------------------------------------
 
 export function ScreenNavigator(screens: ScreensProps) {
-	const Stack = createNativeStackNavigator();
-	const translate = useTranslator();
-	return (
-		<Stack.Navigator>
-			{screens.items.map((screen, index) => {
-				const getHeaderTitle = (props: { navigation: any; route: any }): string => {
-					const options = screen.options && screen.options(props);
-					return (
-						options?.headerTitle?.toString() ||
-						options?.title?.toString() ||
-						screen.name
-					);
-				};
+    const Stack = createNativeStackNavigator();
+    const translate = useTranslator();
+    return (
+        <Stack.Navigator>
+            {screens.items.map((screen, index) => {
+                const getHeaderTitle = (props: {navigation: any; route: any}): string => {
+                    const options = screen.options && screen.options(props);
+                    return options?.headerTitle?.toString() || options?.title?.toString() || screen.name;
+                };
 
-				const getOptions = (props: {
-					navigation: any;
-					route: any;
-				}): NativeStackNavigationOptions => {
-					const baseOptions = (screen.options && screen.options(props)) || {};
-					const headerTitle = getHeaderTitle(props);
-					const { translation, missing } = translate(headerTitle);
+                const getOptions = (props: {navigation: any; route: any}): NativeStackNavigationOptions => {
+                    const baseOptions = (screen.options && screen.options(props)) || {};
+                    const headerTitle = getHeaderTitle(props);
+                    const {translation, missing} = translate(headerTitle);
 
-					return {
-						...baseOptions,
-						headerTitle: translation,
-						headerTintColor: (missing && "red") || "black",
-					};
-				};
+                    return {
+                        ...baseOptions,
+                        headerTitle: translation,
+                        headerTintColor: (missing && 'red') || 'black',
+                        headerShadowVisible: true, // shadow on Android, border on iOS
+                    };
+                };
 
-				return (
-					<Stack.Screen
-						name={(index === 0 ? "_" : "") + screen.name}
-						//@ts-ignore
-						component={screen.component}
-						options={getOptions}
-						key={screen.name}
-					/>
-				);
-			})}
-		</Stack.Navigator>
-	);
+                return (
+                    <Stack.Screen
+                        name={(index === 0 ? '_' : '') + screen.name}
+                        //@ts-ignore
+                        component={screen.component}
+                        options={getOptions}
+                        key={screen.name}
+                    />
+                );
+            })}
+        </Stack.Navigator>
+    );
 }

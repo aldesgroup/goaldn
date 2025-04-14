@@ -1,9 +1,9 @@
-import {TouchableOpacity, View} from 'react-native';
-import {getLanguages, languageAtom} from '../../utils/i18n';
 import {useAtom} from 'jotai';
-import {Txt} from '../ui/txt';
-import {WorldIcon} from '../../utils/icons';
+import {TouchableOpacity, View} from 'react-native';
 import {getColors} from '../../styles/theme';
+import {getLanguages, languageAtom} from '../../utils/i18n';
+import {Globe} from 'lucide-react-native';
+import {Txt} from '../ui/custom/txt';
 
 export function LanguageSwitcher() {
     // shared state
@@ -25,7 +25,7 @@ export function LanguageSwitcher() {
     // view
     return (
         <TouchableOpacity className="flex flex-row gap-2" onPress={handleSwitch}>
-            <WorldIcon color={colors.foreground} />
+            <Globe color={colors.foreground} />
             <Txt raw className="pt-0.5 font-semibold uppercase">
                 {language}
             </Txt>

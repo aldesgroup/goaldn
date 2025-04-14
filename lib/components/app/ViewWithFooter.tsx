@@ -1,9 +1,9 @@
 import {useNavigation} from '@react-navigation/native';
 import {ScrollView, View} from 'react-native';
 import {cn} from '../../utils/cn';
-import {ArrowLeftIcon, ArrowRightIcon} from '../../utils/icons';
-import {Button, buttonVariantsType, textColorForVariant} from '../ui/button-custom';
-import {Txt} from '../ui/txt';
+import {Button, buttonVariantsType, textColorForVariant} from '../ui/custom/button-pimped';
+import {Txt} from '../ui/custom/txt';
+import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
 
 interface viewWithFooterProps {
     children: React.ReactNode;
@@ -13,22 +13,22 @@ interface viewWithFooterProps {
     leftButtonVariant?: buttonVariantsType;
     leftButtonOnPress?: () => {};
     leftButtonDisabled?: boolean;
-    leftButtonIcon?: null | ((props: {color: string}) => JSX.Element);
+    leftButtonIcon?: null | LucideIcon;
     rightButtonLabel?: string;
     rightButtonVariant?: buttonVariantsType;
     rightButtonOnPress: () => {};
     rightButtonDisabled?: boolean;
-    rightButtonIcon?: null | ((props: {color: string}) => JSX.Element);
+    rightButtonIcon?: null | LucideIcon;
 }
 
 export function ViewWithFooter({
-    contentClassName = 'py-8 px-6',
+    contentClassName = 'p-8',
     leftButtonLabel = 'Previous',
     leftButtonVariant = 'secondary',
-    leftButtonIcon = ArrowLeftIcon,
+    leftButtonIcon = MoveLeft,
     rightButtonLabel = 'Next',
     rightButtonVariant = 'default',
-    rightButtonIcon = ArrowRightIcon,
+    rightButtonIcon = MoveRight,
     ...props
 }: viewWithFooterProps) {
     const navigation = useNavigation();
@@ -40,14 +40,14 @@ export function ViewWithFooter({
         // Anchoring the footer
         <View className="flex-1">
             {/* Scrollable Content Area */}
-            <ScrollView contentContainerClassName={cn('flex-grow', contentClassName)}>{props.children}</ScrollView>
+            <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', contentClassName)}>{props.children}</ScrollView>
 
             {/* Footer */}
             <View className={cn('h-24 flex-row justify-between rounded-t-2xl border border-gray-300 bg-white p-6', props.footerClassName)}>
                 {/* Left button */}
                 <Button variant={leftButtonVariant} onPress={leftButtonOnPressAction} disabled={props.leftButtonDisabled}>
                     <View className="flex-row items-center gap-3">
-                        <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} />
+                        <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />
                         <Txt>{leftButtonLabel}</Txt>
                     </View>
                 </Button>
@@ -56,7 +56,7 @@ export function ViewWithFooter({
                 <Button variant={rightButtonVariant} onPress={props.rightButtonOnPress} disabled={props.rightButtonDisabled}>
                     <View className="flex-row items-center gap-3">
                         <Txt>{rightButtonLabel}</Txt>
-                        <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} />
+                        <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} size={18} />
                     </View>
                 </Button>
             </View>
