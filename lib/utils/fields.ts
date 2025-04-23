@@ -1,5 +1,5 @@
+import {RESET, useFieldValue, useInputField, type FieldAtom} from 'form-atoms';
 import {atom, Atom, useAtomValue} from 'jotai';
-import {useField, useFieldValue, useFormValues, type FieldAtom, type FormAtom, type FormFields} from 'form-atoms';
 import {LucideIcon} from 'lucide-react-native';
 
 export type FieldConfigOption = {value: number; label: string};
@@ -70,7 +70,7 @@ export type FieldConfig<Value> = {
     /**
      * Indicates if a non-empty value is expected
      */
-    mandatory?: boolean;
+    mandatory?: boolean | (() => boolean);
 
     /**
      * Custom hook to provide a way to tell if the field's value is valid, beyond its basic constraints (mandatory, min, max, etc.).
@@ -116,6 +116,7 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
     const fieldConfig = useAtomValue(fieldConfAtom);
     const validError = fieldConfig.valid && fieldConfig.valid();
     const value = useFieldValue(fieldConfig.fieldAtom) as Value;
+    const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
 
     // checking the custom validation hook first (if there's one), since the computation's been done anyway!
     if (validError) {
@@ -132,7 +133,7 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
                 if (!options.some(val => val === value)) {
                     return {msg: 'This value is not allowed', param: min};
                 }
-            } else if (fieldConfig.mandatory) {
+            } else if (mandatory) {
                 return {msg: 'A value must be provided here'};
             }
         } else {
@@ -147,11 +148,11 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
         if (max > 0 && value.length > 0 && value.length > max) {
             return {msg: 'Maximum required length exceeded', param: max};
         }
-        if (fieldConfig.mandatory && value.length === 0) {
+        if (mandatory && value.length === 0) {
             return {msg: 'A value must be provided here'};
         }
     } else {
-        if (fieldConfig.mandatory && !value) {
+        if (mandatory && !value) {
             return {msg: 'A value must be provided here'};
         }
     }
@@ -159,12 +160,28 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
     return null;
 }
 
-// This function could have literally been called useFieldConfigAtomValue
+// This function could have literally been called useFieldConfigFieldAtomValue
 // but since we pass to this function the same objects we use in forms, this name is convenient
 export function useFormFieldValue<Value>(conf: FieldConfigAtom<Value>) {
     const fieldConfig = useAtomValue(conf);
     const value = useFieldValue(fieldConfig.fieldAtom);
     return value;
+}
+
+// This function could have literally been called useFieldConfigSetFieldAtom
+// but since we pass to this function the same objects we use in forms, this name is convenient
+export function useSetFormField<Value>(conf: FieldConfigAtom<Value>) {
+    // TODO : patch request to push the data into the cloud?
+    const fieldConfig = useAtomValue(conf);
+    const field = useInputField(fieldConfig.fieldAtom);
+    return field.actions.setValue;
+}
+
+// This function aims at providing the same kind of signature as useState: const [value, setValue] = useFormField(...)
+export function useFormField<Value>(conf: FieldConfigAtom<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
+    const fieldConfig = useAtomValue(conf);
+    const field = useInputField(fieldConfig.fieldAtom);
+    return [field.state.value, field.actions.setValue];
 }
 
 // display modes for form fields

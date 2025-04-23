@@ -35,6 +35,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     const visible = isReport || isSheet || (fieldConfig.visible ? fieldConfig.visible() : true);
     const maxLength = fieldConfig.max || 0;
     const validError = getFieldValidationError(props.field);
+    const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
 
     // effects
     if (fieldConfig.effects) {
@@ -73,21 +74,27 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
             <View className={cn('flex-col gap-2', props.className, isReport && 'flex-row items-center')}>
                 {/* Label */}
                 <View className="flex-row gap-1">
-                    <Txt className={cn(props.labelClassName, validError && 'text-error-foreground', isSheet && 'text-sm font-bold uppercase')}>
+                    <Txt
+                        className={cn(
+                            props.labelClassName,
+                            validError && 'text-destructive-foreground',
+                            isSheet && 'text-sm font-bold uppercase',
+                            isReport && 'text-foreground-light',
+                        )}>
                         {props.label}
                     </Txt>
                     {isReport && <Txt raw>: </Txt>}
-                    {fieldConfig.mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
+                    {mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
                 </View>
                 {/* Input field */}
                 {!isInput ? (
                     // No input in report mode
                     <View className="flex-row items-center">
-                        <Txt raw={!isBoolean(value)} className="text-lg">
+                        <Txt raw={!isBoolean(value)} className="text-foreground-light text-lg">
                             {getStringValue(value)}
                         </Txt>
                         {props.unit && (
-                            <Txt raw className="text-lg">
+                            <Txt raw className="text-foreground-light text-lg">
                                 {props.unit}
                             </Txt>
                         )}
@@ -101,7 +108,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
                                 'border-border text-foreground',
                                 value ? 'bg-secondary' : 'bg-white',
                                 props.inputClassName,
-                                validError && 'text-error-foreground border-error-foreground',
+                                validError && 'text-destructive-foreground border-destructive-foreground',
                             )}
                             editable={!disabled}
                             value={value}
@@ -110,9 +117,9 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
                         />
                         {validError && (
                             <View className="flex-row gap-1">
-                                <Txt className="text-error-foreground">{validError.msg}</Txt>
+                                <Txt className="text-destructive-foreground">{validError.msg}</Txt>
                                 {validError.param && (
-                                    <Txt className="text-error-foreground" raw>
+                                    <Txt className="text-destructive-foreground" raw>
                                         ({validError.param})
                                     </Txt>
                                 )}

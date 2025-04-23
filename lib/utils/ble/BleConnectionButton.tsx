@@ -1,4 +1,4 @@
-import {Button, ButtonProps} from '../../components/ui/button';
+import {Button, ButtonProps} from '../../components/ui/custom/button-pimped';
 import {Txt} from '../../components/ui/custom/txt';
 import {cn} from '../cn';
 import {Bluetooth} from 'lucide-react-native';

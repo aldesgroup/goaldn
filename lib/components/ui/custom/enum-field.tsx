@@ -90,6 +90,7 @@ export function EnumField<confAtom extends FieldConfigAtom<number>>({mode = 'inp
     // shared state
     const fieldConfig = useAtomValue(props.field);
     const visible = isReport || isSheet || (fieldConfig.visible ? fieldConfig.visible() : true);
+    const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
 
     // effects
     if (fieldConfig.effects) {
@@ -105,9 +106,11 @@ export function EnumField<confAtom extends FieldConfigAtom<number>>({mode = 'inp
             <View className={cn('flex-col', isInput && 'gap-4', isSheet && 'gap-3', isReport && 'flex-row items-center gap-x-1 gap-y-2')}>
                 {/* Label */}
                 <View className="flex-row gap-1">
-                    <Txt className={cn(props.labelClassName, isSheet && 'text-sm font-bold uppercase')}>{props.label}</Txt>
+                    <Txt className={cn(props.labelClassName, isSheet && 'text-sm font-bold uppercase', isReport && 'text-foreground-light')}>
+                        {props.label}
+                    </Txt>
                     {isReport && <Txt raw>: </Txt>}
-                    {fieldConfig.mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
+                    {mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
                 </View>
                 {/* Showing the available options */}
                 {!isInput ? (

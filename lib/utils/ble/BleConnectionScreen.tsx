@@ -1,27 +1,29 @@
-import {useAtom} from 'jotai';
+import {useAtom, useAtomValue, useSetAtom} from 'jotai';
+import {Bluetooth, RefreshCcw, X} from 'lucide-react-native';
 import {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
-import {CloseIconOption, CombineOptions} from '../../components/app/Navigator-options';
+import Config from 'react-native-config';
+import {Button} from '../../components/ui/custom/button-pimped';
 import {Txt} from '../../components/ui/custom/txt';
+import {getColors} from '../../styles/theme';
 import {useHideTabBar} from '../hooks';
-import {bleManagerAtom, connectedDeviceAtom, isBondingRequiredAtom, isConnectedAtom} from './BleConnectionAtoms';
-import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './blePermissions';
+import {bleManagerAtom, connectedDeviceAtom, isBondingRequiredAtom} from './bluetoothAtoms';
+import {isMockEnabled, MOCK_DEVICE_ID, mockPeripheral} from './bluetoothMocking';
+import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
 
 // these are options that can be used when configuring this screen with react-navigation/native-stack
-//@ts-ignore
-export const bleScreenOptions = CombineOptions(CloseIconOption(), ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom'}));
+export const bleScreenOptions = ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom', headerShown: false});
 
-//@ts-ignore
-export function BleConnectionScreen({navigation}) {
+export function BleConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // --- external, shared state
     // --------------------------------------------------------------------------------------------
-    const [bleManager] = useAtom(bleManagerAtom);
+    const bleManager = useAtomValue(bleManagerAtom);
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
-    const [isBondingRequired] = useAtom(isBondingRequiredAtom);
-    const [_, setIsConnected] = useAtom(isConnectedAtom);
-    const [, setPermissionsGranted] = useAtom(permissionsGrantedAtom);
+    const isBondingRequired = useAtomValue(isBondingRequiredAtom);
+    const setPermissionsGranted = useSetAtom(permissionsGrantedAtom);
+    const colors = getColors();
 
     // --------------------------------------------------------------------------------------------
     // internal state
@@ -53,7 +55,6 @@ export function BleConnectionScreen({navigation}) {
         // This BLE manager starts operations, that we have to listen to, to handle their result
         const listeners: any[] = [
             bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
-            bleManager.onStopScan(() => setIsScanning(false)),
             bleManager.onConnectPeripheral(handleConnectPeripheral),
             bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
         ];
@@ -62,9 +63,8 @@ export function BleConnectionScreen({navigation}) {
             // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
             // but at least scanning should be stopped
             if (!isScanStarted.current) {
-                bleManager.stopScan().then(() => {
+                stopScan().then(() => {
                     console.log('Scanning has been stopped!');
-                    setIsScanning(false);
                 });
             }
 
@@ -87,6 +87,7 @@ export function BleConnectionScreen({navigation}) {
                 // Check if device is already in the list
                 const isDuplicate = prevDevices.some(d => d.id === peripheral.id);
 
+                // if (isDuplicate || connectedDevice?.id === peripheral.id) {
                 if (isDuplicate) {
                     return prevDevices;
                 }
@@ -100,8 +101,8 @@ export function BleConnectionScreen({navigation}) {
                     updatedDevices
                         // .filter((d: Peripheral) => d.name) // Remove unnamed devices
                         .sort((a, b: Peripheral) => {
-                            const aHasPrefix = (a.name || '').startsWith('Aldes');
-                            const bHasPrefix = (b.name || '').startsWith('Aldes');
+                            const aHasPrefix = Config.BLE_PREFIX && (a.name || '').startsWith(Config.BLE_PREFIX);
+                            const bHasPrefix = Config.BLE_PREFIX && (b.name || '').startsWith(Config.BLE_PREFIX);
 
                             // If one has prefix and the other doesn't, prioritize the one with prefix
                             if (aHasPrefix && !bHasPrefix) return -1;
@@ -143,6 +144,17 @@ export function BleConnectionScreen({navigation}) {
         }
     };
 
+    const stopScan = async () => {
+        await bleManager.stopScan();
+        setIsScanning(false);
+        setError('');
+    };
+
+    const quitScreen = async () => {
+        await stopScan();
+        navigation.goBack();
+    };
+
     const startOrStopScan = async () => {
         try {
             isScanStarted.current = true;
@@ -150,8 +162,7 @@ export function BleConnectionScreen({navigation}) {
             setError('');
 
             if (isScanning) {
-                await bleManager.stopScan();
-                setIsScanning(false);
+                stopScan();
                 return;
             }
 
@@ -170,7 +181,18 @@ export function BleConnectionScreen({navigation}) {
 
             // Scanning
             try {
-                bleManager.scan([], 30, false);
+                const scanDurationSeconds = 10;
+
+                // Finding all the real devices
+                bleManager.scan([], scanDurationSeconds, false);
+
+                // Making sure we're stopping the scan at the end
+                setTimeout(() => stopScan(), scanDurationSeconds * 1000);
+
+                // Adding a mock device
+                if (isMockEnabled) {
+                    setTimeout(() => handleDiscoverPeripheral(mockPeripheral), 1500);
+                }
             } catch (scanErr) {
                 if (scanErr instanceof Error) {
                     setError(`Error while scanning for BLE devices: ${scanErr.message}`);
@@ -187,10 +209,7 @@ export function BleConnectionScreen({navigation}) {
     const connectToDevice = async (device?: Peripheral) => {
         try {
             // First, let's reset the situation a bit
-            await bleManager.stopScan();
-            setError('');
-            setIsScanning(false);
-            setIsConnected(false);
+            stopScan();
 
             // Keeping track of the currently connected device, if any
             let lastConnectedDevice = null;
@@ -206,7 +225,12 @@ export function BleConnectionScreen({navigation}) {
                 setConnectingDevice(connectedDevice.id);
 
                 // actually disconnecting
-                await bleManager.disconnect(connectedDevice.id);
+                if (connectedDevice.id === MOCK_DEVICE_ID) {
+                    // for now, nothing special to do with the mock device
+                } else {
+                    // disconnecting the device
+                    await bleManager.disconnect(connectedDevice.id);
+                }
 
                 // we're done
                 setConnectingDevice(null);
@@ -217,28 +241,31 @@ export function BleConnectionScreen({navigation}) {
             if (device) {
                 setConnectingDevice(device.id);
 
-                // Connect to the selected device
-                await bleManager.connect(device.id);
+                if (device.id === MOCK_DEVICE_ID) {
+                    // for now, nothing special to do with the mock device
+                } else {
+                    // Connect to the selected device
+                    await bleManager.connect(device.id);
 
-                // Making its services available
-                await bleManager.retrieveServices(device.id);
+                    // Making its services available
+                    await bleManager.retrieveServices(device.id);
 
-                // Bonding if necessary
-                if (isBondingRequired) {
-                    // Detecting if bonding has already been done
-                    const bondedPeripherals = await bleManager.getBondedPeripherals();
-                    const alreadyBonded = bondedPeripherals.some(bondedDevice => bondedDevice.id === device.id);
+                    // Bonding if necessary
+                    if (isBondingRequired) {
+                        // Detecting if bonding has already been done
+                        const bondedPeripherals = await bleManager.getBondedPeripherals();
+                        const alreadyBonded = bondedPeripherals.some(bondedDevice => bondedDevice.id === device.id);
 
-                    // nope, let's do this
-                    if (!alreadyBonded) {
-                        await bleManager.createBond(device.id);
-                        console.log("Bonding '" + device.name + "' successful");
+                        // nope, let's do this
+                        if (!alreadyBonded) {
+                            await bleManager.createBond(device.id);
+                            console.log("Bonding '" + device.name + "' successful");
+                        }
                     }
                 }
 
                 // Update connected state
                 setConnectedDevice(device);
-                setIsConnected(true);
 
                 // Go back to the previous screen
                 navigation.goBack();
@@ -259,7 +286,6 @@ export function BleConnectionScreen({navigation}) {
                 // console.log("Unknown error while connecting to a BLE device:", connErr);
                 setError('Unknown error while connecting to a BLE device:' + connErr);
             }
-            setIsConnected(false);
             setConnectedDevice(null);
             return false;
         } finally {
@@ -276,21 +302,21 @@ export function BleConnectionScreen({navigation}) {
         const isDeviceConnected = (connectedDevice && connectedDevice.id === device.id) || undefined;
 
         return (
-            <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-                <View className="mr-4 flex-1">
-                    <Txt raw className="text-base font-medium text-gray-800">
-                        {device.name || 'Unnamed Device'}
-                    </Txt>
-                    <Txt raw className="text-sm text-gray-500">
-                        {device.id}
-                    </Txt>
-                    <Txt raw className="text-xs text-gray-400">
-                        RSSI: {device.rssi}
-                    </Txt>
+            <View className="bg-secondary mb-4 flex-row justify-between rounded-xl p-4">
+                <View className="flex-row items-center gap-4">
+                    <Bluetooth color={colors.secondaryForeground} size={24} />
+                    <View className="">
+                        <Txt raw className="">
+                            {device.name || 'Unnamed Device'}
+                        </Txt>
+                        <Txt raw className="text-sm">
+                            {device.id}
+                        </Txt>
+                    </View>
                 </View>
 
                 <TouchableOpacity
-                    className={`rounded-lg px-4 py-2 ${isDeviceConnected ? 'bg-green-500' : 'bg-blue-500'}`}
+                    className={`rounded-lg px-4 py-2 ${isDeviceConnected ? 'bg-info-foreground' : 'bg-primary'}`}
                     onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}>
                     {connectingDevice === device.id ? (
                         <View>
@@ -307,50 +333,56 @@ export function BleConnectionScreen({navigation}) {
 
     // TODO handle error... cf. theo3.gg... neverthrow.. ?
     return (
-        <View className="flex-1 bg-white p-4">
-            {error && (
-                <View className="mb-4 rounded-lg bg-red-100 p-3">
-                    <Txt className="text-red-800">{error}</Txt>
+        <View className="bg-foreground-light flex-1">
+            <View className="h-1/3"></View>
+            <View className="h-2/3 rounded-t-3xl bg-white p-6 pt-10">
+                {/* "Header" */}
+                <View className="flex-row justify-between pb-10">
+                    <Txt className="text-primary text-2xl font-bold">Connect a Bluetooth device</Txt>
+                    <X color={colors.foreground} onPress={() => quitScreen()} />
                 </View>
-            )}
 
-            {permissionStatus === 'denied' && (
-                <TouchableOpacity className="mb-4 rounded-lg bg-yellow-100 p-3" onPress={checkPermissions}>
-                    <Txt className="text-yellow-800">Bluetooth permissions required. Tap to grant permissions.</Txt>
-                </TouchableOpacity>
-            )}
+                {/* Displaying error messages */}
+                {/* TODO rather integrate a more generic way of dealing for errors */}
+                {error && (
+                    <View className="mb-4 rounded-lg bg-red-100 p-3">
+                        <Txt className="text-red-800">{error}</Txt>
+                    </View>
+                )}
 
-            {connectedDevice && <RenderDeviceItem item={connectedDevice} />}
+                {permissionStatus === 'denied' && (
+                    <TouchableOpacity className="mb-4 rounded-lg bg-yellow-100 p-3" onPress={checkPermissions}>
+                        <Txt className="text-yellow-800">Bluetooth permissions required. Tap to grant permissions.</Txt>
+                    </TouchableOpacity>
+                )}
 
-            <View className="flex-1">
-                <FlatList
-                    data={Object.values(devices)}
-                    keyExtractor={item => item.id}
-                    renderItem={RenderDeviceItem}
-                    contentContainerClassName="pb-4"
-                    ListEmptyComponent={
-                        <View className="flex-1 items-center justify-center py-8">
-                            <Txt className="text-gray-500">{isScanning ? 'Scanning for devices...' : 'No devices found. Tap Scan to begin.'}</Txt>
-                        </View>
-                    }
-                />
-            </View>
+                {/* Displaying the currently connected device on top */}
+                {/* {connectedDevice && <RenderDeviceItem item={connectedDevice} />} */}
 
-            <View className="border-t border-gray-200 pt-4">
-                <TouchableOpacity
-                    className="items-center justify-center rounded-lg py-3"
-                    onPress={startOrStopScan}
-                    // disabled={isScanning || permissionStatus === "checking"}
-                    disabled={permissionStatus === 'checking'}>
-                    {isScanning ? (
-                        <View className="flex-row items-center">
-                            <ActivityIndicator size="small" color="black" />
-                            <Txt className="ml-2 font-medium text-black">Scanning...</Txt>
-                        </View>
-                    ) : (
-                        <Txt className="font-medium text-black">Scan for Devices</Txt>
-                    )}
-                </TouchableOpacity>
+                {/* Showing each found bluetooth device */}
+                <View className="flex-1">
+                    <FlatList data={Object.values(devices)} keyExtractor={item => item.id} renderItem={RenderDeviceItem} />
+                </View>
+
+                {/* Actions */}
+                <View className="flex-row justify-between">
+                    <Button variant="secondary" onPress={() => quitScreen()}>
+                        <Txt>Cancel</Txt>
+                    </Button>
+                    <Button variant="secondary" onPress={startOrStopScan} disabled={permissionStatus === 'checking'}>
+                        {isScanning ? (
+                            <View className="flex-row items-center gap-4">
+                                <Txt>Scanning...</Txt>
+                                <ActivityIndicator size="small" color={colors.secondaryForeground} />
+                            </View>
+                        ) : (
+                            <View className="flex-row items-center gap-4">
+                                <Txt>Scan</Txt>
+                                <RefreshCcw size={16} color={colors.secondaryForeground} />
+                            </View>
+                        )}
+                    </Button>
+                </View>
             </View>
         </View>
     );
