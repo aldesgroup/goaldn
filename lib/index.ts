@@ -13,6 +13,7 @@ export {MainNavigator, ScreenNavigator} from './components/app/Navigator';
 export * from './components/app/Navigator-options';
 export {type MenuProps} from './components/app/Navigator-utils';
 export {ViewWithFooter} from './components/app/ViewWithFooter';
+export {BottomView} from './components/app/BottomView';
 export * from './components/misc';
 
 // Utils

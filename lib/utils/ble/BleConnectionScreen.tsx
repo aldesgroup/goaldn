@@ -11,9 +11,7 @@ import {useHideTabBar} from '../hooks';
 import {bleManagerAtom, connectedDeviceAtom, isBondingRequiredAtom} from './bluetoothAtoms';
 import {isMockEnabled, MOCK_DEVICE_ID, mockPeripheral} from './bluetoothMocking';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
-
-// these are options that can be used when configuring this screen with react-navigation/native-stack
-export const bleScreenOptions = ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom', headerShown: false});
+import {BottomView} from '../../components/app/BottomView';
 
 export function BleConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
@@ -78,7 +76,7 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // utils - handlers for the listeners
     // --------------------------------------------------------------------------------------------
-    const handleDiscoverPeripheral = (peripheral: Peripheral) => {
+    const handleDiscoverPeripheral = (peripheral: Peripheral, forceReappear?: boolean) => {
         // only considering the devices with a name
         if (peripheral.name) {
             // Add device to list if it exists, has a name, and put the desired ones on top
@@ -87,8 +85,7 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
                 // Check if device is already in the list
                 const isDuplicate = prevDevices.some(d => d.id === peripheral.id);
 
-                // if (isDuplicate || connectedDevice?.id === peripheral.id) {
-                if (isDuplicate) {
+                if (isDuplicate || (connectedDevice?.id === peripheral.id && !forceReappear)) {
                     return prevDevices;
                 }
 
@@ -269,13 +266,12 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
 
                 // Go back to the previous screen
                 navigation.goBack();
-            } else {
-                // we've just disconnected without connecting to a new device
-                // this should make our device disappear;
-                // so we're cheating here and doing as if we've just re-discovered our old device
-                if (lastConnectedDevice) {
-                    handleDiscoverPeripheral(lastConnectedDevice);
-                }
+            }
+
+            // we've just disconnected, which should make our device disappear;
+            // so we're cheating here and doing as if we've just re-discovered our old device
+            if (lastConnectedDevice) {
+                handleDiscoverPeripheral(lastConnectedDevice, true);
             }
 
             return true;
@@ -333,57 +329,48 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
 
     // TODO handle error... cf. theo3.gg... neverthrow.. ?
     return (
-        <View className="bg-foreground-light flex-1">
-            <View className="h-1/3"></View>
-            <View className="h-2/3 rounded-t-3xl bg-white p-6 pt-10">
-                {/* "Header" */}
-                <View className="flex-row justify-between pb-10">
-                    <Txt className="text-primary text-2xl font-bold">Connect a Bluetooth device</Txt>
-                    <X color={colors.foreground} onPress={() => quitScreen()} />
+        <BottomView headerTitle="Connect a Bluetooth device" onClose={quitScreen}>
+            {/* Displaying error messages */}
+            {/* TODO rather integrate a more generic way of dealing for errors */}
+            {error && (
+                <View className="mb-4 rounded-lg bg-red-100 p-3">
+                    <Txt className="text-red-800">{error}</Txt>
                 </View>
+            )}
 
-                {/* Displaying error messages */}
-                {/* TODO rather integrate a more generic way of dealing for errors */}
-                {error && (
-                    <View className="mb-4 rounded-lg bg-red-100 p-3">
-                        <Txt className="text-red-800">{error}</Txt>
-                    </View>
-                )}
+            {permissionStatus === 'denied' && (
+                <TouchableOpacity className="mb-4 rounded-lg bg-yellow-100 p-3" onPress={checkPermissions}>
+                    <Txt className="text-yellow-800">Bluetooth permissions required. Tap to grant permissions.</Txt>
+                </TouchableOpacity>
+            )}
 
-                {permissionStatus === 'denied' && (
-                    <TouchableOpacity className="mb-4 rounded-lg bg-yellow-100 p-3" onPress={checkPermissions}>
-                        <Txt className="text-yellow-800">Bluetooth permissions required. Tap to grant permissions.</Txt>
-                    </TouchableOpacity>
-                )}
+            {/* Displaying the currently connected device on top */}
+            {connectedDevice && <RenderDeviceItem item={connectedDevice} />}
 
-                {/* Displaying the currently connected device on top */}
-                {/* {connectedDevice && <RenderDeviceItem item={connectedDevice} />} */}
-
-                {/* Showing each found bluetooth device */}
-                <View className="flex-1">
-                    <FlatList data={Object.values(devices)} keyExtractor={item => item.id} renderItem={RenderDeviceItem} />
-                </View>
-
-                {/* Actions */}
-                <View className="flex-row justify-between">
-                    <Button variant="secondary" onPress={() => quitScreen()}>
-                        <Txt>Cancel</Txt>
-                    </Button>
-                    <Button variant="secondary" onPress={startOrStopScan} disabled={permissionStatus === 'checking'}>
-                        {isScanning ? (
-                            <View className="flex-row items-center gap-4">
-                                <Txt>Scanning...</Txt>
-                                <ActivityIndicator size="small" color={colors.secondaryForeground} />
-                            </View>
-                        ) : (
-                            <View className="flex-row items-center gap-4">
-                                <Txt>Scan</Txt>
-                                <RefreshCcw size={16} color={colors.secondaryForeground} />
-                            </View>
-                        )}
-                    </Button>
-                </View>
+            {/* Showing each found bluetooth device */}
+            <View className="flex-1">
+                <FlatList data={Object.values(devices)} keyExtractor={item => item.id} renderItem={RenderDeviceItem} />
             </View>
-        </View>
+
+            {/* Actions */}
+            <View className="flex-row justify-between">
+                <Button variant="secondary" onPress={() => quitScreen()}>
+                    <Txt>Cancel</Txt>
+                </Button>
+                <Button variant="secondary" onPress={startOrStopScan} disabled={permissionStatus === 'checking'}>
+                    {isScanning ? (
+                        <View className="flex-row items-center gap-4">
+                            <Txt>Scanning...</Txt>
+                            <ActivityIndicator size="small" color={colors.secondaryForeground} />
+                        </View>
+                    ) : (
+                        <View className="flex-row items-center gap-4">
+                            <Txt>Scan</Txt>
+                            <RefreshCcw size={16} color={colors.secondaryForeground} />
+                        </View>
+                    )}
+                </Button>
+            </View>
+        </BottomView>
     );
 }

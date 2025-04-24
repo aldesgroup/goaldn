@@ -34,3 +34,6 @@ export const TitleOption = (title: string, withCloseIcon?: boolean, backToRoot?:
     const baseTitleOption = ({navigation}: {navigation: any}) => ({title: title});
     return withCloseIcon ? CombineOptions(baseTitleOption, CloseIconOption(backToRoot)) : baseTitleOption;
 };
+
+// Option used for the screens that should fade in from the bottom
+export const FadeInOptions = ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom', headerShown: false});

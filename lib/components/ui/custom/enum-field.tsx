@@ -13,6 +13,7 @@ type EnumFieldProps<confAtom extends FieldConfigAtom<number>> = {
     field: confAtom;
     valueClassName?: string;
     mode?: fieldDisplayMode;
+    emptyLabel?: string;
 };
 
 type EnumValueProps = {
@@ -63,7 +64,17 @@ function EnumValue({option, fieldConfig, className, infos, mode = 'input'}: Enum
     );
 }
 
-function CurrentEnumValue({fieldConfig, className, mode}: {fieldConfig: FieldConfig<number>; className?: string; mode: fieldDisplayMode}) {
+function CurrentEnumValue({
+    fieldConfig,
+    className,
+    mode,
+    emptyLabel,
+}: {
+    fieldConfig: FieldConfig<number>;
+    className?: string;
+    mode: fieldDisplayMode;
+    emptyLabel: string;
+}) {
     // shared state
     const value = useFieldValue(fieldConfig.fieldAtom);
     const selectedValue = fieldConfig.optionsOnly ? fieldConfig.optionsOnly.some(val => val === value) && value : value;
@@ -77,11 +88,15 @@ function CurrentEnumValue({fieldConfig, className, mode}: {fieldConfig: FieldCon
             <EnumValue fieldConfig={fieldConfig} className={className} option={option} mode={mode} infos={infos} />
         </View>
     ) : (
-        <Txt className="text-muted-foreground">Not entered</Txt>
+        <Txt className="text-muted-foreground">{emptyLabel}</Txt>
     );
 }
 
-export function EnumField<confAtom extends FieldConfigAtom<number>>({mode = 'input', ...props}: EnumFieldProps<confAtom>) {
+export function EnumField<confAtom extends FieldConfigAtom<number>>({
+    mode = 'input',
+    emptyLabel = 'Not entered',
+    ...props
+}: EnumFieldProps<confAtom>) {
     // local state
     const isReport = mode === 'report';
     const isSheet = mode === 'sheet';
@@ -115,7 +130,7 @@ export function EnumField<confAtom extends FieldConfigAtom<number>>({mode = 'inp
                 {/* Showing the available options */}
                 {!isInput ? (
                     // Here, only showing the choosen value
-                    <CurrentEnumValue fieldConfig={fieldConfig} className={props.valueClassName} mode={mode} />
+                    <CurrentEnumValue fieldConfig={fieldConfig} className={props.valueClassName} mode={mode} emptyLabel={emptyLabel} />
                 ) : (
                     <View className="flex-row flex-wrap gap-3">
                         {fieldConfig.optionsOnly
