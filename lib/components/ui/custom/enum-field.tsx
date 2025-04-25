@@ -6,15 +6,7 @@ import {getColors} from '../../../styles/theme';
 import {cn} from '../../../utils/cn';
 import {FieldConfig, FieldConfigAtom, FieldConfigOption, FieldConfigOptionInfos, fieldDisplayMode} from '../../../utils/fields';
 import {Txt} from './txt';
-
-type EnumFieldProps<confAtom extends FieldConfigAtom<number>> = {
-    label: string;
-    labelClassName?: string;
-    field: confAtom;
-    valueClassName?: string;
-    mode?: fieldDisplayMode;
-    emptyLabel?: string;
-};
+import {ReactNode} from 'react';
 
 type EnumValueProps = {
     option: FieldConfigOption;
@@ -51,7 +43,7 @@ function EnumValue({option, fieldConfig, className, infos, mode = 'input'}: Enum
             }}>
             <View
                 className={cn(
-                    'bg-secondary border-border flex-row items-center gap-2 rounded-full border px-5 py-1',
+                    'border-border bg-secondary flex-row items-center gap-2 rounded-full border px-5 py-1',
                     className,
                     selected && 'bg-primary-light',
                     disabled && 'bg-muted',
@@ -92,9 +84,20 @@ function CurrentEnumValue({
     );
 }
 
+type EnumFieldProps<confAtom extends FieldConfigAtom<number>> = {
+    label: string;
+    labelClassName?: string;
+    field: confAtom;
+    valueClassName?: string;
+    mode?: fieldDisplayMode;
+    emptyLabel?: string;
+    labelRight?: ReactNode;
+};
+
 export function EnumField<confAtom extends FieldConfigAtom<number>>({
     mode = 'input',
     emptyLabel = 'Not entered',
+    labelRight,
     ...props
 }: EnumFieldProps<confAtom>) {
     // local state
@@ -120,12 +123,13 @@ export function EnumField<confAtom extends FieldConfigAtom<number>>({
         fieldConfig.options && (
             <View className={cn('flex-col', isInput && 'gap-4', isSheet && 'gap-3', isReport && 'flex-row items-center gap-x-1 gap-y-2')}>
                 {/* Label */}
-                <View className="flex-row gap-1">
+                <View className="flex-row items-center gap-1">
                     <Txt className={cn(props.labelClassName, isSheet && 'text-sm font-bold uppercase', isReport && 'text-foreground-light')}>
                         {props.label}
                     </Txt>
                     {isReport && <Txt raw>: </Txt>}
                     {mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
+                    {labelRight && labelRight}
                 </View>
                 {/* Showing the available options */}
                 {!isInput ? (

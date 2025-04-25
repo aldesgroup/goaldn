@@ -5,21 +5,21 @@ import {Button, buttonVariantsType, textColorForVariant} from '../ui/custom/butt
 import {Txt} from '../ui/custom/txt';
 import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
 
-interface viewWithFooterProps {
+export type viewWithFooterProps = {
     children: React.ReactNode;
     contentClassName?: string;
     footerClassName?: string;
     leftButtonLabel?: string;
     leftButtonVariant?: buttonVariantsType;
-    leftButtonOnPress?: () => {};
+    leftButtonOnPress: () => void;
     leftButtonDisabled?: boolean;
     leftButtonIcon?: null | LucideIcon;
     rightButtonLabel?: string;
     rightButtonVariant?: buttonVariantsType;
-    rightButtonOnPress: () => {};
+    rightButtonOnPress: () => void;
     rightButtonDisabled?: boolean;
     rightButtonIcon?: null | LucideIcon;
-}
+};
 
 export function ViewWithFooter({
     contentClassName = 'p-8',
@@ -31,8 +31,6 @@ export function ViewWithFooter({
     rightButtonIcon = MoveRight,
     ...props
 }: viewWithFooterProps) {
-    const navigation = useNavigation();
-    const leftButtonOnPressAction = props.leftButtonOnPress || (() => navigation.goBack());
     const LeftButtonIcon = leftButtonIcon || (() => <></>);
     const RightButtonIcon = rightButtonIcon || (() => <></>);
 
@@ -45,7 +43,7 @@ export function ViewWithFooter({
             {/* Footer */}
             <View className={cn('h-24 flex-row justify-between rounded-t-2xl border border-gray-300 bg-white p-6', props.footerClassName)}>
                 {/* Left button */}
-                <Button variant={leftButtonVariant} onPress={leftButtonOnPressAction} disabled={props.leftButtonDisabled}>
+                <Button variant={leftButtonVariant} onPress={props.leftButtonOnPress} disabled={props.leftButtonDisabled}>
                     <View className="flex-row items-center gap-3">
                         <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />
                         <Txt>{leftButtonLabel}</Txt>

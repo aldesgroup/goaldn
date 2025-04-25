@@ -188,7 +188,7 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
 
                 // Adding a mock device
                 if (isMockEnabled) {
-                    setTimeout(() => handleDiscoverPeripheral(mockPeripheral), 1500);
+                    setTimeout(() => handleDiscoverPeripheral(mockPeripheral), 800);
                 }
             } catch (scanErr) {
                 if (scanErr instanceof Error) {
