@@ -8,7 +8,6 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {getColors} from '../../styles/theme';
 import {useInitAndSyncLanguage, useTranslator} from '../../utils/i18n';
 import {MenuProps, ScreensProps} from './Navigator-utils';
-import {FileQuestion} from 'lucide-react-native';
 
 // ------------------------------------------------------------------------------------------------
 // --- Global navigation

@@ -9,6 +9,8 @@ import {Text} from '../text';
 interface TxtProps extends SlottableTextProps {
     children: React.ReactNode;
     raw?: boolean; // if true, then the text is not translated
+    prepend?: React.ReactNode;
+    append?: React.ReactNode;
 }
 
 const getTextContent = (input: React.ReactNode): string => {
@@ -17,12 +19,14 @@ const getTextContent = (input: React.ReactNode): string => {
     return String(input); // Convert numbers or other types to string
 };
 
-const Txt = React.forwardRef<TextRef, TxtProps>(({children, raw, className, ...props}, ref) => {
+const Txt = React.forwardRef<TextRef, TxtProps>(({children, raw, className, prepend, append, ...props}, ref) => {
     const text = getTextContent(children);
     if (raw) {
         return (
             <Text {...props} ref={ref} className={cn('text-left', className)}>
+                {prepend && prepend}
                 {text}
+                {append && append}
             </Text>
         );
     }
@@ -32,7 +36,9 @@ const Txt = React.forwardRef<TextRef, TxtProps>(({children, raw, className, ...p
 
     return (
         <Text {...props} ref={ref} className={cn('text-left', className, missing && 'text-red-600')}>
+            {prepend && prepend}
             {translation}
+            {append && append}
         </Text>
     );
 });

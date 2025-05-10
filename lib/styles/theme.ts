@@ -15,15 +15,16 @@ const themeColors = {
     input: '#FF0077',
     border: '#FF0077',
     background: '#FF0077',
+    infoLight: '#FF0077',
+    info: '#FF0077',
     infoForeground: '#FF0077',
     warningForeground: '#FF0077',
     errorForeground: '#FF0077',
 };
 
-type colorsType = typeof themeColors;
+export type colorsType = typeof themeColors;
 
 export const initThemeColors = (colors: colorsType) => {
-    console.log('setting the colors');
     themeColors.foreground = colors.foreground;
     themeColors.foregroundLight = colors.foregroundLight;
     themeColors.primary = colors.primary;
@@ -40,6 +41,8 @@ export const initThemeColors = (colors: colorsType) => {
     themeColors.input = colors.input;
     themeColors.border = colors.border;
     themeColors.background = colors.background;
+    themeColors.infoLight = colors.infoLight;
+    themeColors.info = colors.info;
     themeColors.infoForeground = colors.infoForeground;
     themeColors.warningForeground = colors.warningForeground;
     themeColors.errorForeground = colors.errorForeground;

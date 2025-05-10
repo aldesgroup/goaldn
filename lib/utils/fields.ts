@@ -1,6 +1,7 @@
 import {RESET, useFieldValue, useInputField, type FieldAtom} from 'form-atoms';
 import {atom, Atom, useAtomValue} from 'jotai';
 import {LucideIcon} from 'lucide-react-native';
+import {useCallback, useMemo} from 'react';
 
 export type FieldConfigOption = {value: number; label: string};
 export type FieldConfigOptionInfos = {disabled?: Atom<boolean>; icon?: LucideIcon};
@@ -189,3 +190,42 @@ export type fieldDisplayMode =
     | 'input' // when a field is displayed in a way that allows to modify its value
     | 'sheet' // when a field is displayed as read-only in a sheet
     | 'report'; //  when a field is displayed as read-only in a report
+
+// This function allows to check that a predicate function returns true for at least 1 form field of the given list
+export function useCheckSomeFormFieldValue<Value>(configs: FieldConfigAtom<Value>[], predicate: (value: Value) => boolean): boolean {
+    const atomValues = configs.map(conf => useFormFieldValue(conf));
+
+    return useMemo(() => {
+        return atomValues.some(predicate);
+    }, [atomValues, predicate]);
+}
+
+// This function allows to check that a predicate function returns true for all the form fields of the given list
+export function useCheckAllFormFieldValues<Value>(configs: FieldConfigAtom<Value>[], predicate: (value: Value) => boolean): boolean {
+    const atomValues = configs.map(conf => useFormFieldValue(conf));
+
+    return useMemo(() => {
+        return atomValues.every(predicate);
+    }, [atomValues, predicate]);
+}
+
+// This function returns an array with all the given form fields' values
+export function useAllFormFieldsValues<Value>(configs: FieldConfigAtom<Value>[]) {
+    return configs.map(conf => useFormFieldValue(conf));
+}
+
+// This function returns a function that allows to set a value to all the given form fields at once
+export function useSetAllFormFields<Value>(configs: FieldConfigAtom<Value>[]) {
+    const setAtoms = configs.map(atom => useSetFormField(atom));
+
+    const setAllValues = useCallback(
+        (newValue: Value) => {
+            setAtoms.forEach(setAtom => {
+                setAtom(newValue);
+            });
+        },
+        [setAtoms],
+    );
+
+    return setAllValues;
+}
