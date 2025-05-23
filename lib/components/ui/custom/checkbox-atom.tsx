@@ -1,10 +1,11 @@
-import {Atom, useAtom, WritableAtom} from 'jotai';
+import {useAtom, useAtomValue, WritableAtom} from 'jotai';
 import {Check, Minus} from 'lucide-react-native';
 import {useEffect} from 'react';
 import {TouchableOpacity, View} from 'react-native';
 import {getColors} from '../../../styles/theme';
-import {cn} from '../../../utils/cn';
 import {useCheckAllAtomValues, useSetAllAtoms} from '../../../utils/atoms';
+import {cn} from '../../../utils/cn';
+import {smallScreenAtom} from '../../../utils/settings';
 import {Txt} from './txt';
 
 type CheckboxAtomProps<A extends WritableAtom<boolean, any, any>, B extends (WritableAtom<boolean, any, any> | undefined)[]> = {
@@ -30,6 +31,7 @@ export function CheckboxAtom<A extends WritableAtom<boolean, any, any>, B extend
     const allUnchecked = associated && useCheckAllAtomValues(associated, val => !val);
     const halfChecked = associated && !allChecked && !allUnchecked;
     const setAllAssociatedFields = associated && useSetAllAtoms(associated);
+    const smallScreen = useAtomValue(smallScreenAtom);
 
     // --- local state
 
@@ -66,6 +68,7 @@ export function CheckboxAtom<A extends WritableAtom<boolean, any, any>, B extend
                 {...props}
                 className={cn(
                     'border-input size-5 items-center justify-center rounded border',
+                    smallScreen && 'size-7',
                     (value || halfChecked) && 'bg-primary',
                     props.boxClassName,
                 )}

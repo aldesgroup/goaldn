@@ -1,6 +1,6 @@
 import {NativeStackNavigationOptions} from '@react-navigation/native-stack';
 import {X} from 'lucide-react-native';
-import {LanguageSwitcher} from '../misc';
+import {LanguageSwitcher} from '../../misc';
 
 // Signature for option functions
 export type OptionFunction = ({navigation}: {navigation: any}) => NativeStackNavigationOptions;

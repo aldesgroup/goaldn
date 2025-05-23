@@ -6,10 +6,14 @@ import {useAtom} from 'jotai';
 // For this component, we can use the props from the view with footer,
 // except we remove the leftButtonOnPress & rightButtonOnPress props,
 // since these actions will completely be driven by the stepper
-type viewWithStepperProps = Partial<Omit<viewWithFooterProps, 'leftButtonOnPress' | 'rightButtonOnPress'>> & stepperProps;
+type viewWithStepperProps = Partial<Omit<viewWithFooterProps, 'leftButtonOnPress' | 'rightButtonOnPress'>> &
+    stepperProps & {
+        beforePreviousStep?: () => void;
+        beforeNextStep?: () => void;
+    };
 
 // A scrollable view with a footer integrated with a stepper
-export function ViewWithStepper({stepperConf, stepperLocked, children, ...props}: viewWithStepperProps) {
+export function ViewWithStepper({beforePreviousStep, beforeNextStep, stepperConf, stepperLocked, children, ...props}: viewWithStepperProps) {
     const navigation: any = useNavigation();
     const currentRoute = useRoute();
     const [state, setState] = useAtom(stepperConf);
@@ -19,12 +23,18 @@ export function ViewWithStepper({stepperConf, stepperLocked, children, ...props}
 
     // we define what happens when the user clicks on the left button, which can be overriden through the props (leftButtonOnPress)
     const goToPreviousStep = () => {
+        // running the previous step action, if any
+        beforePreviousStep && beforePreviousStep();
+
         // trying to go to the previous step if there's is one, or the start route if one defined; else going back to the root
         prevStep ? navigation.navigate(prevStep.route) : state.startRoute ? navigation.navigate(state.startRoute) : navigation.popToTop();
     };
 
     // we define what happens when the user clicks on the right button, which can be overriden through the props (rightButtonOnPress)
     const goToTheNextStep = () => {
+        // running the next step action, if any
+        beforeNextStep && beforeNextStep();
+
         // trying to go to the next step if there's is one, or the end route if one defined; else going back to the root
         nextStep ? navigation.navigate(nextStep.route) : state.endRoute ? navigation.navigate(state.endRoute) : navigation.popToTop();
 

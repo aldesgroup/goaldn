@@ -84,24 +84,32 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
                 </View>
                 <View className="flex-row justify-between">
                     <View className="ml-4 flex-row">
-                        <Txt raw className="text-muted-foreground">
+                        <Txt
+                            raw
+                            className="text-muted-foreground"
+                            append={
+                                props.unit && (
+                                    <Txt raw className="text-muted-foreground">
+                                        {props.unit}
+                                    </Txt>
+                                )
+                            }>
                             {fieldConfig.min}
                         </Txt>
-                        {props.unit && (
-                            <Txt raw className="text-muted-foreground">
-                                {props.unit}
-                            </Txt>
-                        )}
                     </View>
                     <View className="mr-4 flex-row">
-                        <Txt raw className="text-muted-foreground">
+                        <Txt
+                            raw
+                            className="text-muted-foreground"
+                            append={
+                                props.unit && (
+                                    <Txt raw className="text-muted-foreground">
+                                        {props.unit}
+                                    </Txt>
+                                )
+                            }>
                             {fieldConfig.max}
                         </Txt>
-                        {props.unit && (
-                            <Txt raw className="text-muted-foreground">
-                                {props.unit}
-                            </Txt>
-                        )}
                     </View>
                 </View>
             </View>

@@ -1,19 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import i18n from 'i18next';
 import {useAtom} from 'jotai';
-import {atomWithStorage, createJSONStorage} from 'jotai/utils';
 import {useEffect} from 'react';
 import {initReactI18next} from 'react-i18next';
-import * as RNLocalize from 'react-native-localize';
-
-const deviceLng = RNLocalize.getLocales()[0].languageCode;
-
-export const languageAtom = atomWithStorage(
-    'app-language',
-    deviceLng,
-    createJSONStorage(() => AsyncStorage),
-);
+import {deviceLng, languageAtom} from './settings';
 
 export const initI18n = async (resources: Record<string, any>) => {
     i18n.use(initReactI18next).init({

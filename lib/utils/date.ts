@@ -1,5 +1,5 @@
 import {useAtom} from 'jotai';
-import {languageAtom} from './i18n';
+import {languageAtom} from './settings';
 
 const enShortDateFormatter = new Intl.DateTimeFormat('en', {month: '2-digit', day: '2-digit', year: 'numeric'});
 const shortDateFormatter = new Intl.DateTimeFormat('fr', {month: '2-digit', day: '2-digit', year: 'numeric'});

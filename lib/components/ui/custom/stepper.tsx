@@ -1,12 +1,13 @@
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useAtomValue, WritableAtom} from 'jotai';
+import {atomWithReset} from 'jotai/utils';
 import {CircleCheck} from 'lucide-react-native';
-import {Fragment, useEffect} from 'react';
+import {Fragment} from 'react';
 import {TouchableOpacity, View} from 'react-native';
 import {getColors} from '../../../styles/theme';
 import {cn} from '../../../utils/cn';
+import {smallScreenAtom} from '../../../utils/settings';
 import {Txt} from './txt';
-import {atomWithReset} from 'jotai/utils';
 
 // ----------------------------------------------------------------------------
 // Configuring & tracking the state of a stepper
@@ -52,9 +53,15 @@ type stepProps = {
 function Step({stepCfg, rawLabel, selected, passed, locked}: stepProps) {
     const colors = getColors();
     const navigation = useNavigation();
+    const smallScreen = useAtomValue(smallScreenAtom);
+
     return (
         <TouchableOpacity
-            className={cn('size-10 items-center justify-center rounded-full', selected && 'border-secondary-foreground border-2')}
+            className={cn(
+                'size-10 items-center justify-center rounded-full',
+                selected && 'border-secondary-foreground border-2',
+                smallScreen && 'size-16',
+            )}
             //@ts-ignore
             onPress={() => passed && !locked && navigation.navigate(stepCfg.route)}>
             {passed && !selected && !locked ? (
@@ -64,6 +71,7 @@ function Step({stepCfg, rawLabel, selected, passed, locked}: stepProps) {
                     className={cn(
                         'border-border size-8 items-center justify-center rounded-full border-2 bg-white',
                         selected && 'border-primary-light bg-secondary-darker',
+                        smallScreen && 'size-14',
                     )}>
                     <Txt raw={rawLabel} className={cn('text-muted-foreground font-bold', selected && 'text-secondary-foreground')}>
                         {stepCfg.label}

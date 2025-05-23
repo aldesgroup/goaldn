@@ -1,12 +1,14 @@
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {DefaultTheme, NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator, NativeStackNavigationOptions} from '@react-navigation/native-stack';
+import {useAtomValue} from 'jotai';
 import React from 'react';
 import {LogBox} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {getColors} from '../../styles/theme';
-import {useInitAndSyncLanguage, useTranslator} from '../../utils/i18n';
+import {getColors} from '../../../styles/theme';
+import {useInitAndSyncLanguage, useTranslator} from '../../../utils/i18n';
+import {smallScreenAtom} from '../../../utils/settings';
 import {MenuProps, ScreensProps} from './Navigator-utils';
 
 // ------------------------------------------------------------------------------------------------
@@ -19,14 +21,15 @@ const BottomTab = createBottomTabNavigator();
 LogBox.ignoreLogs(['findHostInstance_DEPRECATED']);
 
 function MenuNavigator(props: {menu: MenuProps}) {
-    // shared stat
+    // --- shared state
+    const smallScreen = useAtomValue(smallScreenAtom);
 
-    // utils
+    // --- utils
     const translate = useTranslator();
 
-    // effects
+    // --- effects
 
-    // view
+    // --- view
     return (
         <BottomTab.Navigator>
             {props.menu.entries.map(menuItem => {
@@ -42,6 +45,7 @@ function MenuNavigator(props: {menu: MenuProps}) {
                                 const IconComponent = menuItem.icon;
                                 return <IconComponent color={color} size={size} />;
                             },
+                            tabBarStyle: smallScreen && {height: 70},
                             headerShown: false,
                             title: translation,
                             tabBarLabelStyle: missing && {color: 'red'},
@@ -89,6 +93,7 @@ export function MainNavigator(props: {menu: MenuProps}) {
 export function ScreenNavigator(screens: ScreensProps) {
     const Stack = createNativeStackNavigator();
     const translate = useTranslator();
+    const smallScreen = useAtomValue(smallScreenAtom);
     return (
         <Stack.Navigator>
             {screens.items.map((screen, index) => {

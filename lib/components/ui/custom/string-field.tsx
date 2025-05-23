@@ -4,30 +4,30 @@ import {View} from 'react-native';
 import {cn} from '../../../utils/cn';
 import {FieldConfigAtom, fieldDisplayMode, getFieldValidationError} from '../../../utils/fields';
 import {useTranslator} from '../../../utils/i18n';
+import {smallScreenAtom} from '../../../utils/settings';
 import {Input} from '../input';
 import {Txt} from './txt';
+import {InputLabel, InputLabelProps} from './input-label';
 
 type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends React.ComponentProps<typeof Input>> = {
-    label: string;
-    labelClassName?: string;
     field: T;
     placeholder?: string;
     placeholderRaw?: boolean;
     inputClassName?: string;
-    mode?: fieldDisplayMode;
     unit?: string;
-} & InputProps;
+} & InputLabelProps &
+    InputProps;
 
 export function StringField<confAtom extends FieldConfigAtom<any>, InputProps extends React.ComponentProps<typeof Input>>({
     mode = 'input',
     ...props
 }: StringFieldProps<confAtom, InputProps>) {
-    // local state
+    // --- local state
     const isReport = mode === 'report';
     const isSheet = mode === 'sheet';
     const isInput = mode === 'input';
 
-    // shared state
+    // --- shared state
     const fieldConfig = useAtomValue(props.field);
     const field = useInputField(fieldConfig.fieldAtom);
     const value = useFieldValue(fieldConfig.fieldAtom);
@@ -36,13 +36,14 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     const maxLength = fieldConfig.max || 0;
     const validError = getFieldValidationError(props.field);
     const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
+    const smallScreen = useAtomValue(smallScreenAtom);
 
-    // effects
+    // --- effects
     if (fieldConfig.effects) {
         fieldConfig.effects.map(useEffect => useEffect());
     }
 
-    // utils
+    // --- utils
     let placeholder = props.placeholder;
     if (!props.placeholderRaw) {
         const translate = useTranslator();
@@ -68,36 +69,47 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
         return val;
     };
 
-    // rendering
+    const ErrorAppend = () => {
+        return (
+            <>
+                {validError && validError.param && (
+                    <Txt className="text-destructive-foreground" raw prepend=" ">
+                        ({validError.param})
+                    </Txt>
+                )}
+            </>
+        );
+    };
+
+    // --- rendering
     return (
         visible && (
-            <View className={cn('flex-col gap-2', props.className, isReport && 'flex-row items-center')}>
+            <View className={cn('flex-col gap-2', props.className, isReport && !smallScreen && 'flex-row items-center')}>
                 {/* Label */}
-                <View className="flex-row gap-1">
-                    <Txt
-                        className={cn(
-                            props.labelClassName,
-                            validError && 'text-destructive-foreground',
-                            isSheet && 'text-sm font-bold uppercase',
-                            isReport && 'text-foreground-light',
-                        )}>
-                        {props.label}
-                    </Txt>
-                    {isReport && <Txt raw>: </Txt>}
-                    {mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
-                </View>
+                <InputLabel
+                    label={props.label}
+                    labelClassName={cn(validError && 'text-destructive-foreground', props.labelClassName)}
+                    mode={mode}
+                    mandatory={mandatory}
+                    labelAppend={props.labelAppend}
+                />
+
                 {/* Input field */}
                 {!isInput ? (
                     // No input in report mode
                     <View className="flex-row items-center">
-                        <Txt raw={!isBoolean(value)} className="text-foreground-light text-lg">
+                        <Txt
+                            raw={!isBoolean(value)}
+                            className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}
+                            append={
+                                props.unit && (
+                                    <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>
+                                        {props.unit}
+                                    </Txt>
+                                )
+                            }>
                             {getStringValue(value)}
                         </Txt>
-                        {props.unit && (
-                            <Txt raw className="text-foreground-light text-lg">
-                                {props.unit}
-                            </Txt>
-                        )}
                     </View>
                 ) : (
                     // Now we're talking
@@ -109,6 +121,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
                                 value ? 'bg-secondary' : 'bg-white',
                                 props.inputClassName,
                                 validError && 'text-destructive-foreground border-destructive-foreground',
+                                smallScreen && 'min-h-16',
                             )}
                             editable={!disabled}
                             value={value}
@@ -117,12 +130,9 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
                         />
                         {validError && (
                             <View className="flex-row gap-1">
-                                <Txt className="text-destructive-foreground">{validError.msg}</Txt>
-                                {validError.param && (
-                                    <Txt className="text-destructive-foreground" raw>
-                                        ({validError.param})
-                                    </Txt>
-                                )}
+                                <Txt className="text-destructive-foreground flex-1" append={<ErrorAppend />}>
+                                    {validError.msg}
+                                </Txt>
                             </View>
                         )}
                     </>

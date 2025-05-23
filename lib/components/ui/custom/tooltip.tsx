@@ -4,7 +4,7 @@ import {cn} from '../../../utils/cn';
 import {Txt} from './txt';
 import {getColors} from '../../../styles/theme';
 
-interface TooltipProps {
+export interface TooltipProps {
     trigger: React.ReactNode;
     text?: string;
     children?: React.ReactNode;
@@ -14,6 +14,7 @@ interface TooltipProps {
     triggerSize?: number; // the trigger size
     bgColor?: string; // the tooltip background color
     textColor?: string; // the tooltip text color
+    borderWidth?: number; // percentage of the screen left on both sides of the tooltip
 
     // If false, then when the children (trigger) is release, the tooltip closes;
     // if true, then the content must be clicked again to close the tooltip
@@ -39,14 +40,15 @@ export function Tooltip({
     bgColor = colors.primary,
     textColor = colors.primaryForeground,
     triggerSize = 20,
+    borderWidth = 0.05,
     persistent,
 }: TooltipProps) {
     const [isVisible, setIsVisible] = useState(false);
     const triggerRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
     const {width: screenWidth} = Dimensions.get('window');
     const [triggerLayout, setTriggerLayout] = useState<layout | null>(null);
-    const tooltipWidth = 0.8 * screenWidth; // the tooltip's width will be 80% of the screen's width
-    const tooltipLeft = triggerLayout ? -(triggerLayout.x - 0.1 * screenWidth) : 0;
+    const tooltipWidth = (1 - 2 * borderWidth) * screenWidth; // the tooltip's width will be 80% of the screen's width
+    const tooltipLeft = triggerLayout ? -(triggerLayout.x - borderWidth * screenWidth) : 0;
     const triggerHeight = triggerLayout ? triggerLayout.height : 0;
     const triggerWidth = triggerLayout ? triggerLayout.width : 0;
 
@@ -89,14 +91,14 @@ export function Tooltip({
                             style={[
                                 {
                                     position: 'absolute',
-                                    borderLeftWidth: triggerSize,
-                                    borderRightWidth: triggerSize,
+                                    borderLeftWidth: triggerSize / 2,
+                                    borderRightWidth: triggerSize / 2,
                                     top: -triggerSize,
                                     borderLeftColor: 'transparent',
                                     borderRightColor: 'transparent',
                                     borderBottomWidth: triggerSize,
                                     borderBottomColor: bgColor,
-                                    left: -tooltipLeft - triggerSize + triggerWidth / 2,
+                                    left: -tooltipLeft - triggerSize / 2 + triggerWidth / 2,
                                 },
                             ]}
                         />
@@ -122,14 +124,15 @@ export function Tooltip({
                             style={[
                                 {
                                     position: 'absolute',
-                                    borderLeftWidth: triggerSize,
-                                    borderRightWidth: triggerSize,
+                                    // zIndex: 10,
+                                    borderLeftWidth: triggerSize / 2,
+                                    borderRightWidth: triggerSize / 2,
                                     bottom: -triggerSize,
                                     borderLeftColor: 'transparent',
                                     borderRightColor: 'transparent',
                                     borderTopWidth: triggerSize,
                                     borderTopColor: bgColor,
-                                    left: -tooltipLeft - triggerSize + triggerWidth / 2,
+                                    left: -tooltipLeft - triggerSize / 2 + triggerWidth / 2,
                                 },
                             ]}
                         />

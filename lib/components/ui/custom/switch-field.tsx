@@ -34,7 +34,7 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
     return (
         visible && (
             <View className={cn('flex-row items-center justify-between', props.className)}>
-                <Txt className={cn('text-foreground', props.labelClassName)}>{props.label}</Txt>
+                <Txt className={cn('text-foreground flex-1', props.labelClassName)}>{props.label}</Txt>
                 <Switch
                     {...props}
                     className={props.switchClassName}

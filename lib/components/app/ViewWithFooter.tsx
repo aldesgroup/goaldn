@@ -4,6 +4,8 @@ import {cn} from '../../utils/cn';
 import {Button, buttonVariantsType, textColorForVariant} from '../ui/custom/button-pimped';
 import {Txt} from '../ui/custom/txt';
 import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
+import {useAtomValue} from 'jotai';
+import {smallScreenAtom} from '../../utils/settings';
 
 export type viewWithFooterProps = {
     children: React.ReactNode;
@@ -31,21 +33,33 @@ export function ViewWithFooter({
     rightButtonIcon = MoveRight,
     ...props
 }: viewWithFooterProps) {
+    // --- shared state
+    const smallScreen = useAtomValue(smallScreenAtom);
+
+    // --- local state
     const LeftButtonIcon = leftButtonIcon || (() => <></>);
     const RightButtonIcon = rightButtonIcon || (() => <></>);
 
+    // --- view
     return (
         // Anchoring the footer
         <View className="flex-1">
             {/* Scrollable Content Area */}
-            <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', contentClassName)}>{props.children}</ScrollView>
+            <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', smallScreen && 'gap-9', contentClassName)}>
+                {props.children}
+            </ScrollView>
 
             {/* Footer */}
-            <View className={cn('h-24 flex-row justify-between rounded-t-2xl border border-gray-300 bg-white p-6', props.footerClassName)}>
+            <View
+                className={cn(
+                    'h-24 flex-row justify-between rounded-t-2xl border border-gray-300 bg-white p-6',
+                    smallScreen && 'h-32',
+                    props.footerClassName,
+                )}>
                 {/* Left button */}
                 <Button variant={leftButtonVariant} onPress={props.leftButtonOnPress} disabled={props.leftButtonDisabled}>
                     <View className="flex-row items-center gap-3">
-                        <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />
+                        {!smallScreen && <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />}
                         <Txt>{leftButtonLabel}</Txt>
                     </View>
                 </Button>
@@ -54,7 +68,7 @@ export function ViewWithFooter({
                 <Button variant={rightButtonVariant} onPress={props.rightButtonOnPress} disabled={props.rightButtonDisabled}>
                     <View className="flex-row items-center gap-3">
                         <Txt>{rightButtonLabel}</Txt>
-                        <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} size={18} />
+                        {!smallScreen && <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} size={18} />}
                     </View>
                 </Button>
             </View>

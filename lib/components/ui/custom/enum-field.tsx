@@ -5,8 +5,9 @@ import {Pressable, View} from 'react-native';
 import {getColors} from '../../../styles/theme';
 import {cn} from '../../../utils/cn';
 import {FieldConfig, FieldConfigAtom, FieldConfigOption, FieldConfigOptionInfos, fieldDisplayMode} from '../../../utils/fields';
+import {smallScreenAtom} from '../../../utils/settings';
+import {InputLabel, InputLabelProps} from './input-label';
 import {Txt} from './txt';
-import {ReactNode} from 'react';
 
 type EnumValueProps = {
     option: FieldConfigOption;
@@ -60,12 +61,12 @@ function CurrentEnumValue({
     fieldConfig,
     className,
     mode,
-    emptyLabel,
+    emptyValueLabel,
 }: {
     fieldConfig: FieldConfig<number>;
     className?: string;
     mode: fieldDisplayMode;
-    emptyLabel: string;
+    emptyValueLabel: string;
 }) {
     // shared state
     const value = useFieldValue(fieldConfig.fieldAtom);
@@ -74,67 +75,68 @@ function CurrentEnumValue({
     const infos = option && fieldConfig.optionsInfos?.get(option.value);
 
     // rendering
-    // return ({option ? <EnumValue fieldConfig={fieldConfig} className={className} option={option} /> : <Txt>undefined</Txt>});
     return option ? (
         <View className="flex-wrap">
             <EnumValue fieldConfig={fieldConfig} className={className} option={option} mode={mode} infos={infos} />
         </View>
     ) : (
-        <Txt className="text-muted-foreground">{emptyLabel}</Txt>
+        <Txt className="text-muted-foreground">{emptyValueLabel}</Txt>
     );
 }
 
 type EnumFieldProps<confAtom extends FieldConfigAtom<number>> = {
-    label: string;
-    labelClassName?: string;
     field: confAtom;
     valueClassName?: string;
-    mode?: fieldDisplayMode;
-    emptyLabel?: string;
-    labelRight?: ReactNode;
-};
+    emptyValueLabel?: string;
+} & InputLabelProps;
 
 export function EnumField<confAtom extends FieldConfigAtom<number>>({
     mode = 'input',
-    emptyLabel = 'Not entered',
-    labelRight,
+    emptyValueLabel = 'Not entered',
     ...props
 }: EnumFieldProps<confAtom>) {
-    // local state
+    // --- local state
     const isReport = mode === 'report';
     const isSheet = mode === 'sheet';
     const isInput = mode === 'input';
 
-    // shared state
+    // --- shared state
     const fieldConfig = useAtomValue(props.field);
     const visible = isReport || isSheet || (fieldConfig.visible ? fieldConfig.visible() : true);
     const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
+    const smallScreen = useAtomValue(smallScreenAtom);
 
-    // effects
+    // --- effects
     if (fieldConfig.effects) {
         fieldConfig.effects.map(useEffect => useEffect());
     }
 
-    // utils
+    // --- utils
 
-    // rendering
+    // --- rendering
     return (
         visible &&
         fieldConfig.options && (
-            <View className={cn('flex-col', isInput && 'gap-4', isSheet && 'gap-3', isReport && 'flex-row items-center gap-x-1 gap-y-2')}>
+            <View
+                className={cn(
+                    'flex-col',
+                    isInput && 'gap-4',
+                    isSheet && 'gap-3',
+                    isReport && !smallScreen && 'flex-row items-center gap-x-1 gap-y-2',
+                )}>
                 {/* Label */}
-                <View className="flex-row items-center gap-1">
-                    <Txt className={cn(props.labelClassName, isSheet && 'text-sm font-bold uppercase', isReport && 'text-foreground-light')}>
-                        {props.label}
-                    </Txt>
-                    {isReport && <Txt raw>: </Txt>}
-                    {mandatory && isInput && <Txt className="text-warning-foreground">(mandatory)</Txt>}
-                    {labelRight && labelRight}
-                </View>
+                <InputLabel
+                    label={props.label}
+                    labelClassName={props.labelClassName}
+                    mode={mode}
+                    mandatory={mandatory}
+                    labelAppend={props.labelAppend}
+                />
+
                 {/* Showing the available options */}
                 {!isInput ? (
                     // Here, only showing the choosen value
-                    <CurrentEnumValue fieldConfig={fieldConfig} className={props.valueClassName} mode={mode} emptyLabel={emptyLabel} />
+                    <CurrentEnumValue fieldConfig={fieldConfig} className={props.valueClassName} mode={mode} emptyValueLabel={emptyValueLabel} />
                 ) : (
                     <View className="flex-row flex-wrap gap-3">
                         {fieldConfig.optionsOnly

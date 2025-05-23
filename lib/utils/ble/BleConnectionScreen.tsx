@@ -1,17 +1,19 @@
 import {useAtom, useAtomValue, useSetAtom} from 'jotai';
-import {Bluetooth, RefreshCcw, X} from 'lucide-react-native';
+import {Bluetooth, RefreshCcw} from 'lucide-react-native';
 import {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
+import {BottomView} from '../../components/app/BottomView';
 import {Button} from '../../components/ui/custom/button-pimped';
 import {Txt} from '../../components/ui/custom/txt';
 import {getColors} from '../../styles/theme';
+import {cn} from '../cn';
 import {useHideTabBar} from '../hooks';
+import {smallScreenAtom} from '../settings';
 import {bleManagerAtom, connectedDeviceAtom, isBondingRequiredAtom} from './bluetoothAtoms';
 import {isMockEnabled, MOCK_DEVICE_ID, mockPeripheral} from './bluetoothMocking';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
-import {BottomView} from '../../components/app/BottomView';
 
 export function BleConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
@@ -22,6 +24,7 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
     const isBondingRequired = useAtomValue(isBondingRequiredAtom);
     const setPermissionsGranted = useSetAtom(permissionsGrantedAtom);
     const colors = getColors();
+    const smallScreen = useAtomValue(smallScreenAtom);
 
     // --------------------------------------------------------------------------------------------
     // internal state
@@ -79,7 +82,6 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
     const handleDiscoverPeripheral = (peripheral: Peripheral, forceReappear?: boolean) => {
         // only considering the devices with a name
         if (peripheral.name) {
-            // Add device to list if it exists, has a name, and put the desired ones on top
             // Add device to the list, then apply filtering and sorting
             setDevices(prevDevices => {
                 // Check if device is already in the list
@@ -295,41 +297,52 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
 
     const RenderDeviceItem = ({item}: deviceItemProps) => {
         const device = item;
-        const isDeviceConnected = (connectedDevice && connectedDevice.id === device.id) || undefined;
+        const isDeviceConnected = (connectedDevice && connectedDevice.id === device.id) || false;
 
         return (
-            <View className="bg-secondary mb-4 flex-row justify-between rounded-xl p-4">
+            <View
+                className={cn(
+                    'bg-secondary mb-4 rounded-xl p-4',
+                    // when not wrapped
+                    !smallScreen && 'flex-row justify-between',
+                    // when wrapped
+                    smallScreen && 'flex-col gap-2',
+                )}>
+                {/* Device infos */}
                 <View className="flex-row items-center gap-4">
                     <Bluetooth color={colors.secondaryForeground} size={24} />
                     <View className="">
                         <Txt raw className="">
                             {device.name || 'Unnamed Device'}
                         </Txt>
-                        <Txt raw className="text-sm">
+                        <Txt raw className={cn('text-sm')}>
                             {device.id}
                         </Txt>
                     </View>
                 </View>
 
-                <TouchableOpacity
-                    className={`rounded-lg px-4 py-2 ${isDeviceConnected ? 'bg-info-foreground' : 'bg-primary'}`}
-                    onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}>
-                    {connectingDevice === device.id ? (
-                        <View>
-                            <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnecting...' : 'Connecting...'}</Txt>
-                            <ActivityIndicator size="small" color="white" />
-                        </View>
-                    ) : (
-                        <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnect' : 'Connect'}</Txt>
-                    )}
-                </TouchableOpacity>
+                {/* Button */}
+                <View className={cn('flex-row justify-end', !smallScreen && 'flex-1')}>
+                    <TouchableOpacity
+                        className={cn('rounded-lg px-4 py-2', isDeviceConnected ? 'bg-info-foreground' : 'bg-primary')}
+                        onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}>
+                        {connectingDevice === device.id ? (
+                            <View>
+                                <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnecting...' : 'Connecting...'}</Txt>
+                                <ActivityIndicator size="small" color="white" />
+                            </View>
+                        ) : (
+                            <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnect' : 'Connect'}</Txt>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     };
 
     // TODO handle error... cf. theo3.gg... neverthrow.. ?
     return (
-        <BottomView headerTitle="Connect a Bluetooth device" onClose={quitScreen}>
+        <BottomView headerTitle="Connect a Bluetooth device" onClose={quitScreen} h={smallScreen ? 'h-5/6' : 'h-2/3'}>
             {/* Displaying error messages */}
             {/* TODO rather integrate a more generic way of dealing for errors */}
             {error && (
@@ -360,7 +373,7 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
                 <Button variant="secondary" onPress={startOrStopScan} disabled={permissionStatus === 'checking'}>
                     {isScanning ? (
                         <View className="flex-row items-center gap-4">
-                            <Txt>Scanning...</Txt>
+                            {!smallScreen && <Txt>Scanning...</Txt>}
                             <ActivityIndicator size="small" color={colors.secondaryForeground} />
                         </View>
                     ) : (

@@ -4,6 +4,8 @@ import {Pressable} from 'react-native';
 import {TextClassContext} from '../../../components/ui/text';
 import {cn} from '../../../utils/cn';
 import {getColors} from '../../../styles/theme';
+import {smallScreenAtom} from '../../../utils/settings';
+import {useAtomValue} from 'jotai';
 
 export const buttonVariantsConfig = {
     variants: {
@@ -60,6 +62,7 @@ const buttonTextVariants = cva('web:whitespace-nowrap text-sm native:text-base f
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> & VariantProps<typeof buttonVariants>;
 
 const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>(({className, variant, size, ...props}, ref) => {
+    const smallScreen = useAtomValue(smallScreenAtom);
     return (
         <TextClassContext.Provider
             value={buttonTextVariants({
@@ -75,6 +78,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
                     props.disabled && 'opacity-50 web:pointer-events-none',
                     buttonVariants({variant, size, className}),
                     props.disabled && 'bg-muted border-0 opacity-100', // homogenize the "disabled" style
+                    smallScreen && 'native:h-auto native:p-4 h-auto p-4', // handling small screens / big font size
                 )}
                 ref={ref}
                 role="button"

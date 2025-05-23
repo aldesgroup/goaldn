@@ -1,86 +1,43 @@
-// import React, { useEffect, useState } from "react";
-// import { AppState, AppStateStatus, Text } from "react-native";
-// import {
-// 	bleManagerAtom,
-// 	connectedDeviceAtom,
-// 	destroyBleManager,
-// 	isConnectedAtom,
-// } from "./BleConnectionAtoms";
-// import { useAtom } from "jotai";
+// BLEDisconnectionWatcher.tsx
+import {useAtom} from 'jotai';
+import {useEffect} from 'react';
+import {connectedDeviceAtom, getBleManager} from './bluetoothAtoms';
+import {MOCK_DEVICE_ID} from './bluetoothMocking';
 
-export function BLEConnectionMonitor() {
-	// const [bleManager] = useAtom(bleManagerAtom);
-	// const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
-	// const [isConnected, setIsConnected] = useAtom(isConnectedAtom);
+export function BLEConnectionMonitor({checkEveryMs = 3000}: {checkEveryMs?: number}) {
+    const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
+    const bleManager = getBleManager();
 
-	// useEffect(() => {
-	// 	// Handle app state changes
-	// 	const handleAppStateChange = (nextAppState: AppStateStatus) => {
-	// 		if (nextAppState === "background" || nextAppState === "inactive") {
-	// 			console.log("detected app state change: ", nextAppState);
-	// 			if (!!connectedDevice) {
-	// 				console.log(
-	// 					"there's a connected device! " +
-	// 						connectedDevice.name +
-	// 						" (" +
-	// 						connectedDevice.id +
-	// 						")"
-	// 				);
-	// 			}
+    useEffect(() => {
+        console.log('Monitoring disconnections');
+        const subscription = bleManager.onDisconnectPeripheral(() => {
+            console.log('BLE not connected anymore!');
+            setConnectedDevice(null);
+        });
 
-	// 			// Attempt to disconnect device when app goes to background
-	// 			disconnectDevice();
-	// 		}
-	// 	};
+        return () => {
+            console.log('Removing BLE disconnect subscription');
+            subscription.remove();
+        };
+    }, []);
 
-	// 	// Add app state change listener
-	// 	const subscription = AppState.addEventListener("change", handleAppStateChange);
+    useEffect(() => {
+        if (!connectedDevice || connectedDevice.id === MOCK_DEVICE_ID) return;
 
-	// 	return () => {
-	// 		// Cleanup function
-	// 		try {
-	// 			// Remove app state listener
-	// 			subscription.remove();
+        console.log('Monitoring not-connected state');
+        const interval = setInterval(async () => {
+            console.log('checking');
+            const stillConnected = await bleManager.isPeripheralConnected(connectedDevice.id, []);
+            if (!stillConnected) {
+                console.log('Disconnected detected by polling!');
+                setConnectedDevice(null);
+            } else {
+                console.log('still connected!');
+            }
+        }, checkEveryMs);
 
-	// 			// Disconnect the device
-	// 			disconnectDevice();
+        return () => clearInterval(interval);
+    }, [connectedDevice]);
 
-	// 			// Destroy the BLE manager
-	// 			destroyBleManager();
-
-	// 			console.log("BLE Cleanup completed successfully");
-	// 		} catch (error) {
-	// 			console.error("Error during BLE cleanup:", error);
-	// 		}
-	// 	};
-	// }, [connectedDevice, bleManager]); // Empty dependency array ensures this runs once
-
-	// const disconnectDevice = async () => {
-	// 	if (connectedDevice) {
-	// 		try {
-	// 			console.log("trying to disconnect device " + connectedDevice.id);
-
-	// 			// Attempt to cancel connection
-	// 			await bleManager.cancelDeviceConnection(connectedDevice.id);
-
-	// 			// Verify disconnection
-	// 			const connectedDevices = await bleManager.connectedDevices([]);
-	// 			const isStillConnected = connectedDevices.some(
-	// 				(device) => device.id === connectedDevice.id
-	// 			);
-
-	// 			if (!isStillConnected) {
-	// 				console.log("Device successfully disconnected");
-	// 				setConnectedDevice(null);
-	// 				setIsConnected(false);
-	// 			} else {
-	// 				console.warn("Device disconnect verification failed");
-	// 			}
-	// 		} catch (error) {
-	// 			console.error("Disconnect error:", error);
-	// 		}
-	// 	}
-	// };
-
-	return <></>;
+    return null; // no UI
 }
