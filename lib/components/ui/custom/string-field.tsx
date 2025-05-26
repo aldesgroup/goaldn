@@ -100,7 +100,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
                     <View className="flex-row items-center">
                         <Txt
                             raw={!isBoolean(value)}
-                            className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}
+                            className={cn('text-foreground-light text-lg', props.inputClassName)}
                             append={
                                 props.unit && (
                                     <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>

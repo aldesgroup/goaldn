@@ -29,10 +29,18 @@ export const LanguageSwitcherOption = ({navigation}: {navigation: any}) => ({
     headerRight: LanguageSwitcher,
 });
 
+export const RemoveBackButtonOption = ({navigation}: {navigation: any}) => ({
+    headerBackVisible: false,
+});
+
 // Allows to change the title, an optionally to display the X close icon
-export const TitleOption = (title: string, withCloseIcon?: boolean, backToRoot?: boolean): OptionFunction => {
+export const TitleOption = (title: string, params?: {withCloseIcon?: boolean; backToRoot?: boolean; removeBackButton?: boolean}): OptionFunction => {
     const baseTitleOption = ({navigation}: {navigation: any}) => ({title: title});
-    return withCloseIcon ? CombineOptions(baseTitleOption, CloseIconOption(backToRoot)) : baseTitleOption;
+    return params?.withCloseIcon
+        ? CombineOptions(baseTitleOption, CloseIconOption(params.backToRoot))
+        : params?.removeBackButton
+          ? CombineOptions(baseTitleOption, RemoveBackButtonOption)
+          : baseTitleOption;
 };
 
 // Option used for the screens that should fade in from the bottom
