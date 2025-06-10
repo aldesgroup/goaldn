@@ -13,7 +13,8 @@ type StringAtomProps<A extends WritableAtom<any | Promise<any>, any, any>, Input
     placeholder?: string;
     placeholderRaw?: boolean;
     inputClassName?: string;
-    unit?: string;
+    unit?: string; // a bit of text to put after the value, without translation
+    clearDefault?: boolean; // if true, then, if if the atom's value contains the GOALD_DEFAULT_STRING's value, it's cleared
 } & InputLabelProps &
     InputProps;
 

@@ -17,6 +17,7 @@ export {Tooltip} from './components/ui/custom/tooltip';
 export {Txt} from './components/ui/custom/txt';
 
 // App building components
+export {Avatar, type AvatarProps} from './components/app/Avatar';
 export {BottomView} from './components/app/BottomView';
 export {Card} from './components/app/CardBasic';
 export {CollapsableCard} from './components/app/CardCollapsable';

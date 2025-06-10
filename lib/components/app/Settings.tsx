@@ -1,6 +1,5 @@
 import {useAtomValue} from 'jotai';
-import {View} from 'react-native';
-import {cn} from '../../utils/cn';
+import {ScrollView, View} from 'react-native';
 import {getLanguages} from '../../utils/i18n';
 import {
     detectFromDensityAtom,
@@ -17,7 +16,6 @@ import {StringAtom} from '../ui/custom/string-atom';
 import {SwitchAtom} from '../ui/custom/switch-atom';
 import {Txt} from '../ui/custom/txt';
 import {Card} from './CardBasic';
-import {ScrollView} from 'react-native';
 
 // A basic settings screen; can be use as-is, or serve as an inspiration
 export function Settings() {

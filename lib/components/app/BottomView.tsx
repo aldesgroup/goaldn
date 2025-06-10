@@ -10,11 +10,13 @@ export function BottomView({
     headerTitle,
     onClose,
     h = 'h-2/3',
+    closeDisabled,
 }: {
     children: ReactNode;
     headerTitle: string;
     onClose: () => void;
     h?: 'h-2/3' | 'h-1/2' | 'h-1/3' | 'h-3/4' | 'h-5/6';
+    closeDisabled?: boolean;
 }) {
     // --- shared state
     const colors = getColors();
@@ -42,7 +44,7 @@ export function BottomView({
                 {/* "Header" */}
                 <View className="flex-row justify-between pb-10">
                     <Txt className={cn('text-primary w-11/12 text-2xl font-bold')}>{headerTitle}</Txt>
-                    <X color={colors.foreground} onPress={onClose} />
+                    <X color={closeDisabled ? colors.muted : colors.foreground} onPress={onClose} disabled={closeDisabled} />
                 </View>
                 {/* View's content */}
                 {children}

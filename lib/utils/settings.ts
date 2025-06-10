@@ -1,20 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {atom, useAtomValue, useSetAtom, WritableAtom} from 'jotai';
-import {atomWithStorage, createJSONStorage} from 'jotai/utils';
-import {useEffect} from 'react';
+import {atom, WritableAtom} from 'jotai';
 import {PixelRatio} from 'react-native';
 import * as RNLocalize from 'react-native-localize';
-
-//-----------------------------------------------------------------------------
-// Utils
-//-----------------------------------------------------------------------------
-export function storedAtom<T>(key: string, defaultValue: T) {
-    return atomWithStorage(
-        key,
-        defaultValue,
-        createJSONStorage(() => AsyncStorage),
-    );
-}
+import {storedAtom} from './atoms';
 
 //-----------------------------------------------------------------------------
 // Language

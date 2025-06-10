@@ -13,7 +13,7 @@ export type viewWithFooterProps = {
     footerClassName?: string;
     leftButtonLabel?: string;
     leftButtonVariant?: buttonVariantsType;
-    leftButtonOnPress: () => void;
+    leftButtonOnPress: null | (() => void);
     leftButtonDisabled?: boolean;
     leftButtonIcon?: null | LucideIcon;
     rightButtonLabel?: string;
@@ -54,15 +54,18 @@ export function ViewWithFooter({
                 className={cn(
                     'h-24 flex-row justify-between rounded-t-2xl border border-gray-300 bg-white p-6',
                     smallScreen && 'h-32',
+                    !props.leftButtonOnPress && 'justify-end',
                     props.footerClassName,
                 )}>
                 {/* Left button */}
-                <Button variant={leftButtonVariant} onPress={props.leftButtonOnPress} disabled={props.leftButtonDisabled}>
-                    <View className="flex-row items-center gap-3">
-                        {!smallScreen && <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />}
-                        <Txt>{leftButtonLabel}</Txt>
-                    </View>
-                </Button>
+                {props.leftButtonOnPress && (
+                    <Button variant={leftButtonVariant} onPress={props.leftButtonOnPress} disabled={props.leftButtonDisabled}>
+                        <View className="flex-row items-center gap-3">
+                            {!smallScreen && <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />}
+                            <Txt>{leftButtonLabel}</Txt>
+                        </View>
+                    </Button>
+                )}
 
                 {/* Right button */}
                 <Button variant={rightButtonVariant} onPress={props.rightButtonOnPress} disabled={props.rightButtonDisabled}>
