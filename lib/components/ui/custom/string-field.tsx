@@ -1,14 +1,24 @@
 import {useFieldValue, useInputField} from 'form-atoms';
 import {useAtomValue} from 'jotai';
+import React from 'react';
 import {View} from 'react-native';
 import {cn} from '../../../utils/cn';
-import {FieldConfigAtom, fieldDisplayMode, getFieldValidationError} from '../../../utils/fields';
+import {FieldConfigAtom, getFieldValidationError} from '../../../utils/fields';
 import {useTranslator} from '../../../utils/i18n';
 import {smallScreenAtom} from '../../../utils/settings';
 import {Input} from '../input';
-import {Txt} from './txt';
 import {InputLabel, InputLabelProps} from './input-label';
+import {Txt} from './txt';
 
+/**
+ * Props for the StringField component.
+ * Extends InputLabelProps and InputProps with additional string-specific properties.
+ * @property {T} field - The field configuration atom
+ * @property {string} [placeholder] - The placeholder text for the input
+ * @property {boolean} [placeholderRaw] - Whether to use raw (untranslated) placeholder text
+ * @property {string} [inputClassName] - Additional CSS classes for the input
+ * @property {string} [unit] - Text to display after the value (not translated)
+ */
 type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends React.ComponentProps<typeof Input>> = {
     field: T;
     placeholder?: string;
@@ -18,6 +28,13 @@ type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends React.C
 } & InputLabelProps &
     InputProps;
 
+/**
+ * A form field component that renders a string input with validation and error handling.
+ * Supports different display modes (input, sheet, report) and handles various value types.
+ *
+ * @param {StringFieldProps<confAtom, InputProps>} props - The component props
+ * @returns {JSX.Element} A string input field with label, validation, and optional unit
+ */
 export function StringField<confAtom extends FieldConfigAtom<any>, InputProps extends React.ComponentProps<typeof Input>>({
     mode = 'input',
     ...props

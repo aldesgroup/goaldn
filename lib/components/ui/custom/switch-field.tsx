@@ -6,6 +6,14 @@ import {FieldConfigAtom} from '../../../utils/fields';
 import {Switch} from '../switch';
 import {Txt} from './txt';
 
+/**
+ * Props for the SwitchField component.
+ * @property {string} [className] - Additional CSS classes for the container
+ * @property {string} label - The label text for the switch
+ * @property {string} [labelClassName] - Additional CSS classes for the label
+ * @property {T} field - The field configuration atom
+ * @property {string} [switchClassName] - Additional CSS classes for the switch
+ */
 type SwitchFieldProps<T extends FieldConfigAtom<boolean>> = {
     className?: string;
     label: string;
@@ -14,6 +22,13 @@ type SwitchFieldProps<T extends FieldConfigAtom<boolean>> = {
     switchClassName?: string;
 };
 
+/**
+ * A form field component that renders a switch input.
+ * The switch state is controlled by the field configuration atom.
+ *
+ * @param {SwitchFieldProps<confAtom>} props - The component props
+ * @returns {JSX.Element} A switch field component with label
+ */
 export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: SwitchFieldProps<confAtom>) {
     // --- shared state
     const fieldConfig = useAtomValue(props.field);

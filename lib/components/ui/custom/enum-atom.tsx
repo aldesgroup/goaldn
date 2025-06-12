@@ -9,10 +9,24 @@ import {fieldDisplayMode} from '../../../utils/fields';
 import {Txt} from './txt';
 import {InputLabel, InputLabelProps} from './input-label';
 
+/**
+ * Type representing a value that can be converted to a string.
+ */
 type kindaString = {
     toString(): string;
 };
 
+/**
+ * Props for the EnumValue component.
+ * @template T - The type of the enum value
+ * @template A - The type of the atom
+ * @property {T} option - The enum option value
+ * @property {A} atom - The Jotai atom controlling the selection
+ * @property {string} [badgeClassName] - Additional CSS classes for the badge
+ * @property {string} [textClassName] - Additional CSS classes for the text
+ * @property {fieldDisplayMode} [mode] - The display mode of the component
+ * @property {boolean} [raw] - Whether to render raw text without styling
+ */
 type EnumValueProps<T extends kindaString | Promise<kindaString>, A extends WritableAtom<T | Promise<T>, any, any>> = {
     option: T;
     atom: A;
@@ -22,6 +36,15 @@ type EnumValueProps<T extends kindaString | Promise<kindaString>, A extends Writ
     raw?: boolean;
 };
 
+/**
+ * A component that renders a single enum option value.
+ * Handles selection state and user interaction.
+ *
+ * @template T - The type of the enum value
+ * @template A - The type of the atom
+ * @param {EnumValueProps<T, A>} props - The component props
+ * @returns {JSX.Element} A pressable badge showing the enum option
+ */
 function EnumValue<T extends kindaString | Promise<kindaString>, A extends WritableAtom<T | Promise<T>, any, any>>({
     option,
     atom,
@@ -68,6 +91,21 @@ function EnumValue<T extends kindaString | Promise<kindaString>, A extends Writa
     );
 }
 
+/**
+ * A component that displays the currently selected enum value.
+ * Shows a placeholder when no value is selected.
+ *
+ * @template T - The type of the enum value
+ * @template A - The type of the atom
+ * @param {Object} props - The component props
+ * @param {T[]} props.options - Available enum options
+ * @param {A} props.atom - The Jotai atom controlling the selection
+ * @param {string} [props.badgeClassName] - Additional CSS classes for the badge
+ * @param {string} [props.textClassName] - Additional CSS classes for the text
+ * @param {fieldDisplayMode} props.mode - The display mode of the component
+ * @param {string} props.emptyValueLabel - Text to show when no value is selected
+ * @returns {JSX.Element} A view showing the current selection or placeholder
+ */
 function CurrentEnumValue<T extends kindaString | Promise<kindaString>, A extends WritableAtom<T | Promise<T>, any, any>>({
     options,
     atom,
@@ -97,6 +135,17 @@ function CurrentEnumValue<T extends kindaString | Promise<kindaString>, A extend
     );
 }
 
+/**
+ * Props for the EnumAtom component.
+ * @template T - The type of the enum value
+ * @template A - The type of the atom
+ * @property {A} atom - The Jotai atom controlling the selection
+ * @property {T[]} options - Available enum options
+ * @property {string} [badgeClassName] - Additional CSS classes for the badge
+ * @property {string} [textClassName] - Additional CSS classes for the text
+ * @property {string} [emptyValueLabel] - Text to show when no value is selected
+ * @property {boolean} [raw] - Whether to render raw text without styling
+ */
 type EnumAtomProps<T extends kindaString | Promise<kindaString>, A extends WritableAtom<T | Promise<T>, any, any>> = {
     atom: A;
     options: T[];
@@ -106,6 +155,15 @@ type EnumAtomProps<T extends kindaString | Promise<kindaString>, A extends Writa
     raw?: boolean;
 } & InputLabelProps;
 
+/**
+ * A component that renders a group of enum options with selection functionality.
+ * Supports different display modes and integrates with Jotai atoms.
+ *
+ * @template T - The type of the enum value
+ * @template A - The type of the atom
+ * @param {EnumAtomProps<T, A>} props - The component props
+ * @returns {JSX.Element} A view containing the enum options and label
+ */
 export function EnumAtom<T extends kindaString | Promise<kindaString>, A extends WritableAtom<T | Promise<T>, any, any>>({
     atom,
     options,

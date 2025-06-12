@@ -1,3 +1,12 @@
+/**
+ * Barrel file for the goaldn library. Re-exports UI components, app components, utilities, and styling helpers
+ * for convenient imports throughout the application and for external consumers.
+ *
+ * - UI components: Buttons, checkboxes, enums, carousels, icons, tooltips, steppers, etc.
+ * - App components: Avatar, navigation, cards, settings, views, etc.
+ * - Utilities: Atoms, BLE, date, fields, hooks, i18n, PDF, settings, etc.
+ * - Styling: Theme color helpers
+ */
 // Base UI components
 export {Button, type buttonVariantsType} from './components/ui/custom/button-pimped';
 export {CheckboxAtom} from './components/ui/custom/checkbox-atom';

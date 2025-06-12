@@ -8,6 +8,18 @@ import {cn} from '../../../utils/cn';
 import {smallScreenAtom} from '../../../utils/settings';
 import {Txt} from './txt';
 
+/**
+ * Props for the CheckboxAtom component.
+ * @template A - The type of the main checkbox atom
+ * @template B - The type of the array of associated checkbox atoms
+ * @property {string} [className] - Additional CSS classes for the container
+ * @property {string} [label] - Text label for the checkbox
+ * @property {string} [labelClassName] - Additional CSS classes for the label
+ * @property {boolean} [labelPrepend] - Whether to show the label before the checkbox
+ * @property {A} atom - The Jotai atom controlling the checkbox state
+ * @property {string} [boxClassName] - Additional CSS classes for the checkbox box
+ * @property {B} [associated] - Array of associated checkbox atoms for group behavior
+ */
 type CheckboxAtomProps<A extends WritableAtom<boolean, any, any>, B extends (WritableAtom<boolean, any, any> | undefined)[]> = {
     className?: string;
     label?: string;
@@ -18,6 +30,15 @@ type CheckboxAtomProps<A extends WritableAtom<boolean, any, any>, B extends (Wri
     associated?: B;
 };
 
+/**
+ * A checkbox component that integrates with Jotai atoms for state management.
+ * Supports group behavior with associated checkboxes and customizable styling.
+ *
+ * @template A - The type of the main checkbox atom
+ * @template B - The type of the array of associated checkbox atoms
+ * @param {CheckboxAtomProps<A, B>} props - The component props
+ * @returns {JSX.Element} A checkbox component with label and optional group behavior
+ */
 export function CheckboxAtom<A extends WritableAtom<boolean, any, any>, B extends (WritableAtom<boolean, any, any> | undefined)[]>({
     label,
     labelPrepend,

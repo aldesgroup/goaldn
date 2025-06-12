@@ -3,16 +3,27 @@ import {Stepper, stepperConfig, stepperProps} from '../ui/custom/stepper';
 import {ViewWithFooter, viewWithFooterProps} from './ViewWithFooter';
 import {useAtom} from 'jotai';
 
-// For this component, we can use the props from the view with footer,
-// except we remove the leftButtonOnPress & rightButtonOnPress props,
-// since these actions will completely be driven by the stepper
+/**
+ * Props for the ViewWithStepper component.
+ * Extends ViewWithFooter props but removes leftButtonOnPress and rightButtonOnPress,
+ * as these are handled by the stepper navigation.
+ * @property {() => void} [beforePreviousStep] - Function to call before navigating to the previous step
+ * @property {() => void} [beforeNextStep] - Function to call before navigating to the next step
+ */
 type viewWithStepperProps = Partial<Omit<viewWithFooterProps, 'leftButtonOnPress' | 'rightButtonOnPress'>> &
     stepperProps & {
         beforePreviousStep?: () => void;
         beforeNextStep?: () => void;
     };
 
-// A scrollable view with a footer integrated with a stepper
+/**
+ * A view component that combines a stepper with a footer for step navigation.
+ * The stepper tracks progress through a series of steps, and the footer provides
+ * navigation buttons that automatically handle step transitions.
+ *
+ * @param {viewWithStepperProps} props - The component props
+ * @returns {JSX.Element} A view with integrated stepper and navigation
+ */
 export function ViewWithStepper({beforePreviousStep, beforeNextStep, stepperConf, stepperLocked, children, ...props}: viewWithStepperProps) {
     const navigation: any = useNavigation();
     const currentRoute = useRoute();

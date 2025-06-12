@@ -5,6 +5,11 @@ import {useEffect} from 'react';
 import {initReactI18next} from 'react-i18next';
 import {deviceLng, languageAtom} from './settings';
 
+/**
+ * Initializes the i18n instance with the provided resources.
+ * @param {Record<string, any>} resources - The translation resources to initialize i18n with.
+ * @returns {Promise<void>} A promise that resolves when i18n is initialized.
+ */
 export const initI18n = async (resources: Record<string, any>) => {
     i18n.use(initReactI18next).init({
         lng: deviceLng,
@@ -16,12 +21,22 @@ export const initI18n = async (resources: Record<string, any>) => {
     });
 };
 
+/**
+ * Retrieves the list of available languages for translation.
+ * @returns {string[]} An array of language codes.
+ */
 export const getLanguages = () => {
     const translationLanguages = (i18n.options.resources && Object.keys(i18n.options.resources)) || [];
     translationLanguages.push('en');
     return translationLanguages;
 };
 
+/**
+ * Truncates a label to a specified maximum length, cutting at a space if possible.
+ * @param {string} label - The label to truncate.
+ * @param {number} max - The maximum length of the label.
+ * @returns {string} The truncated label.
+ */
 function keyFromLabel(label: string, max: number) {
     // If the string is already within the max length, return it as is
     if (label.length <= max) {
@@ -46,12 +61,23 @@ function keyFromLabel(label: string, max: number) {
     return label.slice(0, cutIndex);
 }
 
+/**
+ * Interface for the result of a translation attempt.
+ * @property {string} translation - The translated string.
+ * @property {boolean} missing - Indicates if the translation is missing.
+ */
 interface translationResult {
     translation: string;
     missing: boolean;
 }
 
-// Helper function to recursively check parent routes for a translation
+/**
+ * Helper function to recursively check parent routes for a translation.
+ * @param {string} language - The language code to translate into.
+ * @param {string} label - The label to translate.
+ * @param {string[]} [routes] - The routes to check for translation.
+ * @returns {translationResult} The translation result.
+ */
 const translateKeyAtRoutes = (language: string, label: string, routes?: string[]) => {
     // We do not translate english since we're coding in english
     if (language && language.startsWith('en')) {
@@ -95,7 +121,9 @@ const translateKeyAtRoutes = (language: string, label: string, routes?: string[]
     return {translation, missing};
 };
 
-// Makes sure the value of the language atom - which is locally stored - applies to the i18n instance
+/**
+ * Makes sure the value of the language atom - which is locally stored - applies to the i18n instance.
+ */
 export function useInitAndSyncLanguage() {
     const [language] = useAtom(languageAtom);
 
@@ -106,11 +134,10 @@ export function useInitAndSyncLanguage() {
     }, [language]);
 }
 
-// main translating function hook
-
 /**
- * @returns a translation function that returns the translation found for the current language and route,
- * else it returns the provided key
+ * Main translating function hook.
+ * @returns {Function} A translation function that returns the translation found for the current language and route,
+ * else it returns the provided key.
  */
 export const useTranslator = () => {
     const navigation = useNavigation();

@@ -5,6 +5,15 @@ import {smallScreenAtom} from '../../../utils/settings';
 import {Switch} from '../switch';
 import {Txt} from './txt';
 
+/**
+ * Props for the SwitchAtom component.
+ * @property {string} [className] - Additional CSS classes for the container
+ * @property {string} label - The label text for the switch
+ * @property {string} [labelClassName] - Additional CSS classes for the label
+ * @property {A} atom - The writable atom to bind to
+ * @property {string} [switchClassName] - Additional CSS classes for the switch
+ * @property {boolean} [disabled] - Whether the switch is disabled
+ */
 type SwitchAtomProps<A extends WritableAtom<boolean | Promise<boolean>, any, any>> = {
     className?: string;
     label: string;
@@ -14,6 +23,13 @@ type SwitchAtomProps<A extends WritableAtom<boolean | Promise<boolean>, any, any
     disabled?: boolean;
 };
 
+/**
+ * A component that renders a switch input bound to a Jotai atom.
+ * The switch state is controlled by the atom's value.
+ *
+ * @param {SwitchAtomProps<A>} props - The component props
+ * @returns {JSX.Element} A switch component with label
+ */
 export function SwitchAtom<A extends WritableAtom<boolean | Promise<boolean>, any, any>>(props: SwitchAtomProps<A>) {
     // --- shared state
     const [value, setValue] = useAtom(props.atom);

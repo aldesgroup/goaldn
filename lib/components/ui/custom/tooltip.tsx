@@ -4,6 +4,20 @@ import {cn} from '../../../utils/cn';
 import {Txt} from './txt';
 import {getColors} from '../../../styles/theme';
 
+/**
+ * Props for the Tooltip component.
+ * @property {React.ReactNode} trigger - The element that triggers the tooltip display
+ * @property {string} [text] - The text content of the tooltip
+ * @property {React.ReactNode} [children] - Custom content to render inside the tooltip
+ * @property {string} [className] - Additional CSS classes for the container
+ * @property {string} [textClassName] - Additional CSS classes for the tooltip text
+ * @property {boolean} [underTrigger] - If true, the tooltip appears below the trigger; otherwise above
+ * @property {number} [triggerSize=20] - The size of the trigger element
+ * @property {string} [bgColor] - The background color of the tooltip
+ * @property {string} [textColor] - The text color of the tooltip
+ * @property {number} [borderWidth=0.05] - Percentage of screen width to leave as margin on both sides
+ * @property {boolean} [persistent] - If true, tooltip requires explicit close; if false, closes on trigger release
+ */
 export interface TooltipProps {
     trigger: React.ReactNode;
     text?: string;
@@ -21,6 +35,13 @@ export interface TooltipProps {
     persistent?: boolean;
 }
 
+/**
+ * Layout information for positioning the tooltip.
+ * @property {number} x - The x-coordinate of the element
+ * @property {number} y - The y-coordinate of the element
+ * @property {number} width - The width of the element
+ * @property {number} height - The height of the element
+ */
 type layout = {
     x: number;
     y: number;
@@ -30,6 +51,13 @@ type layout = {
 
 const colors = getColors();
 
+/**
+ * A tooltip component that displays additional information when hovering over or pressing a trigger element.
+ * The tooltip can be positioned above or below the trigger and supports both text and custom content.
+ *
+ * @param {TooltipProps} props - The component props
+ * @returns {JSX.Element} A tooltip component with customizable positioning and styling
+ */
 export function Tooltip({
     trigger,
     text,
@@ -66,6 +94,7 @@ export function Tooltip({
 
     return (
         <View className={cn('relative inline-block', className)}>
+            {/* The trigger, which should be an icon */}
             {/* The trigger, which should be an icon */}
             {persistent ? (
                 <TouchableOpacity ref={triggerRef} onPress={() => setIsVisible(!isVisible)}>

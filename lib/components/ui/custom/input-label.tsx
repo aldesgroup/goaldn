@@ -1,11 +1,20 @@
 import {useAtomValue} from 'jotai';
-import {ReactNode} from 'react';
+import React, {ReactNode} from 'react';
 import {View} from 'react-native';
 import {cn} from '../../../utils/cn';
 import {fieldDisplayMode} from '../../../utils/fields';
 import {smallScreenAtom} from '../../../utils/settings';
 import {Txt} from './txt';
 
+/**
+ * Props for the InputLabel component.
+ * @property {string} label - The text label to display
+ * @property {string} [labelClassName] - Additional CSS classes for the label
+ * @property {ReactNode} [labelAppend] - Additional content to append after the label
+ * @property {fieldDisplayMode} [mode] - The display mode of the label
+ * @property {boolean} [mandatory] - Whether the field is mandatory
+ * @property {boolean} [sideValue] - Whether to display the label on the side
+ */
 export type InputLabelProps = {
     label: string;
     labelClassName?: string;
@@ -15,11 +24,13 @@ export type InputLabelProps = {
     sideValue?: boolean; // display on the side
 };
 
-// Component used to put a label to an input field that:
-// - can take several possible values,
-// - be made mandatory,
-// - have a tooltip appended, or something else,
-// - etc.
+/**
+ * A component for displaying input field labels with various configurations.
+ * Supports different display modes, mandatory indicators, and appended content.
+ *
+ * @param {InputLabelProps} props - The component props
+ * @returns {JSX.Element} A label component with optional appended content
+ */
 export function InputLabel({labelAppend, sideValue, ...props}: InputLabelProps) {
     // --- local state
     const isReport = props.mode === 'report';

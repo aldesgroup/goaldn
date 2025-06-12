@@ -4,16 +4,17 @@ import {cn} from '../../utils/cn';
 import {Txt} from '../ui/custom/txt';
 
 /**
- * HexKeyboard - A reusable component for inputting hexadecimal characters using NativeWind
+ * HexKeyboard - A reusable component for inputting hexadecimal characters using NativeWind.
  *
- * @param {Object} props
- * @param {function} props.onKeyPress - Function called when a key is pressed, receives the pressed character
- * @param {function} props.onDelete - Function called when delete button is pressed
- * @param {function} props.onClear - Function called when clear button is pressed
- * @param {string} props.containerClass - Additional classes for the keyboard container
- * @param {string} props.keyClass - Additional classes for individual keys
- * @param {string} props.keyTextClass - Additional classes for key text
- * @param {string} props.controlKeyClass - Additional classes for control keys
+ * @param props - Component props
+ * @param props.onKeyPress - Function called when a key is pressed, receives the pressed character
+ * @param props.onDelete - Function called when delete button is pressed
+ * @param props.onClear - Function called when clear button is pressed
+ * @param props.containerClass - Additional classes for the keyboard container
+ * @param props.keyClass - Additional classes for individual keys
+ * @param props.keyTextClass - Additional classes for key text
+ * @param props.controlKeyClass - Additional classes for control keys
+ * @returns A keyboard component for hexadecimal input
  */
 export function HexKeyboard(props: {onKeyPress: (key: string) => void; containerClass?: string; keyClass?: string; keyTextClass?: string}) {
     // Hexadecimal characters

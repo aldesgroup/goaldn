@@ -3,7 +3,10 @@ import {useAtomValue} from 'jotai';
 import {useCallback} from 'react';
 import {smallScreenAtom} from './settings';
 
-// To use inside a stack navigator screen (current navigation), to hide the tab of the tab navigator (parent)
+/**
+ * Hook to hide the tab bar in a stack navigator screen.
+ * This function is intended to be used inside a stack navigator screen to hide the tab bar of the parent tab navigator.
+ */
 export function useHideTabBar() {
     const navigation = useNavigation();
     const smallScreen = useAtomValue(smallScreenAtom);

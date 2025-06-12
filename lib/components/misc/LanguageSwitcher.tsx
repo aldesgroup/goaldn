@@ -8,6 +8,12 @@ import {getLanguages} from '../../utils/i18n';
 import {Txt} from '../ui/custom/txt';
 import {languageAtom} from '../../utils/settings';
 
+/**
+ * LanguageSwitcher component allows users to cycle through available languages.
+ * Displays the current language and, if not in production, an environment indicator.
+ *
+ * @returns A touchable component for switching languages, showing the current language and environment.
+ */
 export function LanguageSwitcher() {
     // shared state
     const [language, setLanguage] = useAtom(languageAtom);

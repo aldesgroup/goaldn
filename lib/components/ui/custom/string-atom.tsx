@@ -1,23 +1,40 @@
 import {useAtom, useAtomValue, WritableAtom} from 'jotai';
+import React from 'react';
 import {View} from 'react-native';
 import {cn} from '../../../utils/cn';
-import {fieldDisplayMode} from '../../../utils/fields';
 import {useTranslator} from '../../../utils/i18n';
 import {smallScreenAtom} from '../../../utils/settings';
 import {Input} from '../input';
-import {Txt} from './txt';
 import {InputLabel, InputLabelProps} from './input-label';
+import {Txt} from './txt';
 
+/**
+ * Props for the StringAtom component.
+ * Extends InputLabelProps and InputProps with additional string-specific properties.
+ * @property {A} atom - The writable atom to bind to
+ * @property {string} [placeholder] - The placeholder text for the input
+ * @property {boolean} [placeholderRaw] - Whether to use raw (untranslated) placeholder text
+ * @property {string} [inputClassName] - Additional CSS classes for the input
+ * @property {string} [unit] - Text to display after the value (not translated)
+ * @property {boolean} [clearDefault] - If true, clears the value if it matches GOALD_DEFAULT_STRING
+ */
 type StringAtomProps<A extends WritableAtom<any | Promise<any>, any, any>, InputProps extends React.ComponentProps<typeof Input>> = {
     atom: A;
     placeholder?: string;
     placeholderRaw?: boolean;
     inputClassName?: string;
-    unit?: string; // a bit of text to put after the value, without translation
-    clearDefault?: boolean; // if true, then, if if the atom's value contains the GOALD_DEFAULT_STRING's value, it's cleared
+    unit?: string;
+    clearDefault?: boolean;
 } & InputLabelProps &
     InputProps;
 
+/**
+ * A component that renders a string input field bound to a Jotai atom.
+ * Supports different display modes (input, sheet, report) and handles various value types.
+ *
+ * @param {StringAtomProps<A, InputProps>} props - The component props
+ * @returns {JSX.Element} A string input component with label and optional unit
+ */
 export function StringAtom<A extends WritableAtom<any | Promise<any>, any, any>, InputProps extends React.ComponentProps<typeof Input>>({
     mode = 'input',
     mandatory,

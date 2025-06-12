@@ -8,6 +8,16 @@ import Slider from '@react-native-community/slider';
 import {getColors} from '../../../styles/theme';
 import {useState} from 'react';
 
+/**
+ * Props for the SliderField component.
+ * @property {string} [className] - Additional CSS classes for the container
+ * @property {string} label - The label text for the slider
+ * @property {string} [labelClassName] - Additional CSS classes for the label
+ * @property {T} field - The field configuration atom for the slider value
+ * @property {string} [sliderClassName] - Additional CSS classes for the slider
+ * @property {string} [unit] - The unit to display with the value (e.g., "%", "px")
+ * @property {fieldDisplayMode} [mode] - The display mode for the field
+ */
 type SliderFieldProps<T extends FieldConfigAtom<number>> = {
     className?: string;
     label: string;
@@ -18,6 +28,13 @@ type SliderFieldProps<T extends FieldConfigAtom<number>> = {
     mode?: fieldDisplayMode;
 };
 
+/**
+ * A form field component that renders a slider with a dynamic value display.
+ * The value display follows the slider thumb position and scales based on the current value.
+ *
+ * @param {SliderFieldProps<confAtom>} props - The component props
+ * @returns {JSX.Element} A slider field component with dynamic value display
+ */
 export function SliderField<confAtom extends FieldConfigAtom<number>>(props: SliderFieldProps<confAtom>) {
     // shared state
     const colors = getColors();

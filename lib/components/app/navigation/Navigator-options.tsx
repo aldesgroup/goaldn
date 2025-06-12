@@ -3,10 +3,19 @@ import {X} from 'lucide-react-native';
 import {LanguageSwitcher} from '../../misc';
 import {Avatar, AvatarProps} from '../Avatar';
 
-// Signature for option functions
+/**
+ * Type definition for navigation option functions.
+ * These functions take a navigation object and return navigation options.
+ */
 export type OptionFunction = ({navigation}: {navigation: any}) => NativeStackNavigationOptions;
 
-// Function to combine multiple OptionFunction functions
+/**
+ * Combines multiple navigation option functions into a single function.
+ * The resulting function merges all options from the input functions.
+ *
+ * @param {...OptionFunction} optionFunctions - Array of option functions to combine
+ * @returns {OptionFunction} A new function that combines all input options
+ */
 export const CombineOptions = (...optionFunctions: OptionFunction[]): OptionFunction => {
     return ({navigation}) => {
         return optionFunctions.reduce((combinedOptions, optionFunction) => {
@@ -15,7 +24,14 @@ export const CombineOptions = (...optionFunctions: OptionFunction[]): OptionFunc
     };
 };
 
-// Shows in the header a X icon on the right to close the current screen, hiding the back arrow
+/**
+ * Creates navigation options to show a close (X) icon in the header.
+ * The icon can navigate to a specific screen, back to root, or just go back.
+ *
+ * @param {string} [quitToScreen] - Optional screen name to navigate to when closing
+ * @param {boolean} [quitBackToRoot] - Whether to navigate back to root when closing
+ * @returns {OptionFunction} Navigation options with close icon configuration
+ */
 export const CloseIconOption =
     (quitToScreen?: string, quitBackToRoot?: boolean) =>
     ({navigation}: {navigation: any}) => ({
@@ -26,20 +42,41 @@ export const CloseIconOption =
         headerBackVisible: false,
     });
 
-// Display the language switcher component in the header on the right
+/**
+ * Navigation options to display the language switcher in the header.
+ *
+ * @param {{navigation: any}} param0 - Navigation object
+ * @returns {NativeStackNavigationOptions} Navigation options with language switcher
+ */
 export const LanguageSwitcherOption_ = ({navigation}: {navigation: any}) => ({
     headerRight: LanguageSwitcher,
 });
 
+/**
+ * Navigation options to hide the back button in the header.
+ */
 export const RemoveBackButtonOption: OptionFunction = ({navigation}: {navigation: any}) => ({
     headerBackVisible: false,
 });
 
+/**
+ * Navigation options to hide the entire header.
+ */
 export const RemoveHeaderOption: OptionFunction = ({navigation}: {navigation: any}) => ({
     headerShown: false,
 });
 
-// Allows to change the title, an optionally to display the X close icon
+/**
+ * Creates navigation options for a screen with a title and optional close icon.
+ *
+ * @param {string} title - The title to display in the header
+ * @param {Object} [params] - Optional parameters for additional configuration
+ * @param {boolean} [params.withCloseIcon] - Whether to show a close icon
+ * @param {string} [params.quitToScreen] - Screen to navigate to when closing
+ * @param {boolean} [params.quitBackToRoot] - Whether to navigate to root when closing
+ * @param {boolean} [params.removeBackButton] - Whether to hide the back button
+ * @returns {OptionFunction} Navigation options with title and optional close icon
+ */
 export const TitleOption = (
     title: string,
     params?: {withCloseIcon?: boolean; quitToScreen?: string; quitBackToRoot?: boolean; removeBackButton?: boolean},
@@ -52,10 +89,18 @@ export const TitleOption = (
           : baseTitleOption;
 };
 
-// Option used for the screens that should fade in from the bottom
+/**
+ * Navigation options for screens that should fade in from the bottom.
+ * These screens will have no header and use a fade animation.
+ */
 export const FadeInOption = ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom', headerShown: false});
 
-// Options used to add an Avatar in the header on the right
+/**
+ * Creates navigation options to display an Avatar component in the header.
+ *
+ * @param {AvatarProps} props - Props to pass to the Avatar component
+ * @returns {OptionFunction} Navigation options with Avatar configuration
+ */
 export const AvatarOption =
     (props: AvatarProps) =>
     ({navigation}: {navigation: any}) => ({

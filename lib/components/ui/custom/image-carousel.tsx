@@ -6,6 +6,18 @@ import {getColors} from '../../../styles/theme';
 
 const {width: carouselWidth} = Dimensions.get('window');
 
+/**
+ * A carousel component for displaying a series of images with navigation dots.
+ * Supports parallax scrolling effect and customizable dimensions.
+ *
+ * @template T - The type of the image source
+ * @param {Object} props - The component props
+ * @param {T[]} props.images - Array of image sources to display
+ * @param {number} props.height - Height of the carousel
+ * @param {number} [props.width=carouselWidth] - Width of the carousel, defaults to screen width
+ * @param {boolean} [props.withDots=true] - Whether to show navigation dots
+ * @returns {JSX.Element} A carousel component with optional navigation dots
+ */
 export function ImageCarousel<T extends ImageURISource>({
     images,
     height,

@@ -1,4 +1,5 @@
 import {useAtomValue} from 'jotai';
+import React from 'react';
 import {ScrollView, View} from 'react-native';
 import {getLanguages} from '../../utils/i18n';
 import {
@@ -17,7 +18,13 @@ import {SwitchAtom} from '../ui/custom/switch-atom';
 import {Txt} from '../ui/custom/txt';
 import {Card} from './CardBasic';
 
-// A basic settings screen; can be use as-is, or serve as an inspiration
+/**
+ * A settings screen component that displays various application settings.
+ * Includes language selection, screen size detection, and font scaling options.
+ * Can be used as-is or serve as a template for custom settings screens.
+ *
+ * @returns {JSX.Element} A scrollable settings screen with various configuration options
+ */
 export function Settings() {
     // --- shared state
     const fontScale = getFontScale();

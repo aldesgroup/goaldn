@@ -4,6 +4,14 @@ import {useEffect} from 'react';
 import {connectedDeviceAtom, getBleManager} from './bluetoothAtoms';
 import {MOCK_DEVICE_ID} from './bluetoothMocking';
 
+/**
+ * A component that monitors Bluetooth Low Energy (BLE) connections.
+ * It handles both automatic disconnection events and periodic connection checks.
+ *
+ * @param {Object} props - Component props
+ * @param {number} [props.checkEveryMs=3000] - Interval in milliseconds for checking connection status
+ * @returns {null} This component doesn't render anything
+ */
 export function BLEConnectionMonitor({checkEveryMs = 3000}: {checkEveryMs?: number}) {
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
     const bleManager = getBleManager();

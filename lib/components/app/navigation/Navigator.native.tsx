@@ -20,6 +20,12 @@ const BottomTab = createBottomTabNavigator();
 // Hides warning when Strict Mode is active, in dev mode
 LogBox.ignoreLogs(['findHostInstance_DEPRECATED']);
 
+/**
+ * Bottom tab navigator for the main menu. Each entry becomes a tab with an icon and translated label.
+ *
+ * @param props - Contains the menu configuration with entries and icons
+ * @returns A bottom tab navigator component
+ */
 function MenuNavigator(props: {menu: MenuProps}) {
     // --- shared state
     const smallScreen = useAtomValue(smallScreenAtom);
@@ -59,6 +65,13 @@ function MenuNavigator(props: {menu: MenuProps}) {
     );
 }
 
+/**
+ * Main navigation component that sets up the navigation container and theme.
+ * Initializes language settings and provides safe area context.
+ *
+ * @param props - Contains the menu configuration for the bottom tab navigator
+ * @returns The main navigation container with theme and safe area provider
+ */
 export function MainNavigator(props: {menu: MenuProps}) {
     // shared state
     const colors = getColors();
@@ -90,6 +103,12 @@ export function MainNavigator(props: {menu: MenuProps}) {
 // --- Navigation from 1 menu entry
 // ------------------------------------------------------------------------------------------------
 
+/**
+ * Stack navigator for screens within a menu entry. Handles screen options, translations, and header configuration.
+ *
+ * @param screens - Configuration for the screens to be displayed
+ * @returns A stack navigator component with configured screens
+ */
 export function ScreenNavigator(screens: ScreensProps) {
     const Stack = createNativeStackNavigator();
     const translate = useTranslator();

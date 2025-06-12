@@ -4,12 +4,23 @@ import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import RNFS from 'react-native-fs';
 import {Alert, Platform} from 'react-native';
 
+/**
+ * Options for generating a PDF file.
+ * @property {string} htmlContent - The HTML content to convert to PDF.
+ * @property {string} [fileName] - The name of the generated PDF file.
+ * @property {string} [directory] - The directory where the PDF file will be saved.
+ */
 export type PDFGenerationOptions = {
     htmlContent: string;
     fileName?: string;
     directory?: string;
 };
 
+/**
+ * Generates a PDF file from the provided HTML content.
+ * @param {PDFGenerationOptions} options - The options for generating the PDF.
+ * @returns {Promise<string>} A promise that resolves to the file path of the generated PDF.
+ */
 async function generatePDF({htmlContent, fileName = 'generated-file', directory = 'Documents'}: PDFGenerationOptions): Promise<string> {
     try {
         const options = {
@@ -30,6 +41,11 @@ async function generatePDF({htmlContent, fileName = 'generated-file', directory 
     }
 }
 
+/**
+ * Prints a PDF file generated from the provided options.
+ * @param {PDFGenerationOptions} options - The options for generating the PDF.
+ * @returns {Promise<void>} A promise that resolves when the PDF is printed.
+ */
 export async function printPDF(options: PDFGenerationOptions): Promise<void> {
     try {
         const filePath = await generatePDF(options);
@@ -39,6 +55,11 @@ export async function printPDF(options: PDFGenerationOptions): Promise<void> {
     }
 }
 
+/**
+ * Shares a PDF file generated from the provided options.
+ * @param {PDFGenerationOptions} options - The options for generating the PDF.
+ * @returns {Promise<void>} A promise that resolves when the PDF is shared.
+ */
 export async function sharePDF(options: PDFGenerationOptions): Promise<void> {
     try {
         const filePath = await generatePDF(options);
@@ -53,6 +74,11 @@ export async function sharePDF(options: PDFGenerationOptions): Promise<void> {
     }
 }
 
+/**
+ * Saves a PDF file generated from the provided options to the device.
+ * @param {PDFGenerationOptions} options - The options for generating the PDF.
+ * @returns {Promise<string | null>} A promise that resolves to the file path of the saved PDF, or null if an error occurs.
+ */
 export async function savePDF(options: PDFGenerationOptions): Promise<string | null> {
     try {
         const tempFilePath = await generatePDF(options);

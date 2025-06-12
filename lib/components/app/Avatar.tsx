@@ -1,25 +1,50 @@
 import {CircleUserRound, LucideIcon} from 'lucide-react-native';
-import {useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {TouchableOpacity, View} from 'react-native';
 import {cn} from '../../utils/cn';
 import {Txt} from '../ui/custom/txt';
 
+/**
+ * Configuration for a single avatar menu entry.
+ * @property {LucideIcon} icon - The icon to display for this entry
+ * @property {string} label - The label text for this entry
+ * @property {() => void} onPress - The function to call when this entry is pressed
+ */
 type AvatarEntry = {
     icon: LucideIcon;
     label: string;
     onPress: () => void;
 };
 
+/**
+ * Props for the Avatar component.
+ * @property {AvatarEntry[]} entries - Array of menu entries to display
+ * @property {React.ReactNode} [trigger] - Custom trigger element to show/hide the menu
+ * @property {string} [className] - Additional CSS classes for the container
+ */
 export type AvatarProps = {
     entries: AvatarEntry[];
     trigger?: React.ReactNode;
     className?: string;
 };
 
+/**
+ * Default trigger component for the Avatar.
+ * Renders a user circle icon.
+ *
+ * @returns {JSX.Element} A circle user icon component
+ */
 function DefaultTrigger() {
     return <CircleUserRound />;
 }
 
+/**
+ * A component that displays a user avatar with a dropdown menu.
+ * The menu can be triggered by clicking the avatar icon and displays a list of actions.
+ *
+ * @param {AvatarProps} props - The component props
+ * @returns {JSX.Element} An avatar component with dropdown menu
+ */
 export function Avatar({entries, trigger = <DefaultTrigger />, className}: AvatarProps) {
     const [isVisible, setIsVisible] = useState(false);
     const triggerRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);

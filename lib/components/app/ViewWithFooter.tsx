@@ -1,12 +1,28 @@
-import {useNavigation} from '@react-navigation/native';
+import {useAtomValue} from 'jotai';
+import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
+import React from 'react';
 import {ScrollView, View} from 'react-native';
 import {cn} from '../../utils/cn';
+import {smallScreenAtom} from '../../utils/settings';
 import {Button, buttonVariantsType, textColorForVariant} from '../ui/custom/button-pimped';
 import {Txt} from '../ui/custom/txt';
-import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
-import {useAtomValue} from 'jotai';
-import {smallScreenAtom} from '../../utils/settings';
 
+/**
+ * Props for the ViewWithFooter component.
+ * @property {React.ReactNode} children - The content to display in the scrollable area
+ * @property {string} [contentClassName] - Additional CSS classes for the content area
+ * @property {string} [footerClassName] - Additional CSS classes for the footer
+ * @property {string} [leftButtonLabel='Previous'] - Label for the left button
+ * @property {buttonVariantsType} [leftButtonVariant='secondary'] - Variant for the left button
+ * @property {(() => void) | null} leftButtonOnPress - Function to call when left button is pressed
+ * @property {boolean} [leftButtonDisabled] - Whether the left button is disabled
+ * @property {LucideIcon | null} [leftButtonIcon=MoveLeft] - Icon for the left button
+ * @property {string} [rightButtonLabel='Next'] - Label for the right button
+ * @property {buttonVariantsType} [rightButtonVariant='default'] - Variant for the right button
+ * @property {() => void} rightButtonOnPress - Function to call when right button is pressed
+ * @property {boolean} [rightButtonDisabled] - Whether the right button is disabled
+ * @property {LucideIcon | null} [rightButtonIcon=MoveRight] - Icon for the right button
+ */
 export type viewWithFooterProps = {
     children: React.ReactNode;
     contentClassName?: string;
@@ -23,6 +39,14 @@ export type viewWithFooterProps = {
     rightButtonIcon?: null | LucideIcon;
 };
 
+/**
+ * A view component with a fixed footer containing navigation buttons.
+ * The content area is scrollable and the footer remains fixed at the bottom.
+ * Supports customizable buttons with icons and variants.
+ *
+ * @param {viewWithFooterProps} props - The component props
+ * @returns {JSX.Element} A view with scrollable content and fixed footer
+ */
 export function ViewWithFooter({
     contentClassName = 'p-8',
     leftButtonLabel = 'Previous',

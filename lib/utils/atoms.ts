@@ -7,6 +7,13 @@ import {useCallback, useMemo} from 'react';
 // Working with local-stored atoms
 // ----------------------------------------------------------------------------
 
+/**
+ * Creates a Jotai atom that persists its value in AsyncStorage.
+ * @template T - The type of the atom's value.
+ * @param {string} key - The storage key to use for persistence.
+ * @param {T} defaultValue - The default value for the atom.
+ * @returns {WritableAtom<T, any, any>} A Jotai atom that persists its value.
+ */
 export function storedAtom<T>(key: string, defaultValue: T) {
     return atomWithStorage(
         key,
@@ -19,7 +26,13 @@ export function storedAtom<T>(key: string, defaultValue: T) {
 // Working with collections of atoms
 // ----------------------------------------------------------------------------
 
-// This function allows to check that a predicate function returns true for at least 1 atom of the given list
+/**
+ * Hook that checks if a predicate function returns true for at least one atom in a list.
+ * @template Value - The type of the atoms' values.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to check.
+ * @param {(value?: Value) => boolean} predicate - Function to test each atom's value.
+ * @returns {boolean} True if predicate returns true for at least one atom.
+ */
 export function useCheckSomeAtomValue<Value>(atoms: (WritableAtom<Value, any, any> | undefined)[], predicate: (value?: Value) => boolean): boolean {
     const atomValues = atoms.map(atom => atom && useAtomValue(atom));
 
@@ -28,7 +41,13 @@ export function useCheckSomeAtomValue<Value>(atoms: (WritableAtom<Value, any, an
     }, [atomValues, predicate]);
 }
 
-// This function allows to check that a predicate function returns true for all the atoms of the given list
+/**
+ * Hook that checks if a predicate function returns true for all atoms in a list.
+ * @template Value - The type of the atoms' values.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to check.
+ * @param {(value?: Value) => boolean} predicate - Function to test each atom's value.
+ * @returns {boolean} True if predicate returns true for all atoms.
+ */
 export function useCheckAllAtomValues<Value>(atoms: (WritableAtom<Value, any, any> | undefined)[], predicate: (value?: Value) => boolean): boolean {
     const atomValues = atoms.map(atom => atom && useAtomValue(atom));
 
@@ -37,12 +56,22 @@ export function useCheckAllAtomValues<Value>(atoms: (WritableAtom<Value, any, an
     }, [atomValues, predicate]);
 }
 
-// This function returns an array with all the given atoms' values
+/**
+ * Hook that returns an array containing the values of all provided atoms.
+ * @template Value - The type of the atoms' values.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to get values from.
+ * @returns {Value[]} Array of atom values.
+ */
 export function useAllAtomsValues<Value>(atoms: (WritableAtom<Value, any, any> | undefined)[]) {
     return atoms.map(atom => atom && useAtomValue(atom));
 }
 
-// This function returns a function that allows to set a value to all the given atoms at once
+/**
+ * Hook that returns a function to set the same value to all provided atoms.
+ * @template Value - The type of the atoms' values.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to set values for.
+ * @returns {Function} A function that sets the provided value to all atoms.
+ */
 export function useSetAllAtoms<Value>(atoms: (WritableAtom<Value, any, any> | undefined)[]) {
     const setAtoms = atoms.map(atom => atom && useSetAtom(atom));
 

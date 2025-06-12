@@ -7,6 +7,10 @@ import {getColors} from '../../../styles/theme';
 import {smallScreenAtom} from '../../../utils/settings';
 import {useAtomValue} from 'jotai';
 
+/**
+ * Configuration object for button variants and sizes.
+ * Defines the styling variants and size options for the Button component.
+ */
 export const buttonVariantsConfig = {
     variants: {
         variant: {
@@ -31,11 +35,19 @@ export const buttonVariantsConfig = {
     },
 } as const;
 
+/**
+ * Creates a class variance authority (cva) instance for button styling.
+ * Combines base styles with variant and size configurations.
+ */
 const buttonVariants = cva(
     'group flex items-center justify-center rounded-md web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2',
     buttonVariantsConfig,
 );
 
+/**
+ * Creates a class variance authority (cva) instance for button text styling.
+ * Defines text styles based on button variant and size.
+ */
 const buttonTextVariants = cva('web:whitespace-nowrap text-sm native:text-base font-medium text-foreground web:transition-colors', {
     variants: {
         variant: {
@@ -59,8 +71,20 @@ const buttonTextVariants = cva('web:whitespace-nowrap text-sm native:text-base f
     },
 });
 
+/**
+ * Props type for the Button component.
+ * Extends Pressable props and includes variant and size options.
+ */
 type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> & VariantProps<typeof buttonVariants>;
 
+/**
+ * A customizable button component that supports different variants and sizes.
+ * Handles responsive design and accessibility features.
+ *
+ * @param {ButtonProps} props - The component props
+ * @param {React.Ref<typeof Pressable>} ref - Forwarded ref
+ * @returns {JSX.Element} A styled button component
+ */
 const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>(({className, variant, size, ...props}, ref) => {
     const smallScreen = useAtomValue(smallScreenAtom);
     return (
@@ -92,7 +116,18 @@ Button.displayName = 'Button';
 export {Button, buttonTextVariants, buttonVariants};
 export type {ButtonProps};
 
+/**
+ * Type representing the available button variants.
+ */
 export type buttonVariantsType = keyof typeof buttonVariantsConfig.variants.variant;
+
+/**
+ * Returns the appropriate text color for a button variant.
+ *
+ * @param {buttonVariantsType} variant - The button variant
+ * @param {boolean} [disabled] - Whether the button is disabled
+ * @returns {string} The color value for the text
+ */
 export const textColorForVariant = (variant: buttonVariantsType, disabled?: boolean) => {
     if (disabled) {
         return getColors().mutedForeground;

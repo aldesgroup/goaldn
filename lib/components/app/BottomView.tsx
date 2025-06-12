@@ -5,6 +5,15 @@ import {getColors} from '../../styles/theme';
 import {cn} from '../../utils/cn';
 import {Txt} from '../ui/custom/txt';
 
+/**
+ * A bottom sheet component that slides up from the bottom of the screen with a customizable height.
+ * It includes a header with a title and close button, and can display any content in its body.
+ * @property {ReactNode} children - The content to display in the view
+ * @property {string} headerTitle - The title text for the header
+ * @property {() => void} onClose - Function to call when the close button is pressed
+ * @property {'h-2/3' | 'h-1/2' | 'h-1/3' | 'h-3/4' | 'h-5/6'} [h='h-2/3'] - The height of the view
+ * @property {boolean} [closeDisabled] - Whether the close button is disabled
+ */
 export function BottomView({
     children,
     headerTitle,

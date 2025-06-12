@@ -9,6 +9,17 @@ import {Check, Minus} from 'lucide-react-native';
 import {getColors} from '../../../styles/theme';
 import {useEffect} from 'react';
 
+/**
+ * Props for the CheckboxField component.
+ * @template T - The type of the field configuration atom
+ * @property {string} [className] - Additional CSS classes for the container
+ * @property {string} [label] - Text label for the checkbox
+ * @property {string} [labelClassName] - Additional CSS classes for the label
+ * @property {boolean} [labelPrepend] - Whether to show the label before the checkbox
+ * @property {T} field - The field configuration atom
+ * @property {string} [boxClassName] - Additional CSS classes for the checkbox box
+ * @property {T[]} [associated] - Array of associated field configuration atoms for group behavior
+ */
 type CheckboxFieldProps<T extends FieldConfigAtom<boolean>> = {
     className?: string;
     label?: string;
@@ -19,6 +30,14 @@ type CheckboxFieldProps<T extends FieldConfigAtom<boolean>> = {
     associated?: T[];
 };
 
+/**
+ * A checkbox component that integrates with form-atoms for form state management.
+ * Supports group behavior with associated fields and customizable styling.
+ *
+ * @template confAtom - The type of the field configuration atom
+ * @param {CheckboxFieldProps<confAtom>} props - The component props
+ * @returns {JSX.Element} A checkbox component with label and optional group behavior
+ */
 export function CheckboxField<confAtom extends FieldConfigAtom<boolean>>({label, labelPrepend, associated, ...props}: CheckboxFieldProps<confAtom>) {
     // --- shared state
     const colors = getColors();

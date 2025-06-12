@@ -1,3 +1,7 @@
+/**
+ * The themeColors object defines the color palette used throughout the application.
+ * All color values are initialized to a default value and can be updated at runtime.
+ */
 const themeColors = {
     foreground: '#FF0077',
     foregroundLight: '#FF0077',
@@ -22,8 +26,17 @@ const themeColors = {
     errorForeground: '#FF0077',
 };
 
+/**
+ * Type representing the structure of the themeColors object.
+ */
 export type colorsType = typeof themeColors;
 
+/**
+ * Initializes or updates the application's theme colors.
+ * This function mutates the themeColors object and freezes it to prevent further changes.
+ *
+ * @param colors - An object containing the new color values for the theme
+ */
 export const initThemeColors = (colors: colorsType) => {
     themeColors.foreground = colors.foreground;
     themeColors.foregroundLight = colors.foregroundLight;
@@ -49,4 +62,9 @@ export const initThemeColors = (colors: colorsType) => {
     Object.freeze(themeColors);
 };
 
+/**
+ * Returns the current theme colors used in the application.
+ *
+ * @returns The current colorsType object representing the theme colors
+ */
 export const getColors: () => colorsType = () => themeColors;

@@ -1,6 +1,6 @@
-import {atom, useAtom, useAtomValue, WritableAtom} from 'jotai';
+import {useAtom, useAtomValue, WritableAtom} from 'jotai';
 import {ChevronDown, ChevronUp} from 'lucide-react-native';
-import {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {Pressable, View} from 'react-native';
 import {getColors} from '../../styles/theme';
 import {cn} from '../../utils/cn';
@@ -9,6 +9,17 @@ import {Button} from '../ui/custom/button-pimped';
 import {Txt} from '../ui/custom/txt';
 import {Card} from './CardBasic';
 
+/**
+ * A collapsible card component that can be expanded and collapsed with a header and optional content.
+ * The card supports both controlled (via atom) and uncontrolled state management.
+ * @property {string} title - The title text for the card
+ * @property {React.ReactNode} children - The content to display when the card is expanded
+ * @property {React.ReactNode} [alwaysVisible] - Content that is always visible regardless of card state
+ * @property {string} [className] - Additional CSS classes for the card
+ * @property {boolean} [allowCollapse=true] - Whether the card can be collapsed
+ * @property {boolean} [withCloseButton] - Whether to show a close button when expanded
+ * @property {WritableAtom<boolean>} [openAtom] - Optional atom to control the card's open state
+ */
 export function CollapsableCard({
     title,
     children,

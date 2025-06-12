@@ -5,6 +5,11 @@ import BleManager, {Peripheral} from 'react-native-ble-manager';
 // Create a singleton instance of BleManager that persists across component lifecycles
 let started = false;
 
+/**
+ * Gets or initializes the singleton instance of BleManager.
+ * Ensures BleManager is started only once and returns the same instance throughout the app.
+ * @returns {typeof BleManager} The BleManager instance.
+ */
 export const getBleManager = () => {
     if (!started) {
         BleManager.start();
@@ -14,11 +19,20 @@ export const getBleManager = () => {
     return BleManager;
 };
 
-// Stores the BLE manager instance
+/**
+ * Jotai atom storing the BleManager instance.
+ * Initialized with the singleton instance from getBleManager().
+ */
 export const bleManagerAtom = atom<typeof BleManager>(getBleManager());
 
-// Stores the currently connected device
+/**
+ * Jotai atom storing the currently connected Bluetooth peripheral device.
+ * Initialized as null when no device is connected.
+ */
 export const connectedDeviceAtom = atom<Peripheral | null>(null);
 
-// Stores the bonding requirement
+/**
+ * Jotai atom indicating whether bonding (pairing) is required for the current connection.
+ * Used to control the bonding flow in the UI.
+ */
 export const isBondingRequiredAtom = atom(false);

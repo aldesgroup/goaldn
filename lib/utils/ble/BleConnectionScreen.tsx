@@ -15,6 +15,14 @@ import {bleManagerAtom, connectedDeviceAtom, isBondingRequiredAtom} from './blue
 import {isMockEnabled, MOCK_DEVICE_ID, mockPeripheral} from './bluetoothMocking';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
 
+/**
+ * A screen component for managing Bluetooth Low Energy (BLE) device connections.
+ * Handles device scanning, connection, and permission management.
+ *
+ * @param {Object} props - Component props
+ * @param {Object} props.navigation - Navigation object for screen navigation
+ * @returns {JSX.Element} A screen component for BLE device management
+ */
 export function BleConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // --- external, shared state
@@ -291,10 +299,19 @@ export function BleConnectionScreen({navigation}: {navigation: any}) {
         }
     };
 
+    /**
+     * Props for the device item component in the device list.
+     * @property {Peripheral} item - The BLE peripheral device to display
+     */
     interface deviceItemProps {
         item: Peripheral;
     }
 
+    /**
+     * Renders a single device item in the device list.
+     * @param {deviceItemProps} props - The device item props
+     * @returns {JSX.Element} A touchable device item component
+     */
     const RenderDeviceItem = ({item}: deviceItemProps) => {
         const device = item;
         const isDeviceConnected = (connectedDevice && connectedDevice.id === device.id) || false;
