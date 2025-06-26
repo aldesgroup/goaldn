@@ -1,0 +1,11 @@
+{
+    "name": "GoaldN",
+    "plugin": ["typedoc-plugin-markdown", "typedoc-docusaurus-theme"],
+    "entryPoints": ["lib/index.ts"],
+    "out": "../devotion/website/docs/goaldn/api",
+    "sidebar": {
+        "pretty": true,
+        "typescript": true
+    },
+    "entryPointStrategy": "expand"
+}
