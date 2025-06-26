@@ -22,7 +22,7 @@ import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGranted
  * @returns {JSX.Element} A screen component for BLE device management
  * @category Bluetooth
  */
-export function BLEConnectionScreen({navigation}: {navigation: any}) {
+export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // --- external, shared state
     // --------------------------------------------------------------------------------------------

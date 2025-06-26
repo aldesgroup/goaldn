@@ -12,7 +12,7 @@ import {MOCK_DEVICE_ID} from './bluetoothMocking';
  * @returns {null} This component doesn't render anything
  * @category Bluetooth
  */
-export function BLEConnectionMonitor({checkEveryMs = 3000}: {checkEveryMs?: number}) {
+export function BluetoothConnectionMonitor({checkEveryMs = 3000}: {checkEveryMs?: number}) {
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
     const bleManager = getBleManager();
 
