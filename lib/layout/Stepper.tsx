@@ -29,7 +29,7 @@ type stepConfig = {
  * Configuration for the entire stepper component.
  * @category Types
  */
-export type StepperConfig = {
+export type StepperConfiguration = {
     /** Whether to use raw (untranslated) labels */
     rawLabels: boolean;
     /** The initial route to start from */
@@ -51,11 +51,11 @@ export type StepperConfig = {
  * @param {string | null} startRoute - The initial route to start from
  * @param {stepConfig[]} steps - Array of step configurations
  * @param {string | null} endRoute - The final route to end at
- * @returns {WritableAtom<StepperConfig>} A writable atom containing the stepper configuration
+ * @returns {WritableAtom<StepperConfiguration>} A writable atom containing the stepper configuration
  * @category Types
  */
-export function newStepperConfig(rawLabels: boolean, startRoute: string | null, steps: stepConfig[], endRoute: string | null) {
-    return atomWithReset<StepperConfig>({
+export function newStepperConfiguration(rawLabels: boolean, startRoute: string | null, steps: stepConfig[], endRoute: string | null) {
+    return atomWithReset<StepperConfiguration>({
         rawLabels: rawLabels,
         startRoute: startRoute,
         steps: steps,
@@ -131,7 +131,7 @@ function Step({stepCfg, rawLabel, selected, passed, locked}: stepProps) {
  */
 export type StepperProps = {
     /** The stepper configuration atom */
-    stepperConf: WritableAtom<StepperConfig, any, void>;
+    stepperConf: WritableAtom<StepperConfiguration, any, void>;
     /** Whether the entire stepper is locked */
     stepperLocked: boolean;
 };

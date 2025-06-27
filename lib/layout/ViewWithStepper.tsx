@@ -1,6 +1,6 @@
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useAtom} from 'jotai';
-import {Stepper, StepperConfig, StepperProps} from './Stepper';
+import {Stepper, StepperConfiguration, StepperProps} from './Stepper';
 import {ViewWithFooter, ViewWithFooterProps} from './ViewWithFooter';
 
 /**
@@ -52,7 +52,7 @@ export function ViewWithStepper({beforePreviousStep, beforeNextStep, stepperConf
         nextStep ? navigation.navigate(nextStep.route) : state.endRoute ? navigation.navigate(state.endRoute) : navigation.popToTop();
 
         // keeping track of the max step we've reached
-        setState((prevState: StepperConfig) => ({
+        setState((prevState: StepperConfiguration) => ({
             ...prevState,
             maxReachedStep: state.maxReachedStep ? Math.max(state.maxReachedStep, currentStep) : currentStep,
         }));
