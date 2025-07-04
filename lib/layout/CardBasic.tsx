@@ -11,5 +11,5 @@ import {cn} from '../base';
  * @category Layout
  */
 export function Card({children, className}: {children: React.ReactNode; className?: string}) {
-    return <View className={cn('border-border rounded-3xl border bg-white p-6', className)}>{children}</View>;
+    return <View className={cn('border-border bg-background rounded-3xl border p-6', className)}>{children}</View>;
 }
