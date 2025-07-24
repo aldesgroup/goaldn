@@ -20,6 +20,8 @@ export type TxtProps = SlottableTextProps & {
     prepend?: React.ReactNode;
     /** Content to display after the text */
     append?: React.ReactNode;
+    /** To style the text, with NativeWind */
+    className?: string;
 };
 
 /**
@@ -81,4 +83,4 @@ export function TxtImpl({children, raw, className, prepend, append, ...props}: T
  * @see TxtImpl for how to use this component
  * @category Base
  */
-export const Txt = React.forwardRef(TxtImpl);
+export const Txt = React.forwardRef<TextRef, TxtProps>(TxtImpl);

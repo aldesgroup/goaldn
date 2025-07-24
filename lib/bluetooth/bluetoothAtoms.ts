@@ -21,13 +21,6 @@ export const getBleManager = () => {
 };
 
 /**
- * Jotai atom storing the BleManager instance.
- * Initialized with the singleton instance from getBleManager().
- * @category Bluetooth
- */
-export const bleManagerAtom = atom<typeof BleManager>(getBleManager());
-
-/**
  * Jotai atom storing the currently connected Bluetooth peripheral device.
  * Initialized as null when no device is connected.
  * @category Bluetooth

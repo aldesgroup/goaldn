@@ -79,7 +79,11 @@ const buttonTextVariants = cva('web:whitespace-nowrap text-sm native:text-base f
  * Extends Pressable props and includes variant and size options.
  * @category Types
  */
-type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> & VariantProps<typeof buttonVariants>;
+type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
+    VariantProps<typeof buttonVariants> & {
+        /** To style the text, with NativeWind */
+        className?: string;
+    };
 
 /**
  * A customizable button component that supports different variants and sizes.
@@ -90,7 +94,7 @@ type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> & VariantPro
  * @returns {JSX.Element} A styled button component
  * @category Base
  */
-export function ButtonImpl({className, variant, size, ...props}: ButtonProps, ref: React.Ref<React.ElementRef<typeof Pressable>>) {
+export function ButtonImpl({className, variant, size, ...props}: ButtonProps, ref: React.Ref<React.ComponentRef<typeof Pressable>>) {
     const smallScreen = useAtomValue(smallScreenAtom);
     return (
         <TextClassContext.Provider
@@ -124,7 +128,7 @@ export function ButtonImpl({className, variant, size, ...props}: ButtonProps, re
  * @see ButtonImpl for how to use this component
  * @category Base
  */
-export const Button = React.forwardRef(ButtonImpl);
+export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, ButtonProps>(ButtonImpl);
 
 export {buttonTextVariants, buttonVariants};
 export type {ButtonProps};

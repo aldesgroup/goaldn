@@ -9,7 +9,7 @@ import {BottomView} from '../layout';
 import {useHideTabBar} from '../navigation/navigation-hooks';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
-import {bleManagerAtom, connectedDeviceAtom, isBondingRequiredAtom} from './bluetoothAtoms';
+import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
 import {isMockEnabled, MOCK_DEVICE_ID, mockPeripheral} from './bluetoothMocking';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
 
@@ -26,7 +26,8 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // --- external, shared state
     // --------------------------------------------------------------------------------------------
-    const bleManager = useAtomValue(bleManagerAtom);
+    // const bleManager = useAtomValue(bleManagerAtom);
+    const bleManager = getBleManager();
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
     const isBondingRequired = useAtomValue(isBondingRequiredAtom);
     const setPermissionsGranted = useSetAtom(permissionsGrantedAtom);
@@ -107,8 +108,8 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                     updatedDevices
                         // .filter((d: Peripheral) => d.name) // Remove unnamed devices
                         .sort((a, b: Peripheral) => {
-                            const aHasPrefix = Config.BLE_PREFIX && (a.name || '').startsWith(Config.BLE_PREFIX);
-                            const bHasPrefix = Config.BLE_PREFIX && (b.name || '').startsWith(Config.BLE_PREFIX);
+                            const aHasPrefix = Config.BLE_ID_PREFIX && (a.name || '').startsWith(Config.BLE_ID_PREFIX);
+                            const bHasPrefix = Config.BLE_ID_PREFIX && (b.name || '').startsWith(Config.BLE_ID_PREFIX);
 
                             // If one has prefix and the other doesn't, prioritize the one with prefix
                             if (aHasPrefix && !bHasPrefix) return -1;
@@ -266,6 +267,24 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                         if (!alreadyBonded) {
                             await bleManager.createBond(device.id);
                             console.log("Bonding '" + device.name + "' successful");
+                        }
+                    }
+
+                    // Starting listening for notifications, if needed
+                    if (Config.BLE_USE_NOTIFY === 'true') {
+                        // TODO handle the case where the service & charac IDs are not configured,
+                        // but must come from scanning the available services on the device
+                        if (
+                            Config.BLE_SERVICE_UUID &&
+                            Config.BLE_SERVICE_UUID !== '' &&
+                            Config.BLE_READ_CHAR_UUID &&
+                            Config.BLE_READ_CHAR_UUID !== ''
+                        ) {
+                            console.log('Started using BLE notifications');
+                            bleManager.startNotification(device.id, Config.BLE_SERVICE_UUID, Config.BLE_READ_CHAR_UUID);
+                        } else {
+                            // TODO scan to find the service ID
+                            throw new Error('Cannot start the BLE notifications as the service ID is unknown');
                         }
                     }
                 }

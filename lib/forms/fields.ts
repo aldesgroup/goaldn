@@ -1,5 +1,5 @@
 import {RESET, useFieldValue, useInputField, type FieldAtom} from 'form-atoms';
-import {atom, Atom, useAtomValue} from 'jotai';
+import {atom, Atom, useAtomValue, WritableAtom} from 'jotai';
 import {LucideIcon} from 'lucide-react-native';
 import {useCallback, useMemo} from 'react';
 
@@ -43,6 +43,7 @@ export type FieldValueError = {msg: string; param?: any};
  * @property {Map<number, FieldConfigOptionInfos>} [optionsInfos] - Configuring additional behaviours on options passed to a select field.
  * @property {boolean | (() => boolean)} [mandatory] - Indicates if a non-empty value is expected.
  * @property {() => null | FieldValueError} [valid] - Custom hook to provide a way to tell if the field's value is valid.
+ * @property {WritableAtom<any | Promise<any>, any, any>} [syncWith] - Writable atom to get the initial value from, and write into on certain conditions
  * @category Forms Utils
  */
 export type FieldConfig<Value> = {
@@ -60,6 +61,7 @@ export type FieldConfig<Value> = {
     optionsInfos?: Map<number, FieldConfigOptionInfos>;
     mandatory?: boolean | (() => boolean);
     valid?: () => null | FieldValueError;
+    syncWith?: WritableAtom<string | Promise<string>, any, any>;
 };
 
 /**
@@ -90,6 +92,7 @@ export function fieldConfigAtom<Value>(config: FieldConfig<Value>): FieldConfigA
         optionsInfos: config.optionsInfos,
         mandatory: config.mandatory,
         valid: config.valid,
+        syncWith: config.syncWith,
     });
 }
 

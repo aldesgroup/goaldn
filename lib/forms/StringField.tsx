@@ -1,6 +1,6 @@
 import {useFieldValue, useInputField} from 'form-atoms';
-import {useAtomValue} from 'jotai';
-import React from 'react';
+import {useAtom, useAtomValue} from 'jotai';
+import React, {useEffect} from 'react';
 import {View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
 import {FieldConfigAtom, getFieldValidationError} from '../forms';
@@ -19,10 +19,14 @@ export type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends 
     placeholder?: string;
     /** Whether to use raw (untranslated) placeholder text */
     placeholderRaw?: boolean;
+    /** Additional CSS classes for the whole component */
+    className?: string;
     /** Additional CSS classes for the input */
     inputClassName?: string;
     /** Text to display after the value (not translated) */
     unit?: string;
+    /** Should the field value be translated, when it's read-only? */
+    translateValue?: boolean;
 } & InputLabelProps &
     InputProps;
 
@@ -53,11 +57,20 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     const validError = getFieldValidationError(props.field);
     const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
     const smallScreen = useAtomValue(smallScreenAtom);
+    const [syncedVal, setSyncedVal] = fieldConfig.syncWith ? useAtom(fieldConfig.syncWith) : [undefined, undefined];
 
     // --- effects
     if (fieldConfig.effects) {
+        // effects configured on the field
         fieldConfig.effects.map(useEffect => useEffect());
     }
+
+    useEffect(() => {
+        // reacting to a value coming from the additional configured atom
+        if (syncedVal) {
+            field.actions.setValue(syncedVal);
+        }
+    }, [syncedVal]);
 
     // --- utils
     let placeholder = props.placeholder;
@@ -79,10 +92,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     };
 
     const getStringValue = (val: any) => {
-        if (isBoolean(val)) {
-            return val ? 'Yes' : 'No';
-        }
-        return val;
+        return isBoolean(val) ? (val ? 'Yes' : 'No') : val;
     };
 
     const ErrorAppend = () => {
@@ -115,7 +125,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
                     // No input in report mode
                     <View className="flex-row items-center">
                         <Txt
-                            raw={!isBoolean(value)}
+                            raw={!isBoolean(value) && !props.translateValue}
                             className={cn('text-foreground-light text-lg', props.inputClassName)}
                             append={
                                 props.unit && (

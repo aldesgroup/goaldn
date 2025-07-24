@@ -4,11 +4,14 @@ import plugin from 'tailwindcss/plugin';
 import animatePlugin from 'tailwindcss-animate';
 import type {colorsType} from './theme';
 
-// setting the colors here for 2 purposes:
-// - to build the exported theme here, which is used at build time
-// - to initialise the same theme colors for use by some GoaldN components
-// This means this file has to be imported in the tailwind config of a native app (build time)...
-// ... AND in the app itself, to be passed to GoaldN's initThemeColors function (runtime)
+/**
+ * setting the colors here for 2 purposes:
+ * - to build the exported theme here, which is used at build time
+ * - to initialise the same theme colors for use by some GoaldN components
+ * This means this file has to be imported in the tailwind config of a native app (build time)...
+ * ... AND in the app itself, to be passed to GoaldN's initThemeColors function (runtime)
+ * @category Styling
+ */
 export const devotionColors: colorsType = {
     foreground: '#1122AA',
     foregroundLight: '#1199FF',
@@ -188,6 +191,11 @@ const devotionPlugin = plugin(
     },
 );
 
+/**
+ * A styling preset that can serve as a example (cf. the Devotion Project Template),
+ * but can easily be replaced with a custom one.
+ * @category Styling
+ */
 export const devotionPreset = {
     darkMode: ['class'],
     content: [],

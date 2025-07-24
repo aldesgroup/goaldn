@@ -22,7 +22,9 @@ export type InputLabelProps = {
     /** Whether the field is mandatory */
     mandatory?: boolean;
     /** Whether to display the label on the side */
-    sideValue?: boolean; // display on the side
+    sideValue?: boolean;
+    /** Do not try to translate the label */
+    raw?: boolean;
 };
 
 /**
@@ -61,7 +63,8 @@ export function InputLabel({labelAppend, sideValue, ...props}: InputLabelProps) 
                         )}
                         {isReport && <Txt raw>{' : '}</Txt>}
                     </>
-                }>
+                }
+                raw={props.raw}>
                 {props.label}
             </Txt>
             {labelAppend && labelAppend}

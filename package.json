@@ -6,6 +6,7 @@
         "@react-navigation/native-stack": "^7.3.21",
         "@rn-primitives/slot": "^1.2.0",
         "@rn-primitives/switch": "^1.2.0",
+        "async-mutex": "^0.5.0",
         "buffer": "^6.0.3",
         "class-variance-authority": "^0.7.1",
         "form-atoms": "^3.3.1",

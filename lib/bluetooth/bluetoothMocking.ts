@@ -12,11 +12,11 @@ import Config from 'react-native-config';
 export const MOCK_DEVICE_ID = 'AL:DE:S_:DE:VI:CE';
 
 /**
- * Mock device name, prefixed with the BLE_PREFIX from config if available.
+ * Mock device name, prefixed with the BLE_ID_PREFIX from config if available.
  * Used for testing and development purposes.
  * @category Bluetooth
  */
-export const MOCK_DEVICE_NAME = (Config.BLE_PREFIX && Config.BLE_PREFIX) + 'DummyDevice';
+export const MOCK_DEVICE_NAME = (Config.BLE_ID_PREFIX && Config.BLE_ID_PREFIX) + 'DummyDevice';
 
 /**
  * Flag indicating whether mock functionality is enabled.

@@ -8,6 +8,7 @@ export * from './forms';
 export * from './layout';
 export * from './media';
 export * from './misc';
+export * from './modbus';
 export * from './navigation';
 export * from './settings';
 export * from './state-management';

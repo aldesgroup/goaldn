@@ -17,6 +17,8 @@ type StringAtomProps<A extends WritableAtom<any | Promise<any>, any, any>, Input
     placeholder?: string;
     /** Whether to use raw (untranslated) placeholder text */
     placeholderRaw?: boolean;
+    /** Additional CSS classes for the whole component */
+    className?: string;
     /** Additional CSS classes for the input */
     inputClassName?: string;
     /** Text to display after the value (not translated) */
