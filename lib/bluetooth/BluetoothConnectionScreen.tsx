@@ -10,8 +10,9 @@ import {useHideTabBar} from '../navigation/navigation-hooks';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
-import {isMockEnabled, MOCK_DEVICE_ID, mockPeripheral} from './bluetoothMocking';
+import {isSimulationBleDeviceEnabledAtom, SIMULATION_DEVICE_ID, simulationPeripheral} from './bluetoothMocking';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
+import {unwrap} from 'jotai/utils';
 
 /**
  * A screen component for managing Bluetooth Low Energy (BLE) device connections.
@@ -33,6 +34,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const setPermissionsGranted = useSetAtom(permissionsGrantedAtom);
     const colors = getColors();
     const smallScreen = useAtomValue(smallScreenAtom);
+    const isSimulationBleDeviceEnabled = useAtomValue(unwrap(isSimulationBleDeviceEnabledAtom));
 
     // --------------------------------------------------------------------------------------------
     // internal state
@@ -53,36 +55,39 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     useHideTabBar();
     useEffect(() => {
-        // Check permissions when component mounts
-        checkPermissions();
+        // we don't do sh** if we don't know about the simulation BLE device being enabled or not
+        if (isSimulationBleDeviceEnabled !== undefined) {
+            // Check permissions when component mounts
+            checkPermissions();
 
-        // Start scanning right away - NOPE, not for now
-        if (!isScanStarted.current) {
-            startOrStopScan();
-        }
-
-        // This BLE manager starts operations, that we have to listen to, to handle their result
-        const listeners: any[] = [
-            bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
-            bleManager.onConnectPeripheral(handleConnectPeripheral),
-            bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
-        ];
-
-        return () => {
-            // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
-            // but at least scanning should be stopped
+            // Start scanning right away - NOPE, not for now
             if (!isScanStarted.current) {
-                stopScan().then(() => {
-                    console.log('Scanning has been stopped!');
-                });
+                startOrStopScan();
             }
 
-            // stopping the listening
-            for (const listener of listeners) {
-                listener.remove();
-            }
-        };
-    }, []);
+            // This BLE manager starts operations, that we have to listen to, to handle their result
+            const listeners: any[] = [
+                bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
+                bleManager.onConnectPeripheral(handleConnectPeripheral),
+                bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
+            ];
+
+            return () => {
+                // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
+                // but at least scanning should be stopped
+                if (!isScanStarted.current) {
+                    stopScan().then(() => {
+                        console.log('Scanning has been stopped!');
+                    });
+                }
+
+                // stopping the listening
+                for (const listener of listeners) {
+                    listener.remove();
+                }
+            };
+        }
+    }, [isSimulationBleDeviceEnabled]);
 
     // --------------------------------------------------------------------------------------------
     // utils - handlers for the listeners
@@ -197,8 +202,8 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 setTimeout(() => stopScan(), scanDurationSeconds * 1000);
 
                 // Adding a mock device
-                if (isMockEnabled) {
-                    setTimeout(() => handleDiscoverPeripheral(mockPeripheral), 800);
+                if (isSimulationBleDeviceEnabled) {
+                    setTimeout(() => handleDiscoverPeripheral(simulationPeripheral), 800);
                 }
             } catch (scanErr) {
                 if (scanErr instanceof Error) {
@@ -232,7 +237,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 setConnectingDevice(connectedDevice.id);
 
                 // actually disconnecting
-                if (connectedDevice.id === MOCK_DEVICE_ID) {
+                if (connectedDevice.id === SIMULATION_DEVICE_ID) {
                     // for now, nothing special to do with the mock device
                 } else {
                     // disconnecting the device
@@ -248,7 +253,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             if (device) {
                 setConnectingDevice(device.id);
 
-                if (device.id === MOCK_DEVICE_ID) {
+                if (device.id === SIMULATION_DEVICE_ID) {
                     // for now, nothing special to do with the mock device
                 } else {
                     // Connect to the selected device

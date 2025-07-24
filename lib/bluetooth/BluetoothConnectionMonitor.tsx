@@ -1,7 +1,7 @@
 import {useAtom} from 'jotai';
 import {useEffect} from 'react';
 import {connectedDeviceAtom, getBleManager} from './bluetoothAtoms';
-import {MOCK_DEVICE_ID} from './bluetoothMocking';
+import {SIMULATION_DEVICE_ID} from './bluetoothMocking';
 
 /**
  * A component that monitors Bluetooth Low Energy (BLE) connections.
@@ -30,7 +30,7 @@ export function BluetoothConnectionMonitor({checkEveryMs = 3000}: {checkEveryMs?
     }, []);
 
     useEffect(() => {
-        if (!connectedDevice || connectedDevice.id === MOCK_DEVICE_ID) return;
+        if (!connectedDevice || connectedDevice.id === SIMULATION_DEVICE_ID) return;
 
         console.log('Monitoring not-connected state');
         const interval = setInterval(async () => {

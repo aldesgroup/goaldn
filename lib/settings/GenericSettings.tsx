@@ -2,6 +2,7 @@ import {useAtomValue} from 'jotai';
 import React from 'react';
 import {ScrollView, View} from 'react-native';
 import {Txt} from '../base';
+import {isSimulationBleDeviceEnabledAtom} from '../bluetooth';
 import {Card} from '../layout';
 import {EnumAtom, StringAtom, SwitchAtom} from '../state-management';
 import {getLanguages} from './i18n';
@@ -66,6 +67,7 @@ export function GenericSettings() {
                     <SwitchAtom label="Adapt to small screens and / or big font?" atom={userSetSmallScreenAtom} />
                 )}
                 <StringAtom label="Small screen and / or big font mode?" atom={smallScreenAtom} mode="report" />
+                <SwitchAtom label="Simulation device enabled?" atom={isSimulationBleDeviceEnabledAtom} />
             </Card>
         </ScrollView>
     );

@@ -11,15 +11,16 @@ import {useCallback, useMemo} from 'react';
  * Creates a Jotai atom that persists its value in AsyncStorage.
  * @template T - The type of the atom's value.
  * @param {string} key - The storage key to use for persistence.
- * @param {T} defaultValue - The default value for the atom.
+ * @param {T} initialValue - The initial value for the atom.
  * @returns {WritableAtom<T, any, any>} A Jotai atom that persists its value.
  * @category State Management
  */
-export function storedAtom<T>(key: string, defaultValue: T) {
+export function storedAtom<T>(key: string, initialValue: T) {
     return atomWithStorage(
         key,
-        defaultValue,
+        initialValue,
         createJSONStorage(() => AsyncStorage),
+        {getOnInit: true}, // we prioritize getting the value from the storage rather than eagerly getting the initial value
     );
 }
 
