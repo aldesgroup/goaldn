@@ -1,7 +1,7 @@
 import {useAtom} from 'jotai';
 import {useEffect} from 'react';
 import {connectedDeviceAtom, getBleManager} from './bluetoothAtoms';
-import {SIMULATION_DEVICE_ID} from './bluetoothMocking';
+import {SIMULATION_DEVICE_ID} from './bluetoothSimulation';
 
 /**
  * A component that monitors Bluetooth Low Energy (BLE) connections.

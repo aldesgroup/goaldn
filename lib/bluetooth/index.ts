@@ -3,4 +3,4 @@ export * from './bluetoothAtoms';
 export * from './BluetoothConnectionButton';
 export * from './BluetoothConnectionMonitor';
 export * from './BluetoothConnectionScreen';
-export * from './bluetoothMocking';
+export * from './bluetoothSimulation';

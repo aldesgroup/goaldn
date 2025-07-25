@@ -1,4 +1,5 @@
 import {useAtom, useAtomValue, useSetAtom} from 'jotai';
+import {unwrap} from 'jotai/utils';
 import {Bluetooth, RefreshCcw} from 'lucide-react-native';
 import {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
@@ -10,9 +11,8 @@ import {useHideTabBar} from '../navigation/navigation-hooks';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
-import {isSimulationBleDeviceEnabledAtom, SIMULATION_DEVICE_ID, simulationPeripheral} from './bluetoothMocking';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
-import {unwrap} from 'jotai/utils';
+import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, SIMULATION_DEVICE_ID, simulationPeripheral} from './bluetoothSimulation';
 
 /**
  * A screen component for managing Bluetooth Low Energy (BLE) device connections.
@@ -35,6 +35,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const colors = getColors();
     const smallScreen = useAtomValue(smallScreenAtom);
     const isSimulationBleDeviceEnabled = useAtomValue(unwrap(isSimulationBleDeviceEnabledAtom));
+    const setBleDeviceSimulated = useSetAtom(isBleDeviceSimulatedAtom);
 
     // --------------------------------------------------------------------------------------------
     // internal state
@@ -225,6 +226,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
             // Keeping track of the currently connected device, if any
             let lastConnectedDevice = null;
+            setBleDeviceSimulated(false);
 
             // Disconnecting the current device if any
             if (connectedDevice) {
@@ -252,9 +254,9 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             // Connecting to a new one, if any
             if (device) {
                 setConnectingDevice(device.id);
-
                 if (device.id === SIMULATION_DEVICE_ID) {
-                    // for now, nothing special to do with the mock device
+                    // keeping in mind we've a simulation device here
+                    setBleDeviceSimulated(true);
                 } else {
                     // Connect to the selected device
                     await bleManager.connect(device.id);

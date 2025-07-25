@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // Mocking a BLE device here
 // ----------------------------------------------------------------------------
+import {atom} from 'jotai';
 import {AdvertisingData, Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
 import {storedAtom} from '../state-management';
@@ -25,6 +26,12 @@ export const SIMULATION_DEVICE_NAME = (Config.BLE_ID_PREFIX && Config.BLE_ID_PRE
  * @category Bluetooth
  */
 export const isSimulationBleDeviceEnabledAtom = storedAtom('simulation-ble-device-enabled', Config.ENVIRONMENT !== 'production');
+
+/**
+ * Inidicate if the currently connected device is a simulation one, rather than a real one.
+ * @category Bluetooth
+ */
+export const isBleDeviceSimulatedAtom = atom(false);
 
 /**
  * Mock peripheral device object for testing and development.
