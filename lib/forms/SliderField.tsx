@@ -1,10 +1,11 @@
 import Slider from '@react-native-community/slider';
 import {useFieldValue, useInputField} from 'form-atoms';
 import {useAtomValue} from 'jotai';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
-import {FieldConfigAtom, fieldDisplayMode} from '../forms';
+import {FieldConfigAtom, fieldDisplayMode, useFieldLastModified} from '../forms';
+import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {getColors} from '../styling';
 
 /**
@@ -26,6 +27,8 @@ export type SliderFieldProps<T extends FieldConfigAtom<number>> = {
     unit?: string;
     /** The display mode for the field */
     mode?: fieldDisplayMode;
+    /** Should the field value be synchronized with the value of another atom? */
+    syncWith?: RefreshableAtom<Promise<string>, string>;
 };
 
 /**
@@ -42,27 +45,53 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
     const fieldConfig = useAtomValue(props.field);
     const field = useInputField(fieldConfig.fieldAtom);
     const value = useFieldValue(fieldConfig.fieldAtom);
+    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
     const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
     const visible = fieldConfig.visible ? fieldConfig.visible() : true;
     const minVal = fieldConfig.min || 0;
     const maxVal = fieldConfig.max || 1;
 
-    // local state
+    // --- shared state - syncing with another atom
+    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
+    const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
+        ? useRefreshableAtom<Promise<string>, string>(syncAtom)
+        : [undefined, undefined, undefined, undefined];
+    const syncedValAsNum = syncedVal ? parseInt(syncedVal) : undefined;
+
+    // --- local state
     const [displayedValue, setDisplayedValue] = useState(value);
 
-    // experimental!
+    // --- local state - experimental! = slider position
     const maxPct = 96.0; // we don't need to go further than that
     const minPct = 5.0 + ((value + (props.unit || '')).length - 1) * 2.2; // finger measurement of the % where to put the thumb for the min value
     const posPct = Math.ceil(minPct + ((maxPct - minPct) * (displayedValue - minVal)) / (maxVal - minVal)); // interpolating
 
-    // effects
+    // --- effects
     if (fieldConfig.effects) {
+        // effects configured on the field
         fieldConfig.effects.map(useEffect => useEffect());
     }
 
-    // utils
+    // refreshing the synced value, if any
+    useEffect(() => {
+        if (refreshSyncedVal) refreshSyncedVal();
+    }, []);
 
-    // rendering
+    // if the synced value has changed & is more recent, we set it
+    useEffect(() => {
+        // there is a synced value, and it's different from the local value
+        if (syncedValAsNum && syncedValLastModified && syncedValAsNum !== value) {
+            // if there is no last modified date, or the synced value is more recent, we set it
+            if (!lastModified || syncedValLastModified > lastModified) {
+                field.actions.setValue(syncedValAsNum);
+                setLastModified(new Date());
+            }
+        }
+    }, [syncedVal]);
+
+    // --- utils
+
+    // --- rendering
     return (
         visible && (
             <View className={cn('flex-col', props.className)}>
@@ -95,7 +124,10 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
                         maximumTrackTintColor={colors.mutedForeground}
                         thumbTintColor={colors.primary}
                         disabled={disabled}
-                        onSlidingComplete={val => field.actions.setValue(val)}
+                        onSlidingComplete={val => {
+                            field.actions.setValue(val);
+                            setLastModified(new Date());
+                        }}
                         onValueChange={setDisplayedValue}
                         value={value}
                     />

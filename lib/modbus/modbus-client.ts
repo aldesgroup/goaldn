@@ -1,11 +1,13 @@
 import {Mutex} from 'async-mutex';
 import {Buffer} from 'buffer';
-import {atom} from 'jotai';
+import {atom, useAtomValue} from 'jotai';
+import {useMemo} from 'react';
 import {Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
-import {connectedDeviceAtom, getBleManager} from '../bluetooth';
+import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
 import {sleep} from '../utils';
 import {createModbusReadingFrame, createModbusWritingFrame8bit, MODBUS_FUNCTIONS, ModbusResponse, parseModbusResponse} from './modbus-frame';
+import {useSimulatedModbusClient} from './modbus-simulation';
 import {registerValuesToString, stringToRegisterValues} from './modbus-utils';
 
 const bleManager = getBleManager();
@@ -131,8 +133,8 @@ export class BleModbusClient {
     }
 }
 
-// accessing the MODBUS client
-export const modbusClientAtom = atom(get => {
+// accessing the real MODBUS client
+export const realModbusClientAtom = atom(get => {
     // reacting on a device change
     const device = get(connectedDeviceAtom);
     if (!device) {
@@ -166,3 +168,14 @@ export const modbusClientAtom = atom(get => {
     console.log('Initialising the MODBUS client');
     return new BleModbusClient(device, timeout, delay, serviceUUID, readCharacteristicUUID, writeCharacteristicUUID, useNotify, framePrefix);
 });
+
+// Hook to get the appropriate MODBUS client (real or simulated)
+export const useModbusClient = () => {
+    const isSimulatedDevice = useAtomValue(isBleDeviceSimulatedAtom);
+    const realClient = useAtomValue(realModbusClientAtom);
+    const simulatedClient = useSimulatedModbusClient();
+
+    return useMemo(() => {
+        return isSimulatedDevice ? simulatedClient : realClient;
+    }, [isSimulatedDevice, simulatedClient, realClient]);
+};
