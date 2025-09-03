@@ -1,80 +1,63 @@
-import {atom, useAtomValue, useSetAtom} from 'jotai';
 import {useCallback, useState} from 'react';
-import {modbusClientAtom} from './modbus-client';
+import {useModbusClient} from './modbus-client';
 import {ModbusResponse} from './modbus-frame';
-import {isBleDeviceSimulatedAtom} from '../bluetooth/bluetoothSimulation';
-import {simulatedRegistersAtom} from './modbus-atoms';
 
-/**
- * Returns a function that must be used in order to populate the "response" object that's also returned here.
- * @param slaveId
- * @param startAddress
- * @param quantity
- * @param asHex
- * @returns
- */
+// Hooks providing a function to refresh a particular register's value, this value (once asynchronously refreshed), and reading stats
 export const useModbusHoldingRegisters = (label: string, slaveId: number, startAddress: number, quantity: number, asHex?: boolean) => {
-    const client = useAtomValue(modbusClientAtom);
-    const isSimulatedDevice = useAtomValue(isBleDeviceSimulatedAtom);
-    const simulatedRegisters = useAtomValue(simulatedRegistersAtom);
+    const client = useModbusClient();
     const [response, setResponse] = useState<ModbusResponse | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [lastSuccessTime, setLastSuccessTime] = useState<Date | null>(null);
+    const [readError, setReadError] = useState<string | null>(null);
+    const [lastReadTime, setLastReadTime] = useState<Date | null>(null);
 
     const get = useCallback(
-        async (verbose?: boolean) => {
+        async (verbose?: boolean): Promise<string | null> => {
             setLoading(true);
-            setError(null);
+            setReadError(null);
 
             try {
-                if (isSimulatedDevice) {
-                    const value = simulatedRegisters[startAddress];
-                    console.log('values:', simulatedRegisters);
-                    if (value !== undefined) {
-                        setResponse({slaveId, functionCode: 0x03, stringData: value, success: true});
-                        setLastSuccessTime(new Date());
-                    } else {
-                        setError('No simulated value for this register');
-                    }
-                } else if (client) {
-                    const result = await client.readHoldingRegisters(slaveId, startAddress, quantity, asHex);
+                let result: ModbusResponse;
+
+                if (client) {
+                    result = await client.readHoldingRegisters(slaveId, startAddress, quantity, asHex);
                     setResponse(result);
-                    setLastSuccessTime(new Date());
+                    setLastReadTime(new Date());
                     if (verbose) {
                         console.log("Read value for '" + label + "': ", result.stringData);
                     }
+                    return result.stringData ? result.stringData : null;
                 } else {
-                    throw new Error('No MODBUS client available');
+                    setReadError('No MODBUS client available');
+                    return null;
                 }
             } catch (err: any) {
                 // Categorize the error
                 if (err.message && err.message.includes('timeout')) {
-                    setError('Device not responding');
+                    setReadError('Device not responding');
                 } else if (err.message && err.message.includes('Exception')) {
-                    setError(`Device error: ${err.message}`);
+                    setReadError(`Device error: ${err.message}`);
                 } else if (err.message && err.message.includes('CRC')) {
-                    setError('Communication error (corrupted data)');
+                    setReadError('Communication error (corrupted data)');
                 } else if (err.message && err.message.includes('confirmation mismatch')) {
-                    setError('Write operation failed');
+                    setReadError('Write operation failed');
                 } else {
-                    setError(`Communication failed: ${err.message}`);
+                    setReadError(`Communication failed: ${err.message}`);
                 }
                 if (err.stack) console.log(err.stack);
+                return null;
             } finally {
                 setLoading(false);
             }
         },
-        [slaveId, startAddress, quantity, client, isSimulatedDevice, simulatedRegisters],
+        [slaveId, startAddress, quantity, asHex, client, label],
     );
 
-    return {get, val: response?.stringData, response, loading, error, lastSuccessTime};
+    return {get, val: response?.stringData, response, loading, readError, lastReadTime};
 };
 
-export const useModbusWriteMultiple = (label: string, slaveId: number, startAddress: number) => {
-    const client = useAtomValue(modbusClientAtom);
-    const isSimulatedDevice = useAtomValue(isBleDeviceSimulatedAtom);
-    const setSimReg = useSetAtom(simulatedRegistersAtom);
+// Hooks providing a function to write to a particular register, and writing stats
+export const useModbusWriteMultiple = (label: string, slaveId: number, startAddress: number, readQuantityToVerify?: number) => {
+    const client = useModbusClient();
     const [writing, setWriting] = useState(false);
     const [writeError, setWriteError] = useState<string | null>(null);
     const [lastWriteTime, setLastWriteTime] = useState<Date | null>(null);
@@ -85,22 +68,20 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
             setWriteError(null);
 
             try {
-                if (isSimulatedDevice) {
-                    setSimReg(prev => ({...prev, startAddress: value}));
-                    setLastWriteTime(new Date());
-                    if (verbose) {
-                        console.log(`[SIM] Written value for '${label}' at address ${startAddress}: ${value}`);
-                    }
-                    return true;
-                } else if (client) {
+                if (client) {
                     await client.writeMultipleRegisters(slaveId, startAddress, value);
                     setLastWriteTime(new Date());
                     if (verbose) {
                         console.log(`Written value for '${label}' at address ${startAddress}: ${value}`);
                     }
+                    if (readQuantityToVerify) {
+                        const result = await client.readHoldingRegisters(slaveId, startAddress, readQuantityToVerify);
+                        return result.stringData === value;
+                    }
                     return true;
                 } else {
-                    throw new Error('No MODBUS client available');
+                    setWriteError('No MODBUS client available');
+                    return false;
                 }
             } catch (error: any) {
                 setWriteError(`Write failed: ${error.message}, for register '${label}'`);
@@ -109,7 +90,7 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
                 setWriting(false);
             }
         },
-        [client, isSimulatedDevice, setSimReg, startAddress, label],
+        [client, startAddress, label],
     );
 
     return {set, writing, writeError, lastWriteTime};

@@ -1,5 +1,5 @@
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 import {ActivityIndicator, TextInput, View} from 'react-native';
 import {useModbusHoldingRegisters, useModbusWriteMultiple} from './modbus-hooks';
 import {InputLabel, Txt} from '../base';
@@ -29,7 +29,7 @@ export type ModbusRegisterValueProps = {
 
 export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refreshEveryMS, editable, verbose, state}: ModbusRegisterValueProps) {
     // --- shared state
-    const {get, val, response, loading, error, lastSuccessTime} = useModbusHoldingRegisters(label, slaveId, addrInt, size, asHex);
+    const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, addrInt, size, asHex);
     const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt);
     const formatDate = useDateFormatter(true);
     const [currentValue, setCurrentValue] = useState('');
@@ -38,13 +38,31 @@ export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refre
     // --- local state
     const isFocused = useIsFocused();
 
+    // Memoize the response display to prevent unnecessary re-renders
+    const responseDisplay = useMemo(() => {
+        if (loading && !refreshEveryMS) {
+            return <ActivityIndicator />;
+        }
+        return <Txt raw> : {response && val}</Txt>;
+    }, [loading, refreshEveryMS, response, val]);
+
+    // Memoize the last read time display
+    const lastReadTimeDisplay = useMemo(() => {
+        if (!lastReadTime) return null;
+        return (
+            <Txt className="text-secondary-foreground text-xs" raw>
+                Refreshed: {formatDate(lastReadTime)}
+            </Txt>
+        );
+    }, [lastReadTime, formatDate]);
+
     // --- effects
 
     // making sure we're reading the latest register value when putting our eyes on it
     useFocusEffect(
         useCallback(() => {
             get(verbose);
-        }, [get, val, state]),
+        }, [get, state]), // Removed 'val' from dependencies to prevent infinite loops
     );
 
     // handling the "auto-refresh" mode
@@ -107,7 +125,7 @@ export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refre
             {!editable ? (
                 <View className="flex-row">
                     <InputLabel label={label} />
-                    {loading && !refreshEveryMS ? <ActivityIndicator /> : <Txt raw> : {response && val}</Txt>}
+                    {responseDisplay}
                 </View>
             ) : (
                 <View className="flex-row items-center gap-2">
@@ -116,16 +134,12 @@ export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refre
                     {writing ? <ActivityIndicator /> : <X onPress={() => setCurrentValue('')} />}
                 </View>
             )}
-            {error ? (
+            {readError ? (
                 <View className="bg-destructive">
-                    <Txt className="text-destructive-foreground">{error}</Txt>
+                    <Txt className="text-destructive-foreground">{readError}</Txt>
                 </View>
             ) : (
-                lastSuccessTime && (
-                    <Txt className="text-secondary-foreground text-xs" raw>
-                        Refreshed: {formatDate(lastSuccessTime)}
-                    </Txt>
-                )
+                lastReadTimeDisplay
             )}
         </View>
     );
