@@ -84,6 +84,7 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
             // if there is no last modified date, or the synced value is more recent, we set it
             if (!lastModified || syncedValLastModified > lastModified) {
                 field.actions.setValue(syncedValAsNum);
+                setDisplayedValue(syncedValAsNum);
                 setLastModified(new Date());
             }
         }
