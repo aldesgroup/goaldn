@@ -4,3 +4,5 @@ export * from './BluetoothConnectionButton';
 export * from './BluetoothConnectionMonitor';
 export * from './BluetoothConnectionScreen';
 export * from './bluetoothSimulation';
+export * from './BluetoothSimulationModeScreen';
+export * from './SimulatedBluetoothDeviceBanner';
