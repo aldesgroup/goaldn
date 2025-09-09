@@ -48,13 +48,7 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
     const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
         ? useRefreshableAtom<Promise<string>, string>(syncAtom)
         : [undefined, undefined, undefined, undefined];
-    const syncedValAsBool = (() => {
-        if (syncedVal === undefined) return undefined;
-        const normalized = String(syncedVal).trim().toLowerCase();
-        if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
-        if (['false', '0', 'no', 'off'].includes(normalized)) return false;
-        return undefined;
-    })();
+    const syncedValAsBool = syncedVal ? syncedVal === 'true' : undefined;
 
     // --- local state
 
@@ -72,14 +66,14 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
     // if the synced value has changed & is more recent, we set it
     useEffect(() => {
         // there is a synced value, and it's different from the local value
-        if (syncedValLastModified && syncedValAsBool !== undefined && syncedValAsBool !== value) {
+        if (syncedValAsBool && syncedValLastModified && syncedValAsBool !== value) {
             // if there is no last modified date, or the synced value is more recent, we set it
             if (!lastModified || syncedValLastModified > lastModified) {
                 field.actions.setValue(syncedValAsBool);
                 setLastModified(new Date());
             }
         }
-    }, [syncedVal, syncedValLastModified]);
+    }, [syncedVal]);
 
     // --- utils
 
@@ -90,7 +84,6 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
                 <Txt className={cn('text-foreground flex-1', props.labelClassName)}>{props.label}</Txt>
                 <Switch
                     {...props}
-                    key={`switch-${value ? '1' : '0'}`}
                     className={props.switchClassName}
                     disabled={disabled}
                     checked={value}
