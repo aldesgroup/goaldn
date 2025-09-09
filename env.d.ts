@@ -20,6 +20,8 @@ declare module 'react-native-config' {
         BLE_TIMEOUT_MS?: string;
         /* how much time, in ms, to wait before to frames?  */
         BLE_DELAY_MS?: string;
+        /* the code to activate the BLE simulation mode */
+        BLE_SIMULATION_CODE?: string;
     }
     const Config: GoaldnConfig;
     export default Config;

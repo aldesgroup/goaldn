@@ -22,10 +22,9 @@ export const SIMULATION_DEVICE_NAME = (Config.BLE_ID_PREFIX && Config.BLE_ID_PRE
 
 /**
  * Flag indicating whether mock functionality is enabled.
- * Mocking is enabled in all environments except production.
  * @category Bluetooth
  */
-export const isSimulationBleDeviceEnabledAtom = storedAtom('simulation-ble-device-enabled', Config.ENVIRONMENT !== 'production');
+export const isSimulationBleDeviceEnabledAtom = storedAtom('simulation-ble-device-enabled', false);
 
 /**
  * Inidicate if the currently connected device is a simulation one, rather than a real one.
