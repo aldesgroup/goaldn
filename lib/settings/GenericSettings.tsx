@@ -2,7 +2,8 @@ import {useAtomValue} from 'jotai';
 import React from 'react';
 import {ScrollView, View} from 'react-native';
 import {Txt} from '../base';
-import {Card, CollapsableCard} from '../layout';
+import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom} from '../bluetooth';
+import {Card} from '../layout';
 import {EnumAtom, StringAtom, SwitchAtom} from '../state-management';
 import {getLanguages} from './i18n';
 import {
@@ -46,7 +47,7 @@ export function GenericSettings() {
                 />
                 <SwitchAtom label="Automatically detect small screens?" atom={detectSmallScreenAtom} />
                 {detect ? (
-                    <CollapsableCard title="Detection parameters" titleClass="font-normal text-base">
+                    <>
                         <StringAtom label="Font scale threshold" atom={detectFromScaleAtom} sideValue />
                         <View className="flex-row justify-between gap-2">
                             <Txt className="flex-1">Current font scale</Txt>
@@ -61,13 +62,13 @@ export function GenericSettings() {
                                 {pixelDensity.toFixed(2)}
                             </Txt>
                         </View>
-                    </CollapsableCard>
+                    </>
                 ) : (
                     <SwitchAtom label="Adapt to small screens and / or big font?" atom={userSetSmallScreenAtom} />
                 )}
                 <StringAtom label="Small screen and / or big font mode?" atom={smallScreenAtom} mode="report" />
-                {/* <SwitchAtom label="Simulation device enabled?" atom={isSimulationBleDeviceEnabledAtom} />
-                <StringAtom label="Simulation device connected?" atom={isBleDeviceSimulatedAtom} mode="report" /> */}
+                <SwitchAtom label="Simulation device enabled?" atom={isSimulationBleDeviceEnabledAtom} />
+                <StringAtom label="Simulation device connected?" atom={isBleDeviceSimulatedAtom} mode="report" />
             </Card>
         </ScrollView>
     );

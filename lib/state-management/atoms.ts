@@ -31,7 +31,7 @@ export function storedAtom<T>(key: string, initialValue: T) {
 /**
  * Hook that checks if a predicate function returns true for at least one atom in a list.
  * @template Value - The type of the atoms' values.
- * @param {WritableAtom<Value, any, any>[] } atoms - Array of atoms to check.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to check.
  * @param {(value?: Value) => boolean} predicate - Function to test each atom's value.
  * @returns {boolean} True if predicate returns true for at least one atom.
  * @category State Management
@@ -47,7 +47,7 @@ export function useCheckSomeAtomValue<Value>(atoms: (WritableAtom<Value, any, an
 /**
  * Hook that checks if a predicate function returns true for all atoms in a list.
  * @template Value - The type of the atoms' values.
- * @param {WritableAtom<Value, any, any>[] } atoms - Array of atoms to check.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to check.
  * @param {(value?: Value) => boolean} predicate - Function to test each atom's value.
  * @returns {boolean} True if predicate returns true for all atoms.
  * @category State Management
@@ -63,7 +63,7 @@ export function useCheckAllAtomValues<Value>(atoms: (WritableAtom<Value, any, an
 /**
  * Hook that returns an array containing the values of all provided atoms.
  * @template Value - The type of the atoms' values.
- * @param {WritableAtom<Value, any, any>[] } atoms - Array of atoms to get values from.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to get values from.
  * @returns {Value[]} Array of atom values.
  * @category State Management
  */
@@ -74,7 +74,7 @@ export function useAllAtomsValues<Value>(atoms: (WritableAtom<Value, any, any> |
 /**
  * Hook that returns a function to set the same value to all provided atoms.
  * @template Value - The type of the atoms' values.
- * @param {WritableAtom<Value, any, any>[] } atoms - Array of atoms to set values for.
+ * @param {WritableAtom<Value, any, any>[]} atoms - Array of atoms to set values for.
  * @returns {Function} A function that sets the provided value to all atoms.
  * @category State Management
  */
@@ -91,37 +91,4 @@ export function useSetAllAtoms<Value>(atoms: (WritableAtom<Value, any, any> | un
     );
 
     return setAllValues;
-}
-
-/**
- * Define a new atom type that is a writable atom, but its setter also supports the 'undefined' refresh trigger.
- * The read type surfaces a pair { value, lastModified }.
- * For async atoms, the Promise wraps that pair.
- * @category State Management
- */
-export type RefreshableAtom<VALUE, SETVALUE = VALUE> = WritableAtom<
-    VALUE extends Promise<infer T> ? Promise<{value: T; lastModified: Date}> : {value: VALUE; lastModified: Date},
-    [SETVALUE | undefined],
-    any
->;
-
-/**
- * A function to help make use of refreshable atoms in a more friendly way
- * @param refreshableAtom the refreshable atom to use
- * @category State Management
- */
-export function useRefreshableAtom<VALUE, SETVALUE = VALUE>(
-    refreshableAtom: RefreshableAtom<VALUE, SETVALUE>,
-): [Awaited<VALUE>, Date, () => void, (value: SETVALUE) => void] {
-    // Note: For async atoms, Suspense should resolve the promise before this returns.
-    const {value, lastModified} = useAtomValue(refreshableAtom) as any;
-
-    // Use useSetAtom to get the setter function.
-    const set = useSetAtom(refreshableAtom);
-
-    // Create a refresh function that calls the setter with 'undefined'.
-    // This triggers the refresh logic in the atom's setter.
-    const refresh = () => set(undefined as SETVALUE);
-
-    return [value as Awaited<VALUE>, lastModified as Date, refresh, set];
 }

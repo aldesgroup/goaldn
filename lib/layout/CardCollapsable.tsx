@@ -21,7 +21,6 @@ import {Card} from './CardBasic';
  */
 export function CollapsableCard({
     title,
-    titleClass,
     children,
     alwaysVisible,
     className,
@@ -30,7 +29,6 @@ export function CollapsableCard({
     openAtom,
 }: {
     title: string;
-    titleClass?: string;
     children: React.ReactNode;
     alwaysVisible?: React.ReactNode;
     className?: string;
@@ -53,7 +51,7 @@ export function CollapsableCard({
         <Card className={cn(className)}>
             <Pressable onPress={() => setCardOpen(!cardOpen)}>
                 <View className="flex-row items-center justify-between">
-                    <Txt className={cn('text-primary text-xl font-bold', smallScreen && 'flex-1', titleClass)}>{title}</Txt>
+                    <Txt className={cn('text-primary text-xl font-bold', smallScreen && 'flex-1')}>{title}</Txt>
                     {allowCollapse && <>{!cardOpen ? <ChevronDown color={colors.primary} /> : <ChevronUp color={colors.primary} />}</>}
                 </View>
             </Pressable>

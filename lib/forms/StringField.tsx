@@ -1,11 +1,10 @@
 import {useFieldValue, useInputField} from 'form-atoms';
-import {useAtomValue} from 'jotai';
+import {useAtom, useAtomValue} from 'jotai';
 import React, {useEffect} from 'react';
 import {View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
-import {FieldConfigAtom, getFieldValidationError, useFieldLastModified} from '../forms';
+import {FieldConfigAtom, getFieldValidationError} from '../forms';
 import {smallScreenAtom, useTranslator} from '../settings';
-import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {Input} from '../ui/input';
 
 /**
@@ -28,8 +27,6 @@ export type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends 
     unit?: string;
     /** Should the field value be translated, when it's read-only? */
     translateValue?: boolean;
-    /** Should the field value be synchronized with the value of another atom? */
-    syncWith?: RefreshableAtom<Promise<string>, string>;
 } & InputLabelProps &
     InputProps;
 
@@ -54,19 +51,13 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     const fieldConfig = useAtomValue(props.field);
     const field = useInputField(fieldConfig.fieldAtom);
     const value = useFieldValue(fieldConfig.fieldAtom);
-    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
     const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
     const visible = isReport || isSheet || (fieldConfig.visible ? fieldConfig.visible() : true);
     const maxLength = fieldConfig.max || 0;
     const validError = getFieldValidationError(props.field);
     const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
     const smallScreen = useAtomValue(smallScreenAtom);
-
-    // --- shared state - syncing with another atom
-    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
-    const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
-        ? useRefreshableAtom<Promise<string>, string>(syncAtom)
-        : [undefined, undefined, undefined, undefined];
+    const [syncedVal, setSyncedVal] = fieldConfig.syncWith ? useAtom(fieldConfig.syncWith) : [undefined, undefined];
 
     // --- effects
     if (fieldConfig.effects) {
@@ -74,20 +65,10 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
         fieldConfig.effects.map(useEffect => useEffect());
     }
 
-    // refreshing the synced value, if any
     useEffect(() => {
-        if (refreshSyncedVal) refreshSyncedVal();
-    }, []);
-
-    // if the synced value has changed & is more recent, we set it
-    useEffect(() => {
-        // there is a synced value, and it's different from the local value
-        if (syncedVal && syncedVal !== value) {
-            // if there is no last modified date, or the synced value is more recent, we set it
-            if (!lastModified || syncedValLastModified > lastModified) {
-                field.actions.setValue(syncedVal);
-                setLastModified(new Date());
-            }
+        // reacting to a value coming from the additional configured atom
+        if (syncedVal) {
+            field.actions.setValue(syncedVal);
         }
     }, [syncedVal]);
 
@@ -103,7 +84,6 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
         // setting the value, but not allowing to exceed the configured maxlength, if there's one
         if (maxLength === 0 || text.length <= maxLength) {
             field.actions.setValue(text);
-            setLastModified(new Date());
         }
     };
 

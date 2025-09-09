@@ -1,13 +1,11 @@
 import {RESET, useFieldValue, useInputField} from 'form-atoms';
 import {useAtomValue} from 'jotai';
 import {X} from 'lucide-react-native';
-import {useEffect} from 'react';
 import {Pressable, View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
 import {smallScreenAtom} from '../settings';
-import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {getColors} from '../styling';
-import {FieldConfig, FieldConfigAtom, FieldConfigOption, FieldConfigOptionInfos, fieldDisplayMode, useFieldLastModified} from './fields';
+import {FieldConfig, FieldConfigAtom, FieldConfigOption, FieldConfigOptionInfos, fieldDisplayMode} from './fields';
 
 /**
  * Props for the EnumFieldValue component.
@@ -39,7 +37,6 @@ function EnumFieldValue({option, fieldConfig, className, infos, mode = 'input'}:
     // shared state
     const field = useInputField(fieldConfig.fieldAtom);
     const value = useFieldValue(fieldConfig.fieldAtom);
-    const [_, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
     const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
     const colors = getColors();
 
@@ -59,7 +56,6 @@ function EnumFieldValue({option, fieldConfig, className, infos, mode = 'input'}:
                     } else {
                         field.actions.setValue(option.value);
                     }
-                    setLastModified(new Date());
                 }
             }}>
             <View
@@ -128,8 +124,6 @@ type EnumFieldProps<confAtom extends FieldConfigAtom<number>> = {
     valueClassName?: string;
     /** Text to show when no value is selected */
     emptyValueLabel?: string;
-    /** Should the field value be synchronized with the value of another atom? */
-    syncWith?: RefreshableAtom<Promise<string>, string>;
 } & InputLabelProps;
 export type {EnumFieldProps};
 
@@ -158,37 +152,10 @@ export function EnumField<confAtom extends FieldConfigAtom<number>>({
     const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
     const smallScreen = useAtomValue(smallScreenAtom);
 
-    // --- shared state - syncing with another atom
-    const field = useInputField(fieldConfig.fieldAtom);
-    const value = useFieldValue(fieldConfig.fieldAtom);
-    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
-    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
-    const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
-        ? useRefreshableAtom<Promise<string>, string>(syncAtom)
-        : [undefined, undefined, undefined, undefined];
-    const syncedValAsNum = syncedVal ? parseInt(syncedVal) : undefined;
-
     // --- effects
     if (fieldConfig.effects) {
         fieldConfig.effects.map(useEffect => useEffect());
     }
-
-    // refreshing the synced value, if any
-    useEffect(() => {
-        if (refreshSyncedVal) refreshSyncedVal();
-    }, []);
-
-    // if the synced value has changed & is more recent, we set it
-    useEffect(() => {
-        // there is a synced value, and it's different from the local value
-        if (syncedValAsNum && syncedValLastModified && syncedValAsNum !== value) {
-            // if there is no last modified date, or the synced value is more recent, we set it
-            if (!lastModified || syncedValLastModified > lastModified) {
-                field.actions.setValue(syncedValAsNum);
-                setLastModified(new Date());
-            }
-        }
-    }, [syncedVal]);
 
     // --- utils
 

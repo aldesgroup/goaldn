@@ -1,11 +1,9 @@
-import {useFieldValue, useInputField} from 'form-atoms';
+import {useInputField} from 'form-atoms';
 import {useAtomValue} from 'jotai';
-import {useEffect} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
-import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {Switch} from '../ui/switch';
-import {FieldConfigAtom, useFieldLastModified} from './fields';
+import {FieldConfigAtom} from './fields';
 
 /**
  * Props for the SwitchField component.
@@ -22,8 +20,6 @@ export type SwitchFieldProps<T extends FieldConfigAtom<boolean>> = {
     field: T;
     /** Additional CSS classes for the switch */
     switchClassName?: string;
-    /** Should the field value be synchronized with the value of another atom? */
-    syncWith?: RefreshableAtom<Promise<string>, string>;
 };
 
 /**
@@ -38,42 +34,15 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
     // --- shared state
     const fieldConfig = useAtomValue(props.field);
     const field = useInputField(fieldConfig.fieldAtom);
-    const value = useFieldValue(fieldConfig.fieldAtom);
-    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
     const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
     const visible = fieldConfig.visible ? fieldConfig.visible() : true;
-
-    // --- shared state - syncing with another atom
-    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
-    const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
-        ? useRefreshableAtom<Promise<string>, string>(syncAtom)
-        : [undefined, undefined, undefined, undefined];
-    const syncedValAsBool = syncedVal ? syncedVal === 'true' : undefined;
 
     // --- local state
 
     // --- effects
     if (fieldConfig.effects) {
-        // effects configured on the field
         fieldConfig.effects.map(useEffect => useEffect());
     }
-
-    // refreshing the synced value, if any
-    useEffect(() => {
-        if (refreshSyncedVal) refreshSyncedVal();
-    }, []);
-
-    // if the synced value has changed & is more recent, we set it
-    useEffect(() => {
-        // there is a synced value, and it's different from the local value
-        if (syncedValAsBool && syncedValLastModified && syncedValAsBool !== value) {
-            // if there is no last modified date, or the synced value is more recent, we set it
-            if (!lastModified || syncedValLastModified > lastModified) {
-                field.actions.setValue(syncedValAsBool);
-                setLastModified(new Date());
-            }
-        }
-    }, [syncedVal]);
 
     // --- utils
 
@@ -86,11 +55,8 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
                     {...props}
                     className={props.switchClassName}
                     disabled={disabled}
-                    checked={value}
-                    onCheckedChange={val => {
-                        field.actions.setValue(val);
-                        setLastModified(new Date());
-                    }}
+                    checked={field.state.value}
+                    onCheckedChange={val => field.actions.setValue(val)}
                 />
             </View>
         )
