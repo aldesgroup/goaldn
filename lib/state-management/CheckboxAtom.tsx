@@ -28,6 +28,8 @@ type CheckboxAtomProps<A extends WritableAtom<boolean, any, any>, B extends (Wri
     boxClassName?: string;
     /** Array of associated checkbox atoms for group behavior */
     associated?: B;
+    /** Disabling the checkbox */
+    disabled?: boolean;
 };
 export type {CheckboxAtomProps};
 
@@ -45,6 +47,7 @@ export function CheckboxAtom<A extends WritableAtom<boolean, any, any>, B extend
     label,
     labelPrepend,
     associated,
+    disabled,
     ...props
 }: CheckboxAtomProps<A, B>) {
     // --- shared state
@@ -73,12 +76,14 @@ export function CheckboxAtom<A extends WritableAtom<boolean, any, any>, B extend
     // --- utils
     const handleCheck = () => {
         // handling the sync:  this field => associated fields
-        if (value) {
-            setValue(false);
-            setAllAssociatedFields && setAllAssociatedFields(false);
-        } else {
-            setValue(true);
-            setAllAssociatedFields && setAllAssociatedFields(true);
+        if (!disabled) {
+            if (value) {
+                setValue(false);
+                setAllAssociatedFields && setAllAssociatedFields(false);
+            } else {
+                setValue(true);
+                setAllAssociatedFields && setAllAssociatedFields(true);
+            }
         }
     };
 
@@ -93,6 +98,7 @@ export function CheckboxAtom<A extends WritableAtom<boolean, any, any>, B extend
                     'border-input size-5 items-center justify-center rounded border',
                     smallScreen && 'size-7',
                     (value || halfChecked) && 'bg-primary',
+                    disabled && 'bg-muted-foreground',
                     props.boxClassName,
                 )}
                 onPress={handleCheck}>

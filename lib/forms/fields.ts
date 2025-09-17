@@ -264,6 +264,18 @@ export function useAllFormFieldsValues<Value>(configs: FieldConfigAtom<Value>[])
 }
 
 /**
+ * Hook to get an array with all the given form fields' setters.
+ * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @returns {Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void>} An array of setter functions.
+ * @category Forms Utils
+ */
+export function useAllFormFieldsSetters<Value>(
+    configs: FieldConfigAtom<Value>[],
+): Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void> {
+    return configs.map(conf => useSetFormField(conf));
+}
+
+/**
  * Hook to set a value to all the given form fields at once.
  * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
  * @returns {Function} A function to set the value of all form fields.
@@ -273,9 +285,9 @@ export function useSetAllFormFields<Value>(configs: FieldConfigAtom<Value>[]) {
     const setAtoms = configs.map(atom => useSetFormField(atom));
 
     const setAllValues = useCallback(
-        (newValue: Value) => {
+        (newValue: typeof RESET | Value | ((prev: Value) => Value)) => {
             setAtoms.forEach(setAtom => {
-                setAtom(newValue);
+                setAtom(newValue as any);
             });
         },
         [setAtoms],
