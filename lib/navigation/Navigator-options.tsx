@@ -52,7 +52,7 @@ export const CloseIconOption =
  * @returns {NativeStackNavigationOptions} Navigation options with language switcher
  * @category Navigation
  */
-export const LanguageSwitcherOption_ = ({navigation}: {navigation: any}) => ({
+export const LanguageSwitcherOption: OptionFunction = ({navigation}: {navigation: any}) => ({
     headerRight: LanguageSwitcher,
 });
 
@@ -101,7 +101,7 @@ export const TitleOption = (
  * These screens will have no header and use a fade animation.
  * @category Navigation
  */
-export const FadeInOption = ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom', headerShown: false});
+export const FadeInOption: OptionFunction = ({navigation}: {navigation: any}) => ({animation: 'fade_from_bottom', headerShown: false});
 
 /**
  * Creates navigation options to display an Avatar component in the header.
@@ -110,7 +110,7 @@ export const FadeInOption = ({navigation}: {navigation: any}) => ({animation: 'f
  * @returns {OptionFunction} Navigation options with Avatar configuration
  * @category Navigation
  */
-export const AvatarOption =
+export const AvatarOption: (props: AvatarProps) => OptionFunction =
     (props: AvatarProps) =>
     ({navigation}: {navigation: any}) => ({
         // to differ from "normal" navigation (slide-in effect, with back arrow)

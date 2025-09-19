@@ -1,6 +1,9 @@
 // not putting that into the /lib folder so that's not appearing within the client apps through vendoring
 declare module 'react-native-config' {
     export interface GoaldnConfig {
+        // Info.plist (iOS) / AndroidManifest variables
+        APP_NAME: string;
+
         // goaldn variables
         /* the current environment */
         ENVIRONMENT: 'development' | 'staging' | 'production';
