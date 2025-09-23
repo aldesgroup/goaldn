@@ -4,6 +4,7 @@ import React from 'react';
 import {ScrollView, View} from 'react-native';
 import {Button, buttonVariantsType, cn, textColorForVariant, Txt} from '../base';
 import {smallScreenAtom} from '../settings';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 /**
  * Props for the ViewWithFooter component.
@@ -59,6 +60,7 @@ export function ViewWithFooter({
 }: ViewWithFooterProps) {
     // --- shared state
     const smallScreen = useAtomValue(smallScreenAtom);
+    const insets = useSafeAreaInsets();
 
     // --- local state
     const LeftButtonIcon = leftButtonIcon || (() => <></>);
@@ -67,7 +69,7 @@ export function ViewWithFooter({
     // --- view
     return (
         // Anchoring the footer
-        <View className="flex-1">
+        <View className="flex-1" style={{paddingBottom: insets.bottom}}>
             {/* Scrollable Content Area */}
             <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', smallScreen && 'gap-9', contentClassName)}>
                 {props.children}
