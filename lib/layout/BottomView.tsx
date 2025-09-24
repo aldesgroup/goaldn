@@ -1,7 +1,6 @@
 import {X} from 'lucide-react-native';
 import {ReactNode} from 'react';
 import {View} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {cn, Txt} from '../base';
 import {getColors} from '../styling';
 
@@ -30,7 +29,6 @@ export function BottomView({
 }) {
     // --- shared state
     const colors = getColors();
-    const insets = useSafeAreaInsets();
     let voidHeight = 'h-1/3';
     switch (h) {
         case 'h-1/2':
@@ -49,7 +47,7 @@ export function BottomView({
 
     // --- view
     return (
-        <View className="bg-foreground-light flex-1" style={{paddingBottom: insets.bottom}}>
+        <View className="bg-foreground-light flex-1">
             <View className={cn(voidHeight)}>{/* empty on purpose */}</View>
             <View className={cn('rounded-t-3xl bg-white p-6 pt-10', h)}>
                 {/* "Header" */}
