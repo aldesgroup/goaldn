@@ -22,6 +22,8 @@ export type TxtProps = SlottableTextProps & {
     append?: React.ReactNode;
     /** To style the text, with NativeWind */
     className?: string;
+    /** If true, then the first letter is capitalized */
+    capitalizeFirst?: boolean;
 };
 
 /**
@@ -52,13 +54,14 @@ const getTextContent = (input: React.ReactNode): string => {
  * @returns {JSX.Element} A text component with i18n support
  * @category Base
  */
-export function TxtImpl({children, raw, className, prepend, append, ...props}: TxtProps, ref: React.Ref<TextRef>) {
+export function TxtImpl({children, raw, className, prepend, append, capitalizeFirst, ...props}: TxtProps, ref: React.Ref<TextRef>) {
     const text = getTextContent(children);
+    const displayedText = capitalizeFirst ? text.charAt(0).toUpperCase() + text.slice(1) : text;
     if (raw) {
         return (
             <Text {...props} ref={ref} className={cn('text-left', className)}>
                 {prepend && prepend}
-                {text}
+                {displayedText}
                 {append && append}
             </Text>
         );
@@ -66,11 +69,12 @@ export function TxtImpl({children, raw, className, prepend, append, ...props}: T
 
     const translate = useTranslator();
     const {translation, missing} = translate(text);
+    const displayedTranslation = capitalizeFirst && translation ? translation.charAt(0).toUpperCase() + translation.slice(1) : translation;
 
     return (
         <Text {...props} ref={ref} className={cn('text-left', className, missing && 'text-red-600')}>
             {prepend && prepend}
-            {translation}
+            {displayedTranslation}
             {append && append}
         </Text>
     );

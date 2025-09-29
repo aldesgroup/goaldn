@@ -1,7 +1,8 @@
 import {RESET, useFieldValue, useInputField, type FieldAtom} from 'form-atoms';
-import {atom, Atom, useAtomValue, WritableAtom} from 'jotai';
+import {atom, Atom, useAtom, useAtomValue, WritableAtom} from 'jotai';
 import {LucideIcon} from 'lucide-react-native';
 import {useCallback, useMemo} from 'react';
+import {RefreshableAtom} from '../state-management';
 
 /**
  * Type definition for a field configuration option.
@@ -28,8 +29,22 @@ export type FieldConfigOptionInfos = {disabled?: Atom<boolean>; icon?: LucideIco
 export type FieldValueError = {msg: string; param?: any};
 
 /**
+ * Some additional properties not available in the form-atoms library
+ * @property {Date} lastModified - When the field's value was last modified
+ * @category Forms Utils
+ */
+export type FieldState = {lastModified: Date | null};
+
+/**
+ * Type for the atoms that we conceal additional properties associated with a field atom
+ * @category Forms Utils
+ */
+export type FieldStateAtom = WritableAtom<FieldState, [FieldState | ((prev: FieldState) => FieldState)], void>;
+
+/**
  * Type definition for a field configuration.
  * @property {FieldAtom<Value>} fieldAtom - The embedded field to enrich with additional functionality.
+ * @property {FieldStateAtom} stateAtom - Additional properties associated with the field atom
  * @property {() => boolean} [visible] - Custom hook to condition the rendering of the field.
  * @property {() => boolean} [disabled] - Custom hook to provide a dynamic value for the `disabled` tag.
  * @property {(() => void)[]} [effects] - Array of useEffect functions to apply.
@@ -48,6 +63,7 @@ export type FieldValueError = {msg: string; param?: any};
  */
 export type FieldConfig<Value> = {
     fieldAtom: FieldAtom<Value>;
+    stateAtom: FieldStateAtom;
     visible?: () => boolean;
     disabled?: () => boolean;
     effects?: (() => void)[];
@@ -61,7 +77,7 @@ export type FieldConfig<Value> = {
     optionsInfos?: Map<number, FieldConfigOptionInfos>;
     mandatory?: boolean | (() => boolean);
     valid?: () => null | FieldValueError;
-    syncWith?: WritableAtom<string | Promise<string>, any, any>;
+    syncWith?: RefreshableAtom<Promise<Value>, Value>;
 };
 
 /**
@@ -69,6 +85,15 @@ export type FieldConfig<Value> = {
  * @category Forms Utils
  */
 export type FieldConfigAtom<Value> = Atom<FieldConfig<Value>>;
+
+/**
+ * Creates a field state atom, to associated with a field atom inside a field config atom
+ */
+export function fieldStateAtom(): FieldStateAtom {
+    return atom<FieldState>({
+        lastModified: null,
+    });
+}
 
 /**
  * Creates a field configuration atom from the provided configuration.
@@ -79,6 +104,7 @@ export type FieldConfigAtom<Value> = Atom<FieldConfig<Value>>;
 export function fieldConfigAtom<Value>(config: FieldConfig<Value>): FieldConfigAtom<Value> {
     return atom({
         fieldAtom: config.fieldAtom,
+        stateAtom: config.stateAtom,
         visible: config.visible,
         disabled: config.disabled,
         effects: config.effects,
@@ -238,6 +264,18 @@ export function useAllFormFieldsValues<Value>(configs: FieldConfigAtom<Value>[])
 }
 
 /**
+ * Hook to get an array with all the given form fields' setters.
+ * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @returns {Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void>} An array of setter functions.
+ * @category Forms Utils
+ */
+export function useAllFormFieldsSetters<Value>(
+    configs: FieldConfigAtom<Value>[],
+): Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void> {
+    return configs.map(conf => useSetFormField(conf));
+}
+
+/**
  * Hook to set a value to all the given form fields at once.
  * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
  * @returns {Function} A function to set the value of all form fields.
@@ -247,13 +285,30 @@ export function useSetAllFormFields<Value>(configs: FieldConfigAtom<Value>[]) {
     const setAtoms = configs.map(atom => useSetFormField(atom));
 
     const setAllValues = useCallback(
-        (newValue: Value) => {
+        (newValue: typeof RESET | Value | ((prev: Value) => Value)) => {
             setAtoms.forEach(setAtom => {
-                setAtom(newValue);
+                setAtom(newValue as any);
             });
         },
         [setAtoms],
     );
 
     return setAllValues;
+}
+
+/**
+ * Hook to get and set the lastModified flag from a FieldStateAtom.
+ * @param {FieldStateAtom} stateAtom - The field state atom containing lastModified.
+ * @returns {[Date | null, (date: Date) => void]} The current lastModified and a setter.
+ * @category Forms Utils
+ */
+export function useFieldLastModified(stateAtom: FieldStateAtom): [Date | null, (date: Date | null) => void] {
+    const [state, setState] = useAtom(stateAtom);
+    const setLastModified = (date: Date | null) => {
+        setState(prev => ({
+            ...prev,
+            lastModified: date,
+        }));
+    };
+    return [state.lastModified, setLastModified];
 }
