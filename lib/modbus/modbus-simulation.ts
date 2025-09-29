@@ -57,7 +57,7 @@ export class SimulatedBleModbusClient {
         const regs = this.store.get(simulatedRegistersAtom);
         if (!regs[startAddress]) {
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value.toString()}));
-            console.log('initialized register', startAddress, 'with value', value);
+            console.log('initialized simulated register', startAddress, 'with value', value);
         }
     }
 }
@@ -85,10 +85,8 @@ export const useRegisterSimulatedClient = () => {
     const client = useSimulatedModbusClient();
     const setInstance = useSetAtom(simulatedClientInstanceAtom);
     useEffect(() => {
+        console.log('Setting the Simulated MODBUS client');
         setInstance(client ?? null);
-        return () => {
-            setInstance(null);
-        };
     }, [client, setInstance]);
 };
 
