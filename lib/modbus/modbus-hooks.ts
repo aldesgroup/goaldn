@@ -6,6 +6,7 @@ import {ModbusResponse} from './modbus-frame';
 export const useModbusHoldingRegisters = (label: string, slaveId: number, startAddress: number, quantity: number, asHex?: boolean) => {
     const client = useModbusClient();
     const [response, setResponse] = useState<ModbusResponse | null>(null);
+    const [val, setVal] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [readError, setReadError] = useState<string | null>(null);
     const [lastReadTime, setLastReadTime] = useState<Date | null>(null);
@@ -21,6 +22,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
                 if (client) {
                     result = await client.readHoldingRegisters(slaveId, startAddress, quantity, asHex);
                     setResponse(result);
+                    setVal(result?.stringData ?? undefined); // making the returned val reactive
                     setLastReadTime(new Date());
                     if (verbose) {
                         console.log("Read value for '" + label + "': ", result.stringData);
@@ -52,7 +54,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
         [slaveId, startAddress, quantity, asHex, client, label],
     );
 
-    return {get, val: response?.stringData, response, loading, readError, lastReadTime};
+    return {get, val, response, loading, readError, lastReadTime};
 };
 
 // Hooks providing a function to write to a particular register, and writing stats

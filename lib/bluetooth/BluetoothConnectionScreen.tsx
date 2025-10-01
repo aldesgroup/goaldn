@@ -12,7 +12,7 @@ import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
 import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
-import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, SIMULATION_DEVICE_ID, simulationPeripheral} from './bluetoothSimulation';
+import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, simulationPeripherals} from './bluetoothSimulation';
 
 /**
  * A screen component for managing Bluetooth Low Energy (BLE) device connections.
@@ -202,9 +202,13 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 // Making sure we're stopping the scan at the end
                 setTimeout(() => stopScan(), scanDurationSeconds * 1000);
 
-                // Adding a mock device
+                // Adding mock devices
                 if (isSimulationBleDeviceEnabled) {
-                    setTimeout(() => handleDiscoverPeripheral(simulationPeripheral), 800);
+                    setTimeout(() => {
+                        for (const simulationPeripheral of Object.values(simulationPeripherals)) {
+                            handleDiscoverPeripheral(simulationPeripheral);
+                        }
+                    }, 800);
                 }
             } catch (scanErr) {
                 if (scanErr instanceof Error) {
@@ -239,7 +243,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 setConnectingDevice(connectedDevice.id);
 
                 // actually disconnecting
-                if (connectedDevice.id === SIMULATION_DEVICE_ID) {
+                if (simulationPeripherals[connectedDevice.id]) {
                     // for now, nothing special to do with the mock device
                 } else {
                     // disconnecting the device
@@ -249,12 +253,15 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 // we're done
                 setConnectingDevice(null);
                 setConnectedDevice(null);
+
+                // Go back to the previous screen
+                navigation.goBack();
             }
 
             // Connecting to a new one, if any
             if (device) {
                 setConnectingDevice(device.id);
-                if (device.id === SIMULATION_DEVICE_ID) {
+                if (simulationPeripherals[device.id]) {
                     // keeping in mind we've a simulation device here
                     setBleDeviceSimulated(true);
                 } else {

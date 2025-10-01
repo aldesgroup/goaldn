@@ -39,7 +39,7 @@ export function newModbusRegisterAtom(
             if (!response.stringData) {
                 throw new Error('No data present at register: ' + startAddress);
             } else {
-                console.log("Read value for '" + startAddress + "': ", response.stringData);
+                console.log("Read value for '" + startAddress + "' (" + label + '): ', response.stringData);
             }
             nextValue = response.stringData;
         } else {
@@ -90,7 +90,9 @@ export function newModbusRegisterAtom(
                 const simulatedClient = get(simulatedClientInstanceAtom);
 
                 if (isSimulated) {
-                    if (!simulatedClient) throw new Error('No simulated MODBUS client available');
+                    if (!simulatedClient) {
+                        throw new Error('No simulated MODBUS client available');
+                    }
                     await simulatedClient.writeMultipleRegisters(slaveId, startAddress, newValue);
                     // Optimistically update and conditionally refresh
                     const changed = lastValue !== newValue;
