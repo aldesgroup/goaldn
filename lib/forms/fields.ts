@@ -1,24 +1,165 @@
-import {RESET, useFieldValue, useInputField, type FieldAtom} from 'form-atoms';
-import {atom, Atom, useAtom, useAtomValue, WritableAtom} from 'jotai';
+import {fieldAtom, formAtom, FormAtom, useFieldValue as getValue, RESET, useForm, useInputField, type FieldAtom} from 'form-atoms';
+import {atom, Atom, useAtom, useStore, WritableAtom} from 'jotai';
 import {LucideIcon} from 'lucide-react-native';
 import {useCallback, useMemo} from 'react';
 import {RefreshableAtom} from '../state-management';
 
+// ------------------------------------------------------------------------------------------------
+// Base structure for defining a model
+// ------------------------------------------------------------------------------------------------
+
 /**
- * Type definition for a field configuration option.
+ * A Model contains the fields, form atom, and state atoms for a complete form setup.
+ * @property {T} fields - The original fields object
+ * @property {FormAtom<{[K in keyof T]: FieldAtom<any>}>} form - The form atom built from the fields
+ * @property {FieldMetaAtom[]} states - Array of all FieldMetaAtom from the fields
+ */
+export type Model<T extends Record<string, Field<any>>> = {
+    _URL: string;
+    _fields: T;
+    _form: FormAtom<{[K in keyof T]: FieldAtom<any>}>;
+    _states: FieldMetaAtom[];
+};
+
+/**
+ * Creates a new Model with fields, form atom, and state atoms.
+ * @param {T} fields - Object with named Field objects
+ * @returns {Model<T>} Complete model with fields, form, and states
+ * @category Forms Utils
+ */
+export function newModel<T extends Record<string, Field<any>>>(url: string, fields: T): T & Model<T> {
+    const fieldsMap = Object.entries(fields).reduce<Record<string, FieldAtom<any>>>((acc, [key, field]) => {
+        acc[key] = field.valueAtom;
+        return acc;
+    }, {});
+
+    return {
+        ...fields, // this provides a direct access to each field, without writing "._fields" in between
+        _URL: url,
+        _fields: fields,
+        _form: formAtom(fieldsMap) as FormAtom<{[K in keyof T]: FieldAtom<any>}>,
+        _states: Object.values(fields).map(field => field.stateAtom),
+    };
+}
+
+/**
+ * "State" part of a field: holds the underlying atoms for the field's value and state.
+ * @property {FieldAtom<Value>} valueAtom - Form-atoms field atom that stores the current value.
+ * @property {FieldStateAtom} stateAtom - Jotai atom holding auxiliary UI state for the field.
+ * @category Forms Utils
+ */
+export type fieldState<Value> = {
+    valueAtom: FieldAtom<Value>;
+    stateAtom: FieldMetaAtom;
+};
+
+/**
+ * Optional, UI-oriented and validation-related capabilities that can be attached to a field.
+ * These do not include the atoms, which are defined in fieldState.
+ * @property {Value} [initialValue] - The field's initial value
+ * @property {() => boolean} [visible] - Predicate to conditionally render the field.
+ * @property {() => boolean} [disabled] - Predicate to dynamically disable interactions.
+ * @property {(() => void)[]} [effects] - Array of effects to run on mount/render.
+ * @property {number} [min] - Min numeric value or minimum string length.
+ * @property {number} [max] - Max numeric value or maximum string length.
+ * @property {number} [step] - Numeric step for increment/decrement controls.
+ * @property {() => boolean} [decrementDisabled] - Predicate disabling decrement controls.
+ * @property {() => boolean} [incrementDisabled] - Predicate disabling increment controls.
+ * @property {FieldOption[]} [options] - Select options (used for enums).
+ * @property {number[]} [optionsOnly] - Allowed numeric values among options.
+ * @property {Map<number, FieldOptionInfos>} [optionsInfos] - Extra metadata per option.
+ * @property {boolean | (() => boolean)} [mandatory] - Whether a non-empty value is required.
+ * @property {() => null | FieldValueError} [valid] - Custom validator; return null if valid.
+ * @property {RefreshableAtom<Promise<Value>, Value>} [syncWith] - External source to sync the field value with.
+ * @category Forms Utils
+ */
+export type fieldSpecs<Value> = {
+    initialValue: Value;
+    visible?: () => boolean;
+    disabled?: () => boolean;
+    effects?: (() => void)[];
+    min?: number | undefined;
+    max?: number | undefined;
+    step?: number | undefined;
+    decrementDisabled?: () => boolean;
+    incrementDisabled?: () => boolean;
+    options?: FieldOption[];
+    optionsOnly?: number[];
+    optionsInfos?: Map<number, FieldOptionInfos>;
+    mandatory?: boolean | (() => boolean);
+    valid?: () => null | FieldValueError;
+    syncWith?: RefreshableAtom<Promise<Value>, Value>;
+};
+
+/**
+ * Any field is of this type
+ * @category Forms Utils
+ */
+export type Field<Value> = fieldState<Value> & fieldSpecs<Value>;
+
+/**
+ * Factory creating a minimal field with its atoms initialized.
+ * @param {Value} initialValue - Initial value for the field's valueAtom.
+ * @returns {Field<Value>} Field composed of BaseField; extras can be merged by the caller.
+ * @category Forms Utils
+ */
+export function newField<Value>(specs: fieldSpecs<Value>): Field<Value> {
+    return {
+        valueAtom: fieldAtom({value: specs.initialValue}),
+        stateAtom: stateAtom(),
+        ...specs,
+    };
+}
+
+// ------------------------------------------------------------------------------------------------
+// Handling field state
+// ------------------------------------------------------------------------------------------------
+
+/**
+ * Some additional properties not available in the form-atoms library
+ * @property {Date} lastModified - When the field's value was last modified
+ * @category Forms Utils
+ */
+export type FieldMeta = {lastModified: Date | null};
+
+/**
+ * Type for the atoms that we use to conceal additional properties associated with a field
+ * @category Forms Utils
+ */
+export type FieldMetaAtom = WritableAtom<FieldMeta, [FieldMeta | ((prev: FieldMeta) => FieldMeta)], void>;
+
+/**
+ * Creates a field state atom, to associated with a field atom inside a field
+ */
+export function stateAtom(): FieldMetaAtom {
+    return atom<FieldMeta>({
+        lastModified: null,
+    });
+}
+
+// ------------------------------------------------------------------------------------------------
+// Field value options
+// ------------------------------------------------------------------------------------------------
+
+/**
+ * Type definition for a field option.
  * @property {number} value - The value of the option.
  * @property {string} label - The label of the option.
  * @category Forms Utils
  */
-export type FieldConfigOption = {value: number; label: string};
+export type FieldOption = {value: number; label: string};
 
 /**
- * Type definition for additional information about a field configuration option.
+ * Type definition for additional information about a field option.
  * @property {Atom<boolean>} [disabled] - An atom that determines if the option is disabled.
  * @property {LucideIcon} [icon] - An icon associated with the option.
  * @category Forms Utils
  */
-export type FieldConfigOptionInfos = {disabled?: Atom<boolean>; icon?: LucideIcon};
+export type FieldOptionInfos = {disabled?: Atom<boolean>; icon?: LucideIcon};
+
+// ------------------------------------------------------------------------------------------------
+// Field value error
+// ------------------------------------------------------------------------------------------------
 
 /**
  * Type definition for a field value error.
@@ -29,111 +170,16 @@ export type FieldConfigOptionInfos = {disabled?: Atom<boolean>; icon?: LucideIco
 export type FieldValueError = {msg: string; param?: any};
 
 /**
- * Some additional properties not available in the form-atoms library
- * @property {Date} lastModified - When the field's value was last modified
- * @category Forms Utils
- */
-export type FieldState = {lastModified: Date | null};
-
-/**
- * Type for the atoms that we conceal additional properties associated with a field atom
- * @category Forms Utils
- */
-export type FieldStateAtom = WritableAtom<FieldState, [FieldState | ((prev: FieldState) => FieldState)], void>;
-
-/**
- * Type definition for a field configuration.
- * @property {FieldAtom<Value>} fieldAtom - The embedded field to enrich with additional functionality.
- * @property {FieldStateAtom} stateAtom - Additional properties associated with the field atom
- * @property {() => boolean} [visible] - Custom hook to condition the rendering of the field.
- * @property {() => boolean} [disabled] - Custom hook to provide a dynamic value for the `disabled` tag.
- * @property {(() => void)[]} [effects] - Array of useEffect functions to apply.
- * @property {number} [min] - A minimum value for a numeric field; a minimum length for a string field.
- * @property {number} [max] - A maximum value for a numeric field; a maximum length for a string field.
- * @property {number} [step] - A step value for a numeric field.
- * @property {() => boolean} [decrementDisabled] - Custom hook to disable a control decreasing the field's value.
- * @property {() => boolean} [incrementDisabled] - Custom hook to disable a control increasing the field's value.
- * @property {FieldConfigOption[]} [options] - Options for a select field.
- * @property {number[]} [optionsOnly] - Amongst the given options, which values to allow.
- * @property {Map<number, FieldConfigOptionInfos>} [optionsInfos] - Configuring additional behaviours on options passed to a select field.
- * @property {boolean | (() => boolean)} [mandatory] - Indicates if a non-empty value is expected.
- * @property {() => null | FieldValueError} [valid] - Custom hook to provide a way to tell if the field's value is valid.
- * @property {WritableAtom<any | Promise<any>, any, any>} [syncWith] - Writable atom to get the initial value from, and write into on certain conditions
- * @category Forms Utils
- */
-export type FieldConfig<Value> = {
-    fieldAtom: FieldAtom<Value>;
-    stateAtom: FieldStateAtom;
-    visible?: () => boolean;
-    disabled?: () => boolean;
-    effects?: (() => void)[];
-    min?: number | undefined;
-    max?: number | undefined;
-    step?: number | undefined;
-    decrementDisabled?: () => boolean;
-    incrementDisabled?: () => boolean;
-    options?: FieldConfigOption[];
-    optionsOnly?: number[];
-    optionsInfos?: Map<number, FieldConfigOptionInfos>;
-    mandatory?: boolean | (() => boolean);
-    valid?: () => null | FieldValueError;
-    syncWith?: RefreshableAtom<Promise<Value>, Value>;
-};
-
-/**
- * Extension of FieldAtom to add some capabilities, like the control of the `disable` tag.
- * @category Forms Utils
- */
-export type FieldConfigAtom<Value> = Atom<FieldConfig<Value>>;
-
-/**
- * Creates a field state atom, to associated with a field atom inside a field config atom
- */
-export function fieldStateAtom(): FieldStateAtom {
-    return atom<FieldState>({
-        lastModified: null,
-    });
-}
-
-/**
- * Creates a field configuration atom from the provided configuration.
- * @param {FieldConfig<Value>} config - The field configuration.
- * @returns {FieldConfigAtom<Value>} The field configuration atom.
- * @category Forms Utils
- */
-export function fieldConfigAtom<Value>(config: FieldConfig<Value>): FieldConfigAtom<Value> {
-    return atom({
-        fieldAtom: config.fieldAtom,
-        stateAtom: config.stateAtom,
-        visible: config.visible,
-        disabled: config.disabled,
-        effects: config.effects,
-        min: config.min,
-        max: config.max,
-        step: config.step,
-        decrementDisabled: config.decrementDisabled,
-        incrementDisabled: config.incrementDisabled,
-        options: config.options,
-        optionsOnly: config.optionsOnly,
-        optionsInfos: config.optionsInfos,
-        mandatory: config.mandatory,
-        valid: config.valid,
-        syncWith: config.syncWith,
-    });
-}
-
-/**
  * Hook to check if a particular field is valid, using the field's configured 'valid' custom hook,
  * or the field's configured basic constraints. Returns null if valid, the validation error otherwise.
- * @param {FieldConfigAtom<Value>} fieldConfAtom - The field configuration atom.
+ * @param {Field<Value>} fieldConfAtom - The field atom.
  * @returns {null | FieldValueError} The validation error, or null if valid.
  * @category Forms Utils
  */
-export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Value>) {
-    const fieldConfig = useAtomValue(fieldConfAtom);
-    const validError = fieldConfig.valid && fieldConfig.valid();
-    const value = useFieldValue(fieldConfig.fieldAtom) as Value;
-    const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
+export function useFieldValidationError<Value>(field: Field<Value>) {
+    const validError = field.valid && field.valid();
+    const value = getValue(field.valueAtom) as Value;
+    const mandatory = field.mandatory && (typeof field.mandatory === 'function' ? field.mandatory() : field.mandatory);
 
     // checking the custom validation hook first (if there's one), since the computation's been done anyway!
     if (validError) {
@@ -141,11 +187,11 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
     }
 
     if (typeof value === 'number') {
-        const min = fieldConfig.min || 0;
-        const max = fieldConfig.max || 0;
+        const min = field.min || 0;
+        const max = field.max || 0;
         // special case of enums
-        if (fieldConfig.options) {
-            const options = fieldConfig.optionsOnly ? fieldConfig.optionsOnly : fieldConfig.options.map(option => option.value);
+        if (field.options) {
+            const options = field.optionsOnly ? field.optionsOnly : field.options.map(option => option.value);
             if (value) {
                 if (!options.some(val => val === value)) {
                     return {msg: 'This value is not allowed', param: min};
@@ -157,8 +203,8 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
             //TODO "normal" numbers
         }
     } else if (typeof value === 'string') {
-        const min = fieldConfig.min || 0;
-        const max = fieldConfig.max || 0;
+        const min = field.min || 0;
+        const max = field.max || 0;
         if (min > 0 && value.length > 0 && value.length < min) {
             return {msg: 'Minimum required length not reached', param: min};
         }
@@ -178,41 +224,58 @@ export function getFieldValidationError<Value>(fieldConfAtom: FieldConfigAtom<Va
 }
 
 /**
+ * Hook that returns the first validation error found across the given model's fields.
+ * Returns null if no error.
+ */
+export function useModelValidationError<T extends Record<string, Field<any>>>(model: Model<T>) {
+    const fieldErrors = Object.values(model._fields).map(field => useFieldValidationError(field));
+
+    return useMemo(() => {
+        return fieldErrors.find(err => err !== null) || null;
+    }, [fieldErrors]);
+}
+
+// ------------------------------------------------------------------------------------------------
+// Hooks to get and set 1 field value
+// ------------------------------------------------------------------------------------------------
+
+/**
  * Hook to get the value of a form field.
- * @param {FieldConfigAtom<Value>} conf - The field configuration atom.
+ * @param {Field<Value>} conf - The field atom.
  * @returns {Value} The value of the form field.
  * @category Forms Utils
  */
-export function useFormFieldValue<Value>(conf: FieldConfigAtom<Value>) {
-    const fieldConfig = useAtomValue(conf);
-    const value = useFieldValue(fieldConfig.fieldAtom);
-    return value;
+export function useFieldValue<Value>(field: Field<Value>) {
+    const fieldValue = getValue(field.valueAtom);
+    return fieldValue;
 }
 
 /**
  * Hook to set the value of a form field.
- * @param {FieldConfigAtom<Value>} conf - The field configuration atom.
+ * @param {Field<Value>} conf - The field atom.
  * @returns {Function} A function to set the value of the form field.
  * @category Forms Utils
  */
-export function useSetFormField<Value>(conf: FieldConfigAtom<Value>) {
+export function useSetField<Value>(field: Field<Value>) {
     // TODO : patch request to push the data into the cloud?
-    const fieldConfig = useAtomValue(conf);
-    const field = useInputField(fieldConfig.fieldAtom);
-    return field.actions.setValue;
+    const inputField = useInputField(field.valueAtom);
+    return inputField.actions.setValue;
 }
 
 /**
  * Hook to get and set the value of a form field, similar to useState.
- * @param {FieldConfigAtom<Value>} conf - The field configuration atom.
+ * @param {Field<Value>} conf - The field atom.
  * @returns {[Value, Function]} A tuple containing the value and a function to set the value.
  * @category Forms Utils
  */
-export function useFormField<Value>(conf: FieldConfigAtom<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
-    const fieldConfig = useAtomValue(conf);
-    const field = useInputField(fieldConfig.fieldAtom);
-    return [field.state.value, field.actions.setValue];
+export function useField<Value>(field: Field<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
+    const inputField = useInputField(field.valueAtom);
+    return [inputField.state.value, inputField.actions.setValue];
 }
+
+// ------------------------------------------------------------------------------------------------
+// Hooks to get and set field values, for fields of the same type
+// ------------------------------------------------------------------------------------------------
 
 /**
  * Display modes for form fields.
@@ -225,13 +288,13 @@ export type fieldDisplayMode =
 
 /**
  * Hook to check that a predicate function returns true for at least 1 form field of the given list.
- * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @param {Field<Value>[]} fields - The list of field atoms.
  * @param {(value: Value) => boolean} predicate - The predicate function to check.
  * @returns {boolean} True if the predicate returns true for at least one field.
  * @category Forms Utils
  */
-export function useCheckSomeFormFieldValue<Value>(configs: FieldConfigAtom<Value>[], predicate: (value: Value) => boolean): boolean {
-    const atomValues = configs.map(conf => useFormFieldValue(conf));
+export function useCheckSomeFormFieldValue<Value>(fields: Field<Value>[], predicate: (value: Value) => boolean): boolean {
+    const atomValues = fields.map(field => useFieldValue(field));
 
     return useMemo(() => {
         return atomValues.some(predicate);
@@ -240,13 +303,13 @@ export function useCheckSomeFormFieldValue<Value>(configs: FieldConfigAtom<Value
 
 /**
  * Hook to check that a predicate function returns true for all the form fields of the given list.
- * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @param {Field<Value>[]} fields - The list of field atoms.
  * @param {(value: Value) => boolean} predicate - The predicate function to check.
  * @returns {boolean} True if the predicate returns true for all fields.
  * @category Forms Utils
  */
-export function useCheckAllFormFieldValues<Value>(configs: FieldConfigAtom<Value>[], predicate: (value: Value) => boolean): boolean {
-    const atomValues = configs.map(conf => useFormFieldValue(conf));
+export function useCheckAllFormFieldValues<Value>(fields: Field<Value>[], predicate: (value: Value) => boolean): boolean {
+    const atomValues = fields.map(field => useFieldValue(field));
 
     return useMemo(() => {
         return atomValues.every(predicate);
@@ -255,55 +318,54 @@ export function useCheckAllFormFieldValues<Value>(configs: FieldConfigAtom<Value
 
 /**
  * Hook to get an array with all the given form fields' values.
- * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @param {Field<Value>[]} fields - The list of field atoms.
  * @returns {Value[]} An array of form field values.
  * @category Forms Utils
  */
-export function useAllFormFieldsValues<Value>(configs: FieldConfigAtom<Value>[]) {
-    return configs.map(conf => useFormFieldValue(conf));
+export function useAllFormFieldsValues<Value>(fields: Field<Value>[]) {
+    return fields.map(field => useFieldValue(field));
 }
 
 /**
  * Hook to get an array with all the given form fields' setters.
- * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @param {Field<Value>[]} fields - The list of field atoms.
  * @returns {Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void>} An array of setter functions.
  * @category Forms Utils
  */
-export function useAllFormFieldsSetters<Value>(
-    configs: FieldConfigAtom<Value>[],
-): Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void> {
-    return configs.map(conf => useSetFormField(conf));
+export function useAllFormFieldsSetters<Value>(fields: Field<Value>[]): Array<(value: typeof RESET | Value | ((prev: Value) => Value)) => void> {
+    return fields.map(field => useSetField(field));
 }
 
 /**
  * Hook to set a value to all the given form fields at once.
- * @param {FieldConfigAtom<Value>[]} configs - The list of field configuration atoms.
+ * @param {Field<Value>[]} fields - The list of field atoms.
  * @returns {Function} A function to set the value of all form fields.
  * @category Forms Utils
  */
-export function useSetAllFormFields<Value>(configs: FieldConfigAtom<Value>[]) {
-    const setAtoms = configs.map(atom => useSetFormField(atom));
+export function useSetAllFormFields<Value>(fields: Field<Value>[]) {
+    const valueSetters = fields.map(field => useSetField(field));
 
     const setAllValues = useCallback(
         (newValue: typeof RESET | Value | ((prev: Value) => Value)) => {
-            setAtoms.forEach(setAtom => {
-                setAtom(newValue as any);
+            valueSetters.forEach(setValue => {
+                setValue(newValue as any);
             });
         },
-        [setAtoms],
+        [valueSetters],
     );
 
     return setAllValues;
 }
 
 /**
- * Hook to get and set the lastModified flag from a FieldStateAtom.
- * @param {FieldStateAtom} stateAtom - The field state atom containing lastModified.
+ * Hook to get and set the lastModified flag from a FieldMetaAtom.
+ * @param {Field<Value>} field - The field state atom containing lastModified.
  * @returns {[Date | null, (date: Date) => void]} The current lastModified and a setter.
  * @category Forms Utils
  */
-export function useFieldLastModified(stateAtom: FieldStateAtom): [Date | null, (date: Date | null) => void] {
-    const [state, setState] = useAtom(stateAtom);
+// TODO automatically call it when setting the value of a field?!?
+export function useFieldLastModified<Value>(field: Field<Value>): [Date | null, (date: Date | null) => void] {
+    const [state, setState] = useAtom(field.stateAtom);
     const setLastModified = (date: Date | null) => {
         setState(prev => ({
             ...prev,
@@ -311,4 +373,35 @@ export function useFieldLastModified(stateAtom: FieldStateAtom): [Date | null, (
         }));
     };
     return [state.lastModified, setLastModified];
+}
+
+// ------------------------------------------------------------------------------------------------
+// Hooks / functions to work with models
+// ------------------------------------------------------------------------------------------------
+
+/**
+ * An empty form configuration.
+ * @category Forms Utils
+ */
+export const emptyForm = formAtom({});
+
+/**
+ * This hook function should reset a model, i.e. reset the form, and reset all the field states.
+ * @param {Model<any>} model - The model object
+ * @returns {void}
+ * @category Forms Utils
+ */
+export function useResetModel(model: Model<any> | null) {
+    const form = useForm(model?._form ?? emptyForm);
+    const store = useStore();
+
+    return useCallback(() => {
+        if (!model) return;
+        // resetting all the model's fields values
+        form.reset();
+        // resetting all the model's field states
+        model._states.forEach(stateAtom => {
+            store.set(stateAtom, (prev: FieldMeta) => ({...prev, lastModified: null}));
+        });
+    }, [form, store, model]);
 }

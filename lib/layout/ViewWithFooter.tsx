@@ -67,7 +67,7 @@ export function ViewWithFooter({
     // --- view
     return (
         // Anchoring the footer
-        <View className="flex-1">
+        <View className="pb-safe flex-1">
             {/* Scrollable Content Area */}
             <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', smallScreen && 'gap-9', contentClassName)}>
                 {props.children}

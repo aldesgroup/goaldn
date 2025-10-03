@@ -1,10 +1,8 @@
 import Slider from '@react-native-community/slider';
-import {useFieldValue, useInputField} from 'form-atoms';
-import {useAtomValue} from 'jotai';
 import {useEffect, useState} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
-import {FieldConfigAtom, fieldDisplayMode, useFieldLastModified} from '../forms';
+import {Field, fieldDisplayMode, useField, useFieldLastModified} from '../forms';
 import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {getColors} from '../styling';
 
@@ -12,14 +10,14 @@ import {getColors} from '../styling';
  * Props for the SliderField component.
  * @category Types
  */
-export type SliderFieldProps<T extends FieldConfigAtom<number>> = {
+export type SliderFieldProps<T extends Field<number>> = {
     /** Additional CSS classes for the container */
     className?: string;
     /** The label text for the slider */
     label: string;
     /** Additional CSS classes for the label */
     labelClassName?: string;
-    /** The field configuration atom for the slider value */
+    /** The field for the slider value */
     field: T;
     /** Additional CSS classes for the slider */
     sliderClassName?: string;
@@ -39,20 +37,18 @@ export type SliderFieldProps<T extends FieldConfigAtom<number>> = {
  * @returns {JSX.Element} A slider field component with dynamic value display
  * @category Forms
  */
-export function SliderField<confAtom extends FieldConfigAtom<number>>(props: SliderFieldProps<confAtom>) {
+export function SliderField<T extends Field<number>>({field, ...props}: SliderFieldProps<T>) {
     // shared state
     const colors = getColors();
-    const fieldConfig = useAtomValue(props.field);
-    const field = useInputField(fieldConfig.fieldAtom);
-    const value = useFieldValue(fieldConfig.fieldAtom);
-    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
-    const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
-    const visible = fieldConfig.visible ? fieldConfig.visible() : true;
-    const minVal = fieldConfig.min || 0;
-    const maxVal = fieldConfig.max || 1;
+    const [value, setValue] = useField(field);
+    const [lastModified, setLastModified] = useFieldLastModified(field);
+    const disabled = field.disabled ? field.disabled() : false;
+    const visible = field.visible ? field.visible() : true;
+    const minVal = field.min || 0;
+    const maxVal = field.max || 1;
 
     // --- shared state - syncing with another atom
-    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
+    const syncAtom = (props.syncWith ?? field.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
     const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
         ? useRefreshableAtom<Promise<string>, string>(syncAtom)
         : [undefined, undefined, undefined, undefined];
@@ -67,9 +63,9 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
     const posPct = Math.ceil(minPct + ((maxPct - minPct) * (displayedValue - minVal)) / (maxVal - minVal)); // interpolating
 
     // --- effects
-    if (fieldConfig.effects) {
+    if (field.effects) {
         // effects configured on the field
-        fieldConfig.effects.map(useEffect => useEffect());
+        field.effects.map(useEffect => useEffect());
     }
 
     // refreshing the synced value, if any
@@ -83,7 +79,7 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
         if (syncedValAsNum && syncedValLastModified && syncedValAsNum !== value) {
             // if there is no last modified date, or the synced value is more recent, we set it
             if (!lastModified || syncedValLastModified > lastModified) {
-                field.actions.setValue(syncedValAsNum);
+                setValue(syncedValAsNum);
                 setDisplayedValue(syncedValAsNum);
                 setLastModified(new Date());
             }
@@ -118,15 +114,15 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
                         </View>
                     </View>
                     <Slider
-                        minimumValue={fieldConfig.min}
-                        maximumValue={fieldConfig.max}
-                        step={fieldConfig.step}
+                        minimumValue={field.min}
+                        maximumValue={field.max}
+                        step={field.step}
                         minimumTrackTintColor={colors.primary}
                         maximumTrackTintColor={colors.mutedForeground}
                         thumbTintColor={colors.primary}
                         disabled={disabled}
                         onSlidingComplete={val => {
-                            field.actions.setValue(val);
+                            setValue(val);
                             setLastModified(new Date());
                         }}
                         onValueChange={setDisplayedValue}
@@ -145,7 +141,7 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
                                     </Txt>
                                 )
                             }>
-                            {fieldConfig.min}
+                            {field.min}
                         </Txt>
                     </View>
                     <View className="mr-4 flex-row">
@@ -159,7 +155,7 @@ export function SliderField<confAtom extends FieldConfigAtom<number>>(props: Sli
                                     </Txt>
                                 )
                             }>
-                            {fieldConfig.max}
+                            {field.max}
                         </Txt>
                     </View>
                 </View>

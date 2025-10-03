@@ -47,7 +47,7 @@ export function BottomView({
 
     // --- view
     return (
-        <View className="bg-foreground-light flex-1">
+        <View className="bg-foreground-light pb-safe flex-1">
             <View className={cn(voidHeight)}>{/* empty on purpose */}</View>
             <View className={cn('rounded-t-3xl bg-white p-6 pt-10', h)}>
                 {/* "Header" */}
