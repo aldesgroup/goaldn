@@ -14,7 +14,7 @@ import {RefreshableAtom} from '../state-management';
  * @property {FormAtom<{[K in keyof T]: FieldAtom<any>}>} form - The form atom built from the fields
  * @property {FieldMetaAtom[]} states - Array of all FieldMetaAtom from the fields
  */
-export type Model<T extends Record<string, Field<any>>> = {
+export type Model<T extends Record<string, Field<any>>> = T & {
     _URL: string;
     _fields: T;
     _form: FormAtom<{[K in keyof T]: FieldAtom<any>}>;
@@ -27,7 +27,7 @@ export type Model<T extends Record<string, Field<any>>> = {
  * @returns {Model<T>} Complete model with fields, form, and states
  * @category Forms Utils
  */
-export function newModel<T extends Record<string, Field<any>>>(url: string, fields: T): T & Model<T> {
+export function newModel<T extends Record<string, Field<any>>>(url: string, fields: T): Model<T> {
     const fieldsMap = Object.entries(fields).reduce<Record<string, FieldAtom<any>>>((acc, [key, field]) => {
         acc[key] = field.valueAtom;
         return acc;
@@ -387,19 +387,17 @@ export const emptyForm = formAtom({});
 
 /**
  * This hook function should reset a model, i.e. reset the form, and reset all the field states.
- * @param {Model<any>} model - The model object
+ * @param {Model<T extends Record<string, Field<any>>>} model - The model object
  * @returns {void}
  * @category Forms Utils
  */
-export function useResetModel(model: Model<any> | null) {
-    const form = useForm(model?._form ?? emptyForm);
+export function useResetModel<T extends Record<string, Field<any>>>(model: Model<T> | null) {
+    const form = useForm(model?._form ?? (emptyForm as FormAtom<any>));
     const store = useStore();
 
     return useCallback(() => {
         if (!model) return;
-        // resetting all the model's fields values
         form.reset();
-        // resetting all the model's field states
         model._states.forEach(stateAtom => {
             store.set(stateAtom, (prev: FieldMeta) => ({...prev, lastModified: null}));
         });
