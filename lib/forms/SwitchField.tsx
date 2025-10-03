@@ -1,24 +1,22 @@
-import {useFieldValue, useInputField} from 'form-atoms';
-import {useAtomValue} from 'jotai';
 import {useEffect} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
 import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {Switch} from '../ui/switch';
-import {FieldConfigAtom, useFieldLastModified} from './fields';
+import {Field, useField, useFieldLastModified} from './fields';
 
 /**
  * Props for the SwitchField component.
  * @category Types
  */
-export type SwitchFieldProps<T extends FieldConfigAtom<boolean>> = {
+export type SwitchFieldProps<T extends Field<boolean>> = {
     /** Additional CSS classes for the container */
     className?: string;
     /** The label text for the switch */
     label: string;
     /** Additional CSS classes for the label */
     labelClassName?: string;
-    /** The field configuration atom */
+    /** The field */
     field: T;
     /** Additional CSS classes for the switch */
     switchClassName?: string;
@@ -28,23 +26,21 @@ export type SwitchFieldProps<T extends FieldConfigAtom<boolean>> = {
 
 /**
  * A form field component that renders a switch input.
- * The switch state is controlled by the field configuration atom.
+ * The switch state is controlled by the field.
  *
  * @param {SwitchFieldProps<confAtom>} props - The component props
  * @returns {JSX.Element} A switch field component with label
  * @category Forms
  */
-export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: SwitchFieldProps<confAtom>) {
+export function SwitchField<T extends Field<boolean>>({field, ...props}: SwitchFieldProps<T>) {
     // --- shared state
-    const fieldConfig = useAtomValue(props.field);
-    const field = useInputField(fieldConfig.fieldAtom);
-    const value = useFieldValue(fieldConfig.fieldAtom);
-    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
-    const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
-    const visible = fieldConfig.visible ? fieldConfig.visible() : true;
+    const [value, setValue] = useField(field);
+    const [lastModified, setLastModified] = useFieldLastModified(field);
+    const disabled = field.disabled ? field.disabled() : false;
+    const visible = field.visible ? field.visible() : true;
 
     // --- shared state - syncing with another atom
-    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
+    const syncAtom = (props.syncWith ?? field.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
     const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
         ? useRefreshableAtom<Promise<string>, string>(syncAtom)
         : [undefined, undefined, undefined, undefined];
@@ -59,9 +55,9 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
     // --- local state
 
     // --- effects
-    if (fieldConfig.effects) {
+    if (field.effects) {
         // effects configured on the field
-        fieldConfig.effects.map(useEffect => useEffect());
+        field.effects.map(useEffect => useEffect());
     }
 
     // refreshing the synced value, if any
@@ -75,7 +71,7 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
         if (syncedValLastModified && syncedValAsBool !== undefined && syncedValAsBool !== value) {
             // if there is no last modified date, or the synced value is more recent, we set it
             if (!lastModified || syncedValLastModified > lastModified) {
-                field.actions.setValue(syncedValAsBool);
+                setValue(syncedValAsBool);
                 setLastModified(new Date());
             }
         }
@@ -95,7 +91,7 @@ export function SwitchField<confAtom extends FieldConfigAtom<boolean>>(props: Sw
                     disabled={disabled}
                     checked={value}
                     onCheckedChange={val => {
-                        field.actions.setValue(val);
+                        setValue(val);
                         setLastModified(new Date());
                     }}
                 />

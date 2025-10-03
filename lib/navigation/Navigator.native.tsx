@@ -1,5 +1,5 @@
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {DefaultTheme, NavigationContainer} from '@react-navigation/native';
+import {BottomTabBar, createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {DefaultTheme, getFocusedRouteNameFromRoute, NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator, NativeStackNavigationOptions} from '@react-navigation/native-stack';
 import {useAtomValue} from 'jotai';
 import React from 'react';
@@ -37,7 +37,18 @@ function MenuNavigator(props: {menu: MenuProps}) {
 
     // --- view
     return (
-        <BottomTab.Navigator>
+        <BottomTab.Navigator
+            screenOptions={{
+                tabBarStyle: smallScreen && {height: 70},
+            }}
+            tabBar={tabProps => {
+                const {state} = tabProps;
+                const currentRoute = state.routes[state.index];
+                const focusedChild = getFocusedRouteNameFromRoute(currentRoute) || undefined;
+                const isOnRootOfStack = focusedChild === undefined || (typeof focusedChild === 'string' && focusedChild.startsWith('_'));
+                if (!isOnRootOfStack) return null;
+                return <BottomTabBar {...tabProps} />;
+            }}>
             {props.menu.entries.map(menuItem => {
                 const {translation, missing} = translate(menuItem.name);
 
@@ -46,17 +57,22 @@ function MenuNavigator(props: {menu: MenuProps}) {
                         key={menuItem.name}
                         name={menuItem.name}
                         component={menuItem.component}
-                        options={{
-                            tabBarIcon: ({focused, color, size}) => {
-                                const IconComponent = menuItem.icon;
-                                return <IconComponent color={color} size={size} />;
-                            },
-                            tabBarStyle: smallScreen && {height: 70},
-                            headerShown: false,
-                            title: translation,
-                            tabBarLabelStyle: missing && {color: 'red'},
-                            headerTitle: translation,
-                            headerTintColor: (missing && 'red') || 'black',
+                        options={({route}) => {
+                            const focusedChild = getFocusedRouteNameFromRoute(route) || undefined;
+                            const isOnRootOfStack = focusedChild === undefined || (typeof focusedChild === 'string' && focusedChild.startsWith('_'));
+                            return {
+                                tabBarIcon: ({focused, color, size}) => {
+                                    const IconComponent = menuItem.icon;
+                                    return <IconComponent color={color} size={size} />;
+                                },
+                                headerShown: false,
+                                title: translation,
+                                tabBarLabelStyle: missing && {color: 'red'},
+                                headerTitle: translation,
+                                headerTintColor: (missing && 'red') || 'black',
+                                tabBar: isOnRootOfStack ? undefined : () => null,
+                                tabBarStyle: isOnRootOfStack ? smallScreen && {height: 70} : undefined,
+                            };
                         }}
                     />
                 );

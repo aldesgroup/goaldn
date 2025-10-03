@@ -32,7 +32,7 @@ export class SimulatedBleModbusClient {
             if (value !== undefined) {
                 return {slaveId, functionCode: 0x03, stringData: value, success: true};
             } else {
-                throw new Error('No simulated value for this register');
+                throw new Error('No simulated value for register @' + startAddress);
             }
         });
     }
