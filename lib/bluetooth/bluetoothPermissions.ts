@@ -1,7 +1,7 @@
-import {atom, useAtom} from 'jotai';
+import {atom} from 'jotai';
 import {Alert, Linking, Platform} from 'react-native';
 import {BleState} from 'react-native-ble-manager';
-import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
+import {check, PERMISSIONS, requestMultiple, RESULTS} from 'react-native-permissions';
 import {getBleManager} from './bluetoothAtoms';
 
 // Jotai atom for permission state
@@ -15,10 +15,10 @@ export const getRequiredPermissions = () => {
     if (Platform.OS === 'android') {
         if (Platform.Version >= 31) {
             // Android 12+
-            return [PERMISSIONS.ANDROID.BLUETOOTH_SCAN, PERMISSIONS.ANDROID.BLUETOOTH_CONNECT, PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION];
+            return [PERMISSIONS.ANDROID.BLUETOOTH_SCAN, PERMISSIONS.ANDROID.BLUETOOTH_CONNECT];
         } else if (Platform.Version >= 29) {
             // Android 10+
-            return [PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION, PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION];
+            return [PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION];
         } else {
             // Android 9 and below
             return [PERMISSIONS.ANDROID.ACCESS_COARSE_LOCATION];
@@ -67,10 +67,11 @@ export const checkBlePermissions = async () => {
 export const requestBlePermissions = async () => {
     try {
         const permissions = getRequiredPermissions();
+        const results = await requestMultiple(permissions);
         let allGranted = true;
 
         for (const permission of permissions) {
-            const result = await request(permission);
+            const result = results[permission];
 
             if (result === RESULTS.DENIED) {
                 // Permission was denied but not permanently
@@ -137,7 +138,9 @@ export const checkBluetoothEnabled = async () => {
 export const showPermissionAlert = () => {
     Alert.alert(
         'Permissions Required',
-        'Bluetooth and location permissions are required to scan for BLE devices. Please enable them in app settings.',
+        Platform.OS === 'android' && Platform.Version >= 31
+            ? 'Nearby devices permission is required to scan for Bluetooth Low Energy (BLE) devices. Please enable it in Settings.'
+            : 'Bluetooth and Location permissions are required to scan for Bluetooth Low Energy (BLE) devices. Please enable them in Settings.',
         [
             {text: 'Cancel', style: 'cancel'},
             {
