@@ -8,19 +8,21 @@ import {smallScreenAtom} from '../settings';
  * This function is intended to be used inside a stack navigator screen to hide the tab bar of the parent tab navigator.
  * @category Navigation
  */
-export function useHideTabBar() {
+export function useHideTabBar(doHide?: boolean) {
     const navigation = useNavigation();
     const smallScreen = useAtomValue(smallScreenAtom);
 
     useFocusEffect(
         useCallback(() => {
-            // Hide bottom tabs
-            navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
+            if (doHide) {
+                // Hide bottom tabs
+                navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
 
-            return () => {
-                // Show bottom tabs again when exiting
-                navigation.getParent()?.setOptions({tabBarStyle: smallScreen && {height: 70}});
-            };
+                return () => {
+                    // Show bottom tabs again when exiting
+                    navigation.getParent()?.setOptions({tabBarStyle: smallScreen && {height: 70}});
+                };
+            }
         }, [navigation]),
     );
 }

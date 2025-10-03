@@ -7,7 +7,6 @@ import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager
 import Config from 'react-native-config';
 import {Button, cn, Txt} from '../base';
 import {BottomView} from '../layout';
-import {useHideTabBar} from '../navigation/navigation-hooks';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
@@ -54,7 +53,6 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // effects
     // --------------------------------------------------------------------------------------------
-    useHideTabBar();
     useEffect(() => {
         // we don't do sh** if we don't know about the simulation BLE device being enabled or not
         if (isSimulationBleDeviceEnabled !== undefined) {

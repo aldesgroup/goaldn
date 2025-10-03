@@ -1,13 +1,12 @@
-import {useEffect, useState} from 'react';
-import {Pressable, View} from 'react-native';
-import Config from 'react-native-config';
 import {atom, useAtom} from 'jotai';
 import {unwrap} from 'jotai/utils';
 import {CircleCheck} from 'lucide-react-native';
-import {getColors} from '../styling';
-import {Txt, Button} from '../base';
-import {useHideTabBar} from '../navigation/navigation-hooks';
+import {useEffect, useState} from 'react';
+import {Pressable, View} from 'react-native';
+import Config from 'react-native-config';
+import {Button, Txt} from '../base';
 import {StringAtom} from '../state-management';
+import {getColors} from '../styling';
 import {isSimulationBleDeviceEnabledAtom} from './bluetoothSimulation';
 
 const codeAtom = atom('');
@@ -28,8 +27,6 @@ export function BluetoothSimulationModeScreen({navigation}: {navigation: any}) {
     const [code, setCode] = useAtom(codeAtom);
     const [lastSubmittedCode, setLastSubmittedCode] = useState('');
     const [hasError, setHasError] = useState(false);
-
-    useHideTabBar();
 
     const enable = () => {
         setLastSubmittedCode(code);
