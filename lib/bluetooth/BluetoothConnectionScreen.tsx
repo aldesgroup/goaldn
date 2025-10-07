@@ -56,39 +56,32 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     useHideTabBar();
     useEffect(() => {
-        // we don't do sh** if we don't know about the simulation BLE device being enabled or not
-        if (isSimulationBleDeviceEnabled !== undefined) {
-            // Check permissions when component mounts
-            checkPermissions();
+        // This BLE manager starts operations, that we have to listen to, to handle their result
+        const listeners: any[] = [
+            bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
+            bleManager.onConnectPeripheral(handleConnectPeripheral),
+            bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
+        ];
 
-            // Start scanning right away - NOPE, not for now
+        if (!isScanStarted.current) {
+            startOrStopScan();
+        }
+
+        return () => {
+            // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
+            // but at least scanning should be stopped
             if (!isScanStarted.current) {
-                startOrStopScan();
+                stopScan().then(() => {
+                    console.log('Scanning has been stopped!');
+                });
             }
 
-            // This BLE manager starts operations, that we have to listen to, to handle their result
-            const listeners: any[] = [
-                bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
-                bleManager.onConnectPeripheral(handleConnectPeripheral),
-                bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
-            ];
-
-            return () => {
-                // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
-                // but at least scanning should be stopped
-                if (!isScanStarted.current) {
-                    stopScan().then(() => {
-                        console.log('Scanning has been stopped!');
-                    });
-                }
-
-                // stopping the listening
-                for (const listener of listeners) {
-                    listener.remove();
-                }
-            };
-        }
-    }, [isSimulationBleDeviceEnabled]);
+            // stopping the listening
+            for (const listener of listeners) {
+                listener.remove();
+            }
+        };
+    }, []);
 
     // --------------------------------------------------------------------------------------------
     // utils - handlers for the listeners
@@ -146,6 +139,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             const granted = await checkAndRequestBlePermissions();
             setPermissionsGranted(granted);
             setPermissionStatus(granted ? 'granted' : 'denied');
+            return granted;
         } catch (err) {
             if (err instanceof Error) {
                 setError(`Permission error: ${err.message}`);
@@ -170,6 +164,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
     const startOrStopScan = async () => {
         try {
+            const granted = await checkPermissions();
+            if (!granted) {
+                return;
+            }
+
             isScanStarted.current = true;
 
             setError('');
