@@ -1,8 +1,8 @@
 import {atom} from 'jotai';
-import {t} from '../settings';
 import {Alert, Linking, Platform} from 'react-native';
 import {BleState} from 'react-native-ble-manager';
 import {check, PERMISSIONS, requestMultiple, RESULTS} from 'react-native-permissions';
+import {useT} from '../settings';
 import {getBleManager} from './bluetoothAtoms';
 
 // Jotai atom for permission state
@@ -65,103 +65,119 @@ export const checkBlePermissions = async () => {
  * Requests all required BLE permissions
  * @category Bluetooth
  */
-export const requestBlePermissions = async () => {
-    try {
-        const permissions = getRequiredPermissions();
-        const results = await requestMultiple(permissions);
-        let allGranted = true;
+export const useRequestBlePermissions = () => {
+    const showPermissionAlert = useShowPermissionAlert();
 
-        for (const permission of permissions) {
-            const result = results[permission];
+    return async () => {
+        try {
+            const permissions = getRequiredPermissions();
+            const results = await requestMultiple(permissions);
+            let allGranted = true;
 
-            if (result === RESULTS.DENIED) {
-                // Permission was denied but not permanently
-                allGranted = false;
-            } else if (result === RESULTS.BLOCKED || result === RESULTS.UNAVAILABLE) {
-                // Permission is permanently denied or unavailable
-                showPermissionAlert();
-                allGranted = false;
-                break;
+            for (const permission of permissions) {
+                const result = results[permission];
+
+                if (result === RESULTS.DENIED) {
+                    // Permission was denied but not permanently
+                    allGranted = false;
+                } else if (result === RESULTS.BLOCKED || result === RESULTS.UNAVAILABLE) {
+                    // Permission is permanently denied or unavailable
+                    showPermissionAlert();
+                    allGranted = false;
+                    break;
+                }
             }
-        }
 
-        return allGranted;
-    } catch (error) {
-        console.error('Error requesting permissions:', error);
-        return false;
-    }
+            return allGranted;
+        } catch (error) {
+            console.error('Error requesting permissions:', error);
+            return false;
+        }
+    };
 };
 
 /**
  * Checks and requests BLE permissions if necessary
  * @category Bluetooth
  */
-export const checkAndRequestBlePermissions = async () => {
+export const useCheckAndRequestBlePermissions = () => {
+    const requestBlePermissions = useRequestBlePermissions();
+
     // First check if permissions are already granted
-    const permissionsGranted = await checkBlePermissions();
+    return async () => {
+        const permissionsGranted = await checkBlePermissions();
 
-    if (permissionsGranted) {
-        return true;
-    }
+        if (permissionsGranted) {
+            return true;
+        }
 
-    // Request permissions if not already granted
-    return await requestBlePermissions();
+        // Request permissions if not already granted
+        return await requestBlePermissions();
+    };
 };
 
 /**
  * Verifies if Bluetooth is enabled (Android 12+ only)
  * @category Bluetooth
  */
-export const checkBluetoothEnabled = async () => {
-    if (Platform.OS === 'android' && Platform.Version >= 31) {
-        try {
-            const bleManager = getBleManager();
-            const btState = await bleManager.checkState();
+export const useCheckBluetoothEnabled = () => {
+    const showBluetoothAlert = useShowBluetoothAlert();
 
-            if (btState !== BleState.On) {
-                showBluetoothAlert();
+    return async () => {
+        if (Platform.OS === 'android' && Platform.Version >= 31) {
+            try {
+                const bleManager = getBleManager();
+                const btState = await bleManager.checkState();
+
+                if (btState !== BleState.On) {
+                    showBluetoothAlert();
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Error checking Bluetooth state:', error);
                 return false;
             }
-            return true;
-        } catch (error) {
-            console.error('Error checking Bluetooth state:', error);
-            return false;
         }
-    }
 
-    return true; // For iOS or older Android, we don't check
+        return true; // For iOS or older Android, we don't check
+    };
 };
 
 /**
  * Shows an alert prompting the user to enable permissions in settings
  * @category Bluetooth
  */
-export const showPermissionAlert = () => {
-    Alert.alert(
-        t('Permissions required'),
-        Platform.OS === 'android' && Platform.Version >= 31
-            ? t('Nearby devices permission is required to scan for Bluetooth devices. Please enable it in Settings.')
-            : t('Bluetooth and Location permissions are required to scan for Bluetooth devices. Please enable them in Settings.'),
-        [
-            {text: t('Cancel'), style: 'cancel'},
-            {
-                text: t('Settings'),
-                onPress: () => Linking.openSettings(),
-            },
-        ],
-    );
+export const useShowPermissionAlert = () => {
+    const t = useT();
+    return () =>
+        Alert.alert(
+            t('Permissions required'),
+            Platform.OS === 'android' && Platform.Version >= 31
+                ? t('Nearby devices permission is required to scan for Bluetooth devices. Please enable it in Settings.')
+                : t('Bluetooth and Location permissions are required to scan for Bluetooth devices. Please enable them in Settings.'),
+            [
+                {text: t('Cancel'), style: 'cancel'},
+                {
+                    text: t('Settings'),
+                    onPress: () => Linking.openSettings(),
+                },
+            ],
+        );
 };
 
 /**
  * Shows an alert prompting the user to enable Bluetooth
  * @category Bluetooth
  */
-export const showBluetoothAlert = () => {
-    Alert.alert(t('Bluetooth required'), t('Please enable Bluetooth to scan for devices.'), [
-        {text: t('Cancel'), style: 'cancel'},
-        {
-            text: t('Settings'),
-            onPress: () => Linking.openSettings(),
-        },
-    ]);
+export const useShowBluetoothAlert = () => {
+    const t = useT();
+    return () =>
+        Alert.alert(t('Bluetooth required'), t('Please enable Bluetooth to scan for devices.'), [
+            {text: t('Cancel'), style: 'cancel'},
+            {
+                text: t('Settings'),
+                onPress: () => Linking.openSettings(),
+            },
+        ]);
 };

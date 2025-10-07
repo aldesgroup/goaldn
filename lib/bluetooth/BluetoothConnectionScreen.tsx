@@ -11,7 +11,7 @@ import {useResetSimulatedRegisters} from '../modbus';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
-import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
+import {permissionsGrantedAtom, useCheckAndRequestBlePermissions, useCheckBluetoothEnabled} from './bluetoothPermissions';
 import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, simulationPeripherals} from './bluetoothSimulation';
 
 /**
@@ -37,6 +37,8 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const isSimulationBleDeviceEnabled = useAtomValue(unwrap(isSimulationBleDeviceEnabledAtom));
     const setBleDeviceSimulated = useSetAtom(isBleDeviceSimulatedAtom);
     const resetSimulatedRegisters = useResetSimulatedRegisters();
+    const checkAndRequestBlePermissions = useCheckAndRequestBlePermissions();
+    const checkBluetoothEnabled = useCheckBluetoothEnabled();
 
     // --------------------------------------------------------------------------------------------
     // internal state
