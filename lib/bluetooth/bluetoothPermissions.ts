@@ -1,4 +1,5 @@
 import {atom} from 'jotai';
+import {t} from '../settings';
 import {Alert, Linking, Platform} from 'react-native';
 import {BleState} from 'react-native-ble-manager';
 import {check, PERMISSIONS, requestMultiple, RESULTS} from 'react-native-permissions';
@@ -137,14 +138,14 @@ export const checkBluetoothEnabled = async () => {
  */
 export const showPermissionAlert = () => {
     Alert.alert(
-        'Permissions Required',
+        t('Permissions required'),
         Platform.OS === 'android' && Platform.Version >= 31
-            ? 'Nearby devices permission is required to scan for Bluetooth Low Energy (BLE) devices. Please enable it in Settings.'
-            : 'Bluetooth and Location permissions are required to scan for Bluetooth Low Energy (BLE) devices. Please enable them in Settings.',
+            ? t('Nearby devices permission is required to scan for Bluetooth devices. Please enable it in Settings.')
+            : t('Bluetooth and Location permissions are required to scan for Bluetooth devices. Please enable them in Settings.'),
         [
-            {text: 'Cancel', style: 'cancel'},
+            {text: t('Cancel'), style: 'cancel'},
             {
-                text: 'Open Settings',
+                text: t('Settings'),
                 onPress: () => Linking.openSettings(),
             },
         ],
@@ -156,10 +157,10 @@ export const showPermissionAlert = () => {
  * @category Bluetooth
  */
 export const showBluetoothAlert = () => {
-    Alert.alert('Bluetooth Required', 'Please enable Bluetooth to scan for devices.', [
-        {text: 'Cancel', style: 'cancel'},
+    Alert.alert(t('Bluetooth required'), t('Please enable Bluetooth to scan for devices.'), [
+        {text: t('Cancel'), style: 'cancel'},
         {
-            text: 'Settings',
+            text: t('Settings'),
             onPress: () => Linking.openSettings(),
         },
     ]);

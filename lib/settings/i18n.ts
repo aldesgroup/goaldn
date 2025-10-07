@@ -167,3 +167,17 @@ export const useTranslator = () => {
 
     return translate;
 };
+
+/**
+ * Translation function to use outside of React components.
+ * @param label - The label to translate.
+ * @param [options] - Optional parameters.
+ * @param [options.ns] - An array of namespaces (routes).
+ * @returns The translated string or the original label if no translation is found.
+ * @category Settings
+ *
+ **/
+export const t = (label: string, options?: {ns: string[]}) => {
+    const {translation} = translateKeyAtRoutes(i18n.language, label, options?.ns);
+    return translation;
+};

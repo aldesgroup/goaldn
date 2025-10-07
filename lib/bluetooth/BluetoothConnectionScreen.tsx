@@ -63,15 +63,9 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
         ];
 
-        async function startScanning() {
-            const granted = await checkPermissions();
-
-            if (granted && !isScanStarted.current) {
-                await startOrStopScan();
-            }
+        if (!isScanStarted.current) {
+            startOrStopScan();
         }
-
-        startScanning();
 
         return () => {
             // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
@@ -359,7 +353,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         return (
             <View
                 className={cn(
-                    'mb-4 rounded-xl bg-secondary p-4',
+                    'bg-secondary mb-4 rounded-xl p-4',
                     // when not wrapped
                     !smallScreen && 'flex-row justify-between',
                     // when wrapped
