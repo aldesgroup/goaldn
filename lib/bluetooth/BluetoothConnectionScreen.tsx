@@ -56,39 +56,38 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // effects
     // --------------------------------------------------------------------------------------------
     useEffect(() => {
-        // we don't do sh** if we don't know about the simulation BLE device being enabled or not
-        if (isSimulationBleDeviceEnabled !== undefined) {
-            // Check permissions when component mounts
-            checkPermissions();
+        // This BLE manager starts operations, that we have to listen to, to handle their result
+        const listeners: any[] = [
+            bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
+            bleManager.onConnectPeripheral(handleConnectPeripheral),
+            bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
+        ];
 
-            // Start scanning right away - NOPE, not for now
+        async function startScanning() {
+            const granted = await checkPermissions();
+
+            if (granted && !isScanStarted.current) {
+                await startOrStopScan();
+            }
+        }
+
+        startScanning();
+
+        return () => {
+            // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
+            // but at least scanning should be stopped
             if (!isScanStarted.current) {
-                startOrStopScan();
+                stopScan().then(() => {
+                    console.log('Scanning has been stopped!');
+                });
             }
 
-            // This BLE manager starts operations, that we have to listen to, to handle their result
-            const listeners: any[] = [
-                bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
-                bleManager.onConnectPeripheral(handleConnectPeripheral),
-                bleManager.onDisconnectPeripheral(handleDisconnectedPeripheral),
-            ];
-
-            return () => {
-                // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
-                // but at least scanning should be stopped
-                if (!isScanStarted.current) {
-                    stopScan().then(() => {
-                        console.log('Scanning has been stopped!');
-                    });
-                }
-
-                // stopping the listening
-                for (const listener of listeners) {
-                    listener.remove();
-                }
-            };
-        }
-    }, [isSimulationBleDeviceEnabled]);
+            // stopping the listening
+            for (const listener of listeners) {
+                listener.remove();
+            }
+        };
+    }, []);
 
     // --------------------------------------------------------------------------------------------
     // utils - handlers for the listeners
@@ -146,6 +145,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             const granted = await checkAndRequestBlePermissions();
             setPermissionsGranted(granted);
             setPermissionStatus(granted ? 'granted' : 'denied');
+            return granted;
         } catch (err) {
             if (err instanceof Error) {
                 setError(`Permission error: ${err.message}`);
@@ -170,6 +170,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
     const startOrStopScan = async () => {
         try {
+            const granted = await checkPermissions();
+            if (!granted) {
+                return;
+            }
+
             isScanStarted.current = true;
 
             setError('');
@@ -354,7 +359,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         return (
             <View
                 className={cn(
-                    'bg-secondary mb-4 rounded-xl p-4',
+                    'mb-4 rounded-xl bg-secondary p-4',
                     // when not wrapped
                     !smallScreen && 'flex-row justify-between',
                     // when wrapped
