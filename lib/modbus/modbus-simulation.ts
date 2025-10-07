@@ -60,6 +60,14 @@ export class SimulatedBleModbusClient {
             console.log('initialized simulated register', startAddress, 'with value', value);
         }
     }
+
+    // completely reset all simulated registers
+    async resetAllRegisters(): Promise<void> {
+        return this._mutex.runExclusive(async () => {
+            this.store.set(simulatedRegistersAtom, {});
+            console.log('All simulated registers have been reset');
+        });
+    }
 }
 
 // A global atom to hold the simulated client instance (set from React via a hook)
@@ -82,17 +90,26 @@ export const useSimulatedModbusClient = () => {
 
 // Hook to register the simulated client into the global atom so non-hook code can access it
 export const useRegisterSimulatedClient = () => {
-    const client = useSimulatedModbusClient();
+    const simulationClient = useSimulatedModbusClient();
     const setInstance = useSetAtom(simulatedClientInstanceAtom);
     useEffect(() => {
         console.log('Setting the Simulated MODBUS client');
-        setInstance(client ?? null);
-    }, [client, setInstance]);
+        setInstance(simulationClient ?? null);
+    }, [simulationClient, setInstance]);
 };
 
+// Hook to provide a function to initialize a register
 export const useModbusSimulationValueInitializer = () => {
     const simulationClient = useSimulatedModbusClient();
     return (startAddress: number, value: string | number) => {
         simulationClient?.initSimulationData(startAddress, value);
+    };
+};
+
+// Hook to reset all simulated registers (UI-friendly)
+export const useResetSimulatedRegisters = () => {
+    const simulationClient = useSimulatedModbusClient();
+    return async () => {
+        await simulationClient?.resetAllRegisters();
     };
 };

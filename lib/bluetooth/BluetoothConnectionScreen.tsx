@@ -7,6 +7,7 @@ import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager
 import Config from 'react-native-config';
 import {Button, cn, Txt} from '../base';
 import {BottomView} from '../layout';
+import {useResetSimulatedRegisters} from '../modbus';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
@@ -35,6 +36,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const smallScreen = useAtomValue(smallScreenAtom);
     const isSimulationBleDeviceEnabled = useAtomValue(unwrap(isSimulationBleDeviceEnabledAtom));
     const setBleDeviceSimulated = useSetAtom(isBleDeviceSimulatedAtom);
+    const resetSimulatedRegisters = useResetSimulatedRegisters();
 
     // --------------------------------------------------------------------------------------------
     // internal state
@@ -228,7 +230,10 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
             // Keeping track of the currently connected device, if any
             let lastConnectedDevice = null;
+
+            // Resetting some stuff regarding the
             setBleDeviceSimulated(false);
+            resetSimulatedRegisters();
 
             // Disconnecting the current device if any
             if (connectedDevice) {

@@ -66,8 +66,6 @@ export function GenericSettings() {
                     <SwitchAtom label="Adapt to small screens and / or big font?" atom={userSetSmallScreenAtom} />
                 )}
                 <StringAtom label="Small screen and / or big font mode?" atom={smallScreenAtom} mode="report" />
-                {/* <SwitchAtom label="Simulation device enabled?" atom={isSimulationBleDeviceEnabledAtom} />
-                <StringAtom label="Simulation device connected?" atom={isBleDeviceSimulatedAtom} mode="report" /> */}
             </Card>
         </ScrollView>
     );
