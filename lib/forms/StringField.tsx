@@ -126,62 +126,60 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
     };
 
     // --- rendering
-    return (
-        visible && (
-            <View className={cn('flex-col gap-2', props.className, isReport && !smallScreen && 'flex-row items-center')}>
-                {/* Label */}
-                <InputLabel
-                    label={props.label}
-                    labelClassName={cn(validError && 'text-destructive-foreground', props.labelClassName)}
-                    mode={mode}
-                    mandatory={mandatory}
-                    labelAppend={props.labelAppend}
-                />
+    return visible ? (
+        <View className={cn('flex-col gap-2', props.className, isReport && !smallScreen && 'flex-row items-center')}>
+            {/* Label */}
+            <InputLabel
+                label={props.label}
+                labelClassName={cn(validError && 'text-destructive-foreground', props.labelClassName)}
+                mode={mode}
+                mandatory={mandatory}
+                labelAppend={props.labelAppend}
+            />
 
-                {/* Input field */}
-                {!isInput ? (
-                    // No input in report mode
-                    <View className="flex-row items-center">
-                        <Txt
-                            raw={!isBoolean(value) && !props.translateValue}
-                            className={cn('text-foreground-light text-lg', props.inputClassName)}
-                            append={
-                                props.unit && (
-                                    <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>
-                                        {props.unit}
-                                    </Txt>
-                                )
-                            }>
-                            {getStringValue(value)}
-                        </Txt>
-                    </View>
-                ) : (
-                    // Now we're talking
-                    <>
-                        <Input
-                            {...props}
-                            className={cn(
-                                'border-border text-foreground',
-                                value ? 'bg-secondary' : 'bg-white',
-                                props.inputClassName,
-                                validError && 'text-destructive-foreground border-destructive-foreground',
-                                smallScreen && 'min-h-16',
-                            )}
-                            editable={!disabled}
-                            value={value}
-                            placeholder={placeholder} // making sure to put it after the ...props, to override them
-                            onChangeText={updateValue}
-                        />
-                        {validError && (
-                            <View className="flex-row gap-1">
-                                <Txt className="text-destructive-foreground flex-1" append={<ErrorAppend />}>
-                                    {validError.msg}
+            {/* Input field */}
+            {!isInput ? (
+                // No input in report mode
+                <View className="flex-row items-center">
+                    <Txt
+                        raw={!isBoolean(value) && !props.translateValue}
+                        className={cn('text-foreground-light text-lg', props.inputClassName)}
+                        append={
+                            props.unit && (
+                                <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>
+                                    {props.unit}
                                 </Txt>
-                            </View>
+                            )
+                        }>
+                        {getStringValue(value)}
+                    </Txt>
+                </View>
+            ) : (
+                // Now we're talking
+                <>
+                    <Input
+                        {...props}
+                        className={cn(
+                            'border-border text-foreground',
+                            value ? 'bg-secondary' : 'bg-white',
+                            props.inputClassName,
+                            validError && 'text-destructive-foreground border-destructive-foreground',
+                            smallScreen && 'min-h-16',
                         )}
-                    </>
-                )}
-            </View>
-        )
-    );
+                        editable={!disabled}
+                        value={value}
+                        placeholder={placeholder} // making sure to put it after the ...props, to override them
+                        onChangeText={updateValue}
+                    />
+                    {validError && (
+                        <View className="flex-row gap-1">
+                            <Txt className="text-destructive-foreground flex-1" append={<ErrorAppend />}>
+                                {validError.msg}
+                            </Txt>
+                        </View>
+                    )}
+                </>
+            )}
+        </View>
+    ) : null;
 }

@@ -186,60 +186,45 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
     // --- utils
 
     // --- rendering
-    return (
-        visible &&
-        field.options && (
-            <View
-                className={cn(
-                    'flex-col',
-                    isInput && 'gap-4',
-                    isSheet && 'gap-3',
-                    isReport && !smallScreen && 'flex-row items-center gap-x-1 gap-y-2',
-                )}>
-                {/* Label */}
-                <InputLabel
-                    label={props.label}
-                    labelClassName={props.labelClassName}
-                    mode={mode}
-                    mandatory={mandatory}
-                    labelAppend={props.labelAppend}
-                />
+    return visible && field.options ? (
+        <View className={cn('flex-col', isInput && 'gap-4', isSheet && 'gap-3', isReport && !smallScreen && 'flex-row items-center gap-x-1 gap-y-2')}>
+            {/* Label */}
+            <InputLabel label={props.label} labelClassName={props.labelClassName} mode={mode} mandatory={mandatory} labelAppend={props.labelAppend} />
 
-                {/* Showing the available options */}
-                {!isInput ? (
-                    // Here, only showing the choosen value
-                    <CurrentEnumFieldValue field={field} className={props.valueClassName} mode={mode} emptyValueLabel={emptyValueLabel} />
-                ) : (
-                    <View className="flex-row flex-wrap gap-3">
-                        {field.optionsOnly
-                            ? // if we restrict to some values, then we only consider those
-                              field.optionsOnly
-                                  .map(value => field.options?.find(item => item.value === value))
-                                  .map(
-                                      option =>
-                                          option && (
-                                              <EnumFieldValue
-                                                  key={option.value.toString()}
-                                                  option={option}
-                                                  field={field}
-                                                  className={props.valueClassName}
-                                                  infos={field.optionsInfos?.get(option.value)}
-                                              />
-                                          ),
-                                  )
-                            : // else it's normal business, we allow to select any option
-                              field.options.map(option => (
-                                  <EnumFieldValue
-                                      key={option.value.toString()}
-                                      option={option}
-                                      field={field}
-                                      className={props.valueClassName}
-                                      infos={field.optionsInfos?.get(option.value)}
-                                  />
-                              ))}
-                    </View>
-                )}
-            </View>
-        )
-    );
+            {/* Showing the available options */}
+            {!isInput ? (
+                // Here, only showing the choosen value
+                <CurrentEnumFieldValue field={field} className={props.valueClassName} mode={mode} emptyValueLabel={emptyValueLabel} />
+            ) : (
+                <View className="flex-row flex-wrap gap-3">
+                    {field.optionsOnly
+                        ? // if we restrict to some values, then we only consider those
+                          field.optionsOnly
+                              .map(value => field.options?.find(item => item.value === value))
+                              .map(
+                                  option =>
+                                      option && (
+                                          <EnumFieldValue
+                                              key={option.value.toString()}
+                                              option={option}
+                                              field={field}
+                                              className={props.valueClassName}
+                                              infos={field.optionsInfos?.get(option.value)}
+                                          />
+                                      ),
+                              )
+                        : // else it's normal business, we allow to select any option
+                          field.options.map(option => (
+                              <EnumFieldValue
+                                  key={option.value.toString()}
+                                  option={option}
+                                  field={field}
+                                  className={props.valueClassName}
+                                  infos={field.optionsInfos?.get(option.value)}
+                              />
+                          ))}
+                </View>
+            )}
+        </View>
+    ) : null;
 }

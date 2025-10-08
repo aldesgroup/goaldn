@@ -78,29 +78,23 @@ export function CheckboxField<confAtom extends Field<boolean>>({field, label, la
     };
 
     // --- rendering
-    return (
-        visible && (
-            <View className={cn('flex-row items-center gap-2', props.className)}>
-                {label && labelPrepend && <Txt className={cn('text-foreground', props.labelClassName)}>{label}</Txt>}
+    return visible ? (
+        <View className={cn('flex-row items-center gap-2', props.className)}>
+            {label && labelPrepend && <Txt className={cn('text-foreground', props.labelClassName)}>{label}</Txt>}
 
-                <TouchableOpacity
-                    {...props}
-                    className={cn(
-                        'border-input size-5 items-center justify-center rounded border',
-                        (value || halfChecked) && 'bg-primary',
-                        props.boxClassName,
-                    )}
-                    disabled={disabled}
-                    onPress={handleCheck}>
-                    {halfChecked ? (
-                        <Minus size={14} color={colors.primaryForeground} />
-                    ) : (
-                        value && <Check size={14} color={colors.primaryForeground} />
-                    )}
-                </TouchableOpacity>
+            <TouchableOpacity
+                {...props}
+                className={cn(
+                    'border-input size-5 items-center justify-center rounded border',
+                    (value || halfChecked) && 'bg-primary',
+                    props.boxClassName,
+                )}
+                disabled={disabled}
+                onPress={handleCheck}>
+                {halfChecked ? <Minus size={14} color={colors.primaryForeground} /> : value && <Check size={14} color={colors.primaryForeground} />}
+            </TouchableOpacity>
 
-                {label && !labelPrepend && <Txt className={cn('text-foreground', props.labelClassName)}>{label}</Txt>}
-            </View>
-        )
-    );
+            {label && !labelPrepend && <Txt className={cn('text-foreground', props.labelClassName)}>{label}</Txt>}
+        </View>
+    ) : null;
 }

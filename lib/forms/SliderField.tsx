@@ -89,77 +89,75 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
     // --- utils
 
     // --- rendering
-    return (
-        visible && (
-            <View className={cn('flex-col', props.className)}>
-                <Txt className={cn('text-foreground mb-3', props.labelClassName)}>{props.label}</Txt>
-                <View className="my-4">
-                    {/* The value that should follow where the thumb of the slider is! */}
-                    {/* The following solution "a la NativeWind" works only if:
+    return visible ? (
+        <View className={cn('flex-col', props.className)}>
+            <Txt className={cn('text-foreground mb-3', props.labelClassName)}>{props.label}</Txt>
+            <View className="my-4">
+                {/* The value that should follow where the thumb of the slider is! */}
+                {/* The following solution "a la NativeWind" works only if:
                     safelist: [
                         ...Array.from({length: 100}, (_, i) => `w-[${i + 1}%]`)]
                     is added to the client app Tailwind config*/}
-                    {/* <View className={cn('items-end', `w-[${posPct}%]`)}> */}
-                    {/* Instead we use the vanilla solution here: */}
-                    <View className={cn('items-end')} style={{width: `${posPct}%`}}>
-                        <View className="flex-row">
+                {/* <View className={cn('items-end', `w-[${posPct}%]`)}> */}
+                {/* Instead we use the vanilla solution here: */}
+                <View className={cn('items-end')} style={{width: `${posPct}%`}}>
+                    <View className="flex-row">
+                        <Txt raw className="text-primary text-lg font-bold">
+                            {displayedValue}
+                        </Txt>
+                        {props.unit && (
                             <Txt raw className="text-primary text-lg font-bold">
-                                {displayedValue}
+                                {props.unit}
                             </Txt>
-                            {props.unit && (
-                                <Txt raw className="text-primary text-lg font-bold">
+                        )}
+                    </View>
+                </View>
+                <Slider
+                    minimumValue={field.min}
+                    maximumValue={field.max}
+                    step={field.step}
+                    minimumTrackTintColor={colors.primary}
+                    maximumTrackTintColor={colors.mutedForeground}
+                    thumbTintColor={colors.primary}
+                    disabled={disabled}
+                    onSlidingComplete={val => {
+                        setValue(val);
+                        setLastModified(new Date());
+                    }}
+                    onValueChange={setDisplayedValue}
+                    value={value}
+                />
+            </View>
+            <View className="flex-row justify-between">
+                <View className="ml-4 flex-row">
+                    <Txt
+                        raw
+                        className="text-muted-foreground"
+                        append={
+                            props.unit && (
+                                <Txt raw className="text-muted-foreground">
                                     {props.unit}
                                 </Txt>
-                            )}
-                        </View>
-                    </View>
-                    <Slider
-                        minimumValue={field.min}
-                        maximumValue={field.max}
-                        step={field.step}
-                        minimumTrackTintColor={colors.primary}
-                        maximumTrackTintColor={colors.mutedForeground}
-                        thumbTintColor={colors.primary}
-                        disabled={disabled}
-                        onSlidingComplete={val => {
-                            setValue(val);
-                            setLastModified(new Date());
-                        }}
-                        onValueChange={setDisplayedValue}
-                        value={value}
-                    />
+                            )
+                        }>
+                        {field.min}
+                    </Txt>
                 </View>
-                <View className="flex-row justify-between">
-                    <View className="ml-4 flex-row">
-                        <Txt
-                            raw
-                            className="text-muted-foreground"
-                            append={
-                                props.unit && (
-                                    <Txt raw className="text-muted-foreground">
-                                        {props.unit}
-                                    </Txt>
-                                )
-                            }>
-                            {field.min}
-                        </Txt>
-                    </View>
-                    <View className="mr-4 flex-row">
-                        <Txt
-                            raw
-                            className="text-muted-foreground"
-                            append={
-                                props.unit && (
-                                    <Txt raw className="text-muted-foreground">
-                                        {props.unit}
-                                    </Txt>
-                                )
-                            }>
-                            {field.max}
-                        </Txt>
-                    </View>
+                <View className="mr-4 flex-row">
+                    <Txt
+                        raw
+                        className="text-muted-foreground"
+                        append={
+                            props.unit && (
+                                <Txt raw className="text-muted-foreground">
+                                    {props.unit}
+                                </Txt>
+                            )
+                        }>
+                        {field.max}
+                    </Txt>
                 </View>
             </View>
-        )
-    );
+        </View>
+    ) : null;
 }

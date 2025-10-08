@@ -80,22 +80,20 @@ export function SwitchField<T extends Field<boolean>>({field, ...props}: SwitchF
     // --- utils
 
     // --- rendering
-    return (
-        visible && (
-            <View className={cn('flex-row items-center justify-between', props.className)}>
-                <Txt className={cn('text-foreground flex-1', props.labelClassName)}>{props.label}</Txt>
-                <Switch
-                    {...props}
-                    key={`switch-${value ? '1' : '0'}`}
-                    className={props.switchClassName}
-                    disabled={disabled}
-                    checked={value}
-                    onCheckedChange={val => {
-                        setValue(val);
-                        setLastModified(new Date());
-                    }}
-                />
-            </View>
-        )
-    );
+    return visible ? (
+        <View className={cn('flex-row items-center justify-between', props.className)}>
+            <Txt className={cn('text-foreground flex-1', props.labelClassName)}>{props.label}</Txt>
+            <Switch
+                {...props}
+                key={`switch-${value ? '1' : '0'}`}
+                className={props.switchClassName}
+                disabled={disabled}
+                checked={value}
+                onCheckedChange={val => {
+                    setValue(val);
+                    setLastModified(new Date());
+                }}
+            />
+        </View>
+    ) : null;
 }
