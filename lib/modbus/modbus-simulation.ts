@@ -5,6 +5,7 @@ import Config from 'react-native-config';
 import {connectedDeviceAtom} from '../bluetooth';
 import {sleep} from '../utils';
 import {ModbusResponse} from './modbus-frame';
+import {useLogV} from '../base';
 
 // Reactive storage for simulated registers
 export const simulatedRegistersAtom = atom<{[startAddress: number]: string}>({});
@@ -45,7 +46,6 @@ export class SimulatedBleModbusClient {
 
             // setting the value
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value}));
-            console.log('Written', value, 'in register ', startAddress);
 
             // Return a success response
             return {slaveId, functionCode: 0x10, success: true};
@@ -57,7 +57,6 @@ export class SimulatedBleModbusClient {
         const regs = this.store.get(simulatedRegistersAtom);
         if (!regs[startAddress]) {
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value.toString()}));
-            console.log('initialized simulated register', startAddress, 'with value', value);
         }
     }
 
@@ -65,7 +64,6 @@ export class SimulatedBleModbusClient {
     async resetAllRegisters(): Promise<void> {
         return this._mutex.runExclusive(async () => {
             this.store.set(simulatedRegistersAtom, {});
-            console.log('All simulated registers have been reset');
         });
     }
 }
@@ -92,8 +90,9 @@ export const useSimulatedModbusClient = () => {
 export const useRegisterSimulatedClient = () => {
     const simulationClient = useSimulatedModbusClient();
     const setInstance = useSetAtom(simulatedClientInstanceAtom);
+    const logv = useLogV('MODBUS');
     useEffect(() => {
-        console.log('Setting the Simulated MODBUS client');
+        logv('Setting the Simulated MODBUS client');
         setInstance(simulationClient ?? null);
     }, [simulationClient, setInstance]);
 };

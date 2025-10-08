@@ -1,6 +1,7 @@
 import {useCallback, useState} from 'react';
 import {useModbusClient} from './modbus-client';
 import {ModbusResponse} from './modbus-frame';
+import {useLogV} from '../base';
 
 // Hooks providing a function to refresh a particular register's value, this value (once asynchronously refreshed), and reading stats
 export const useModbusHoldingRegisters = (label: string, slaveId: number, startAddress: number, quantity: number, asHex?: boolean) => {
@@ -10,6 +11,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
     const [loading, setLoading] = useState(false);
     const [readError, setReadError] = useState<string | null>(null);
     const [lastReadTime, setLastReadTime] = useState<Date | null>(null);
+    const logv = useLogV('MODBUS');
 
     const get = useCallback(
         async (verbose?: boolean): Promise<string | null> => {
@@ -25,7 +27,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
                     setVal(result?.stringData ?? undefined); // making the returned val reactive
                     setLastReadTime(new Date());
                     if (verbose) {
-                        console.log("Read value for '" + label + "': ", result.stringData);
+                        logv("Read value for '" + label + "': ", result.stringData);
                     }
                     return result.stringData ? result.stringData : null;
                 } else {
@@ -45,7 +47,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
                 } else {
                     setReadError(`Communication failed: ${err.message}`);
                 }
-                if (err.stack) console.log(err.stack);
+                if (err.stack) logv(err.stack);
                 return null;
             } finally {
                 setLoading(false);
@@ -63,6 +65,7 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
     const [writing, setWriting] = useState(false);
     const [writeError, setWriteError] = useState<string | null>(null);
     const [lastWriteTime, setLastWriteTime] = useState<Date | null>(null);
+    const logv = useLogV('MODBUS');
 
     const set = useCallback(
         async (value: string, verbose?: boolean) => {
@@ -74,7 +77,7 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
                     await client.writeMultipleRegisters(slaveId, startAddress, value);
                     setLastWriteTime(new Date());
                     if (verbose) {
-                        console.log(`Written value for '${label}' at address ${startAddress}: ${value}`);
+                        logv(`Written value for '${label}' at address ${startAddress}: ${value}`);
                     }
                     if (readQuantityToVerify) {
                         const result = await client.readHoldingRegisters(slaveId, startAddress, readQuantityToVerify);
