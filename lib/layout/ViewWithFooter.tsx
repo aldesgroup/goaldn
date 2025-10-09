@@ -21,7 +21,7 @@ export type ViewWithFooterProps = {
     /** Variant for the left button */
     leftButtonVariant?: buttonVariantsType;
     /** Function to call when left button is pressed */
-    leftButtonOnPress: null | (() => void);
+    leftButtonOnPress?: null | (() => void);
     /** Whether the left button is disabled */
     leftButtonDisabled?: boolean;
     /** Icon for the left button */
