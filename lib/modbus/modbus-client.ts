@@ -4,7 +4,9 @@ import {atom, useAtomValue} from 'jotai';
 import {useMemo} from 'react';
 import {Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
+import {getLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
+import {verboseAtom} from '../settings';
 import {sleep} from '../utils';
 import {createModbusReadingFrame, createModbusWritingFrame8bit, MODBUS_FUNCTIONS, ModbusResponse, parseModbusResponse} from './modbus-frame';
 import {useSimulatedModbusClient} from './modbus-simulation';
@@ -135,10 +137,14 @@ export class BleModbusClient {
 
 // accessing the real MODBUS client
 export const realModbusClientAtom = atom(get => {
+    // are we in verbose mode?
+    const verbose = get(verboseAtom);
+    const logv = getLogV(verbose, 'MODBUS');
+
     // reacting on a device change
     const device = get(connectedDeviceAtom);
     if (!device) {
-        console.log('Removing the MODBUS client');
+        logv('Removing the MODBUS client');
         return null;
     }
 
@@ -165,7 +171,7 @@ export const realModbusClientAtom = atom(get => {
     let useNotify = Config.BLE_USE_NOTIFY === 'true';
     let framePrefix = Config.BLE_FRAME_PREFIX === '' ? null : Number(Config.BLE_FRAME_PREFIX);
 
-    console.log('Initialising the MODBUS client');
+    logv('Initialising the MODBUS client');
     return new BleModbusClient(device, timeout, delay, serviceUUID, readCharacteristicUUID, writeCharacteristicUUID, useNotify, framePrefix);
 });
 
