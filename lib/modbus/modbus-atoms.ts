@@ -97,7 +97,7 @@ export function newModbusRegisterAtom(
                     if (!simulatedClient) {
                         throw new Error('No simulated MODBUS client available');
                     }
-                    await simulatedClient.writeMultipleRegisters(slaveId, startAddress, newValue);
+                    await simulatedClient.writeMultipleRegisters(slaveId, startAddress, quantity, newValue);
                     // Optimistically update and conditionally refresh
                     const changed = lastValue !== newValue;
                     if (changed) {
@@ -109,7 +109,7 @@ export function newModbusRegisterAtom(
                     if (!realClient) {
                         throw new Error('No MODBUS client available');
                     }
-                    await realClient.writeMultipleRegisters(slaveId, startAddress, newValue);
+                    await realClient.writeMultipleRegisters(slaveId, startAddress, quantity, newValue);
                     // Optimistically update and conditionally refresh
                     const changed = lastValue !== newValue;
                     if (changed) {

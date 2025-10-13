@@ -30,7 +30,7 @@ export type ModbusRegisterValueProps = {
 export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refreshEveryMS, editable, verbose, state}: ModbusRegisterValueProps) {
     // --- shared state
     const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, addrInt, size, asHex);
-    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt);
+    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt, size);
     const formatDate = useDateFormatter(true);
     const [currentValue, setCurrentValue] = useState('');
     const [lastValue, setLastValue] = useState('');
