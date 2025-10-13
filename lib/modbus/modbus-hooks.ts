@@ -60,7 +60,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
 };
 
 // Hooks providing a function to write to a particular register, and writing stats
-export const useModbusWriteMultiple = (label: string, slaveId: number, startAddress: number, readQuantityToVerify?: number) => {
+export const useModbusWriteMultiple = (label: string, slaveId: number, startAddress: number, quantity: number, verify?: boolean) => {
     const client = useModbusClient();
     const [writing, setWriting] = useState(false);
     const [writeError, setWriteError] = useState<string | null>(null);
@@ -74,13 +74,13 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
 
             try {
                 if (client) {
-                    await client.writeMultipleRegisters(slaveId, startAddress, value);
+                    await client.writeMultipleRegisters(slaveId, startAddress, quantity, value);
                     setLastWriteTime(new Date());
                     if (verbose) {
                         logv(`Written value for '${label}' at address ${startAddress}: ${value}`);
                     }
-                    if (readQuantityToVerify) {
-                        const result = await client.readHoldingRegisters(slaveId, startAddress, readQuantityToVerify);
+                    if (verify) {
+                        const result = await client.readHoldingRegisters(slaveId, startAddress, quantity);
                         return result.stringData === value;
                     }
                     return true;

@@ -39,7 +39,7 @@ export class SimulatedBleModbusClient {
     }
 
     // same signature as the real client
-    async writeMultipleRegisters(slaveId: number, startAddress: number, value: string): Promise<ModbusResponse> {
+    async writeMultipleRegisters(slaveId: number, startAddress: number, quantity: number, value: string): Promise<ModbusResponse> {
         return this._mutex.runExclusive(async () => {
             // we're waiting a bit more, to emulate a little bit a real transmission
             await sleep(3 * this.delay);

@@ -51,7 +51,7 @@ export function registerValuesToString(values: number[], asHex?: boolean): strin
  * @param numberAsString
  * @category Modbus
  */
-export function stringToRegisterValues(numberAsString: string): number[] {
+export function stringToRegisterValues(numberAsString: string, byteCount: number): number[] {
     const registers = [];
 
     // working with a big number
@@ -76,8 +76,8 @@ export function stringToRegisterValues(numberAsString: string): number[] {
         }
     }
 
-    // making sure we have an even number of register values
-    if (registers.length % 2 == 1) {
+    // making sure we have the right number of register values
+    while (registers.length < byteCount) {
         registers.unshift(0);
     }
 

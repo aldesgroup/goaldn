@@ -112,20 +112,18 @@ export class BleModbusClient {
         return response;
     }
 
-    async writeMultipleRegisters(slaveId: number, startAddress: number, value: string): Promise<ModbusResponse> {
-        // from string to bytes here
-        const values = value !== '' && !isNaN(Number(value)) ? stringToRegisterValues(value) : [];
+    async writeMultipleRegisters(slaveId: number, startAddress: number, quantity: number, value: string): Promise<ModbusResponse> {
+        // from string to bytes here - the number of bytes is the double of the number of 16-bits registers needed
+        const values = value !== '' && !isNaN(Number(value)) ? stringToRegisterValues(value, 2 * quantity) : [];
 
         // frame creation & sending
-        // const frame = createModbusWritingFrame(slaveId, startAddress, values);
-        const frame = createModbusWritingFrame8bit(slaveId, startAddress, values);
+        const frame = createModbusWritingFrame8bit(slaveId, startAddress, quantity, values);
         const functionCode = MODBUS_FUNCTIONS.WRITE_MULTIPLE_REGISTERS;
         const expectedResponse = {
             slaveId,
             functionCode,
             startAddress,
-            // the expected number of 16-bits words
-            quantity: values.length / 2,
+            quantity: quantity,
         };
 
         const rawResponse = await this.sendFrame(frame);
