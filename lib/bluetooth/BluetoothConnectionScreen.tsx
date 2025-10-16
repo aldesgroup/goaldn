@@ -120,6 +120,12 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                             if (aHasPrefix && !bHasPrefix) return -1;
                             if (!aHasPrefix && bHasPrefix) return 1;
 
+                            // If the name is the same, sort by signal strength
+                            if (a.name === b.name) {
+                                // Higher RSSI (closer to 0) should come first
+                                return (b.rssi || -Infinity) - (a.rssi || -Infinity);
+                            }
+
                             // Otherwise sort alphabetically
                             return (a.name || '').localeCompare(b.name || '');
                         })

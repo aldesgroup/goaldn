@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useModbusClient} from './modbus-client';
 import {ModbusResponse} from './modbus-frame';
 import {useLogV} from '../base';
@@ -99,4 +99,85 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
     );
 
     return {set, writing, writeError, lastWriteTime};
+};
+
+// Hook that polls a holding register on an interval and exposes a reactive value
+export const usePolledHoldingRegister = (
+    label: string,
+    slaveId: number,
+    startAddress: number,
+    quantity: number,
+    intervalMs: number,
+    asHex?: boolean,
+) => {
+    const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, startAddress, quantity, asHex);
+
+    const [currentValue, setCurrentValue] = useState<string | undefined>(undefined);
+    const [previousVal, setPreviousVal] = useState<string | undefined>(undefined);
+    const [lastChangeTime, setLastChangeTime] = useState<Date | null>(null);
+
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stoppedRef = useRef<boolean>(false);
+
+    // Sync internal state when underlying value updates
+    useEffect(() => {
+        if (val !== undefined && val !== currentValue) {
+            setPreviousVal(currentValue);
+            setCurrentValue(val);
+            setLastChangeTime(new Date());
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [val]);
+
+    const clearTimer = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+    };
+
+    const scheduleNext = () => {
+        clearTimer();
+        if (stoppedRef.current) return;
+        timerRef.current = setTimeout(loopOnce, intervalMs);
+    };
+
+    const loopOnce = async () => {
+        if (stoppedRef.current) return;
+        await get(false);
+        scheduleNext();
+    };
+
+    const start = useCallback(() => {
+        stoppedRef.current = false;
+        clearTimer();
+        // Always start immediately
+        void loopOnce();
+    }, [intervalMs, get]);
+
+    const stop = useCallback(() => {
+        stoppedRef.current = true;
+        clearTimer();
+    }, []);
+
+    // Manage lifecycle: always enabled, start immediately
+    useEffect(() => {
+        start();
+        return () => {
+            stop();
+        };
+    }, [start, stop, intervalMs, slaveId, startAddress, quantity, asHex, label]);
+
+    return {
+        val: currentValue,
+        previousVal,
+        hasChanged: currentValue !== previousVal,
+        lastChangeTime,
+        response,
+        loading,
+        readError,
+        lastReadTime,
+        start,
+        stop,
+    };
 };
