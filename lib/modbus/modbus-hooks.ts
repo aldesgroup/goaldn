@@ -109,25 +109,22 @@ export const usePolledHoldingRegister = (
     quantity: number,
     intervalMs: number,
     asHex?: boolean,
+    verbose?: boolean,
 ) => {
+    // --- shared state
     const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, startAddress, quantity, asHex);
 
+    // --- local state
     const [currentValue, setCurrentValue] = useState<string | undefined>(undefined);
     const [previousVal, setPreviousVal] = useState<string | undefined>(undefined);
     const [lastChangeTime, setLastChangeTime] = useState<Date | null>(null);
 
+    // --- local state (but more permanent)
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const stoppedRef = useRef<boolean>(false);
 
-    // Sync internal state when underlying value updates
-    useEffect(() => {
-        if (val !== undefined && val !== currentValue) {
-            setPreviousVal(currentValue);
-            setCurrentValue(val);
-            setLastChangeTime(new Date());
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [val]);
+    // --- utils
+    const logv = useLogV('MODBUS');
 
     const clearTimer = () => {
         if (timerRef.current) {
@@ -144,30 +141,39 @@ export const usePolledHoldingRegister = (
 
     const loopOnce = async () => {
         if (stoppedRef.current) return;
-        await get(false);
+        await get(verbose);
         scheduleNext();
     };
 
     const start = useCallback(() => {
+        if (verbose) logv("Starting polling the value for '" + label + "' (" + startAddress + ') every ' + intervalMs + ' ms');
+
         stoppedRef.current = false;
         clearTimer();
+
         // Always start immediately
         void loopOnce();
-    }, [intervalMs, get]);
+    }, []);
 
     const stop = useCallback(() => {
+        if (verbose) logv("Stopping polling the value for '" + label + "' (" + startAddress + ')');
+
         stoppedRef.current = true;
         clearTimer();
     }, []);
 
-    // Manage lifecycle: always enabled, start immediately
-    useEffect(() => {
-        start();
-        return () => {
-            stop();
-        };
-    }, [start, stop, intervalMs, slaveId, startAddress, quantity, asHex, label]);
+    // --- effects
 
+    // Sync internal state when underlying value updates
+    useEffect(() => {
+        if (val !== undefined && val !== currentValue) {
+            setPreviousVal(currentValue);
+            setCurrentValue(val);
+            setLastChangeTime(new Date());
+        }
+    }, [val]);
+
+    // --- result
     return {
         val: currentValue,
         previousVal,
