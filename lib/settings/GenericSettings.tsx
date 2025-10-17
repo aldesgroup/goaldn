@@ -1,5 +1,5 @@
 import {useAtomValue} from 'jotai';
-import React from 'react';
+import React, {ReactNode} from 'react';
 import {ScrollView, View} from 'react-native';
 import {Txt} from '../base';
 import {Card, CollapsableCard} from '../layout';
@@ -24,7 +24,7 @@ import {
  * @returns {JSX.Element} A scrollable settings screen with various configuration options
  * @category Settings
  */
-export function GenericSettings() {
+export function GenericSettings({children}: {children?: ReactNode}) {
     // --- shared state
     const fontScale = getFontScale();
     const pixelDensity = getPixelDensity();
@@ -34,7 +34,8 @@ export function GenericSettings() {
 
     // --- view
     return (
-        <ScrollView contentContainerClassName="p-6">
+        <ScrollView contentContainerClassName="p-6 gap-6">
+            {/* the generic settings */}
             <Card className="gap-4">
                 <EnumAtom
                     label="Language"
@@ -44,6 +45,8 @@ export function GenericSettings() {
                     badgeClassName="w-auto flex-row"
                     raw
                 />
+            </Card>
+            <Card className="gap-4">
                 <SwitchAtom label="Automatically detect small screens?" atom={detectSmallScreenAtom} />
                 {detect ? (
                     <CollapsableCard title="Detection parameters" titleClass="font-normal text-base">
@@ -66,9 +69,9 @@ export function GenericSettings() {
                     <SwitchAtom label="Adapt to small screens and / or big font?" atom={userSetSmallScreenAtom} />
                 )}
                 <StringAtom label="Small screen and / or big font mode?" atom={smallScreenAtom} mode="report" />
-                {/* <SwitchAtom label="Simulation device enabled?" atom={isSimulationBleDeviceEnabledAtom} />
-                <StringAtom label="Simulation device connected?" atom={isBleDeviceSimulatedAtom} mode="report" /> */}
             </Card>
+            {/* additional, more applicative stuff, if we want */}
+            {children ? children : null}
         </ScrollView>
     );
 }

@@ -4,7 +4,9 @@ import {atom, useAtomValue} from 'jotai';
 import {useMemo} from 'react';
 import {Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
+import {getLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
+import {verboseAtom} from '../settings';
 import {sleep} from '../utils';
 import {createModbusReadingFrame, createModbusWritingFrame8bit, MODBUS_FUNCTIONS, ModbusResponse, parseModbusResponse} from './modbus-frame';
 import {useSimulatedModbusClient} from './modbus-simulation';
@@ -110,20 +112,18 @@ export class BleModbusClient {
         return response;
     }
 
-    async writeMultipleRegisters(slaveId: number, startAddress: number, value: string): Promise<ModbusResponse> {
-        // from string to bytes here
-        const values = value !== '' && !isNaN(Number(value)) ? stringToRegisterValues(value) : [];
+    async writeMultipleRegisters(slaveId: number, startAddress: number, quantity: number, value: string): Promise<ModbusResponse> {
+        // from string to bytes here - the number of bytes is the double of the number of 16-bits registers needed
+        const values = value !== '' && !isNaN(Number(value)) ? stringToRegisterValues(value, 2 * quantity) : [];
 
         // frame creation & sending
-        // const frame = createModbusWritingFrame(slaveId, startAddress, values);
-        const frame = createModbusWritingFrame8bit(slaveId, startAddress, values);
+        const frame = createModbusWritingFrame8bit(slaveId, startAddress, quantity, values);
         const functionCode = MODBUS_FUNCTIONS.WRITE_MULTIPLE_REGISTERS;
         const expectedResponse = {
             slaveId,
             functionCode,
             startAddress,
-            // the expected number of 16-bits words
-            quantity: values.length / 2,
+            quantity: quantity,
         };
 
         const rawResponse = await this.sendFrame(frame);
@@ -135,10 +135,14 @@ export class BleModbusClient {
 
 // accessing the real MODBUS client
 export const realModbusClientAtom = atom(get => {
+    // are we in verbose mode?
+    const verbose = get(verboseAtom);
+    const logv = getLogV(verbose, 'MODBUS');
+
     // reacting on a device change
     const device = get(connectedDeviceAtom);
     if (!device) {
-        console.log('Removing the MODBUS client');
+        logv('Removing the MODBUS client');
         return null;
     }
 
@@ -165,7 +169,7 @@ export const realModbusClientAtom = atom(get => {
     let useNotify = Config.BLE_USE_NOTIFY === 'true';
     let framePrefix = Config.BLE_FRAME_PREFIX === '' ? null : Number(Config.BLE_FRAME_PREFIX);
 
-    console.log('Initialising the MODBUS client');
+    logv('Initialising the MODBUS client');
     return new BleModbusClient(device, timeout, delay, serviceUUID, readCharacteristicUUID, writeCharacteristicUUID, useNotify, framePrefix);
 });
 

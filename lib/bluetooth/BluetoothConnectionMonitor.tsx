@@ -1,7 +1,7 @@
 import {useAtom} from 'jotai';
 import {useEffect} from 'react';
 import {connectedDeviceAtom, getBleManager} from './bluetoothAtoms';
-import {SIMULATION_DEVICE_ID} from './bluetoothSimulation';
+// import {SIMULATION_DEVICE_ID} from './bluetoothSimulation';
 
 /**
  * A component that monitors Bluetooth Low Energy (BLE) connections.
@@ -13,39 +13,39 @@ import {SIMULATION_DEVICE_ID} from './bluetoothSimulation';
  * @category Bluetooth
  */
 export function BluetoothConnectionMonitor({checkEveryMs = 3000}: {checkEveryMs?: number}) {
-    const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
-    const bleManager = getBleManager();
+    // const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
+    // const bleManager = getBleManager();
 
-    useEffect(() => {
-        console.log('Monitoring disconnections');
-        const subscription = bleManager.onDisconnectPeripheral(() => {
-            console.log('BLE not connected anymore!');
-            setConnectedDevice(null);
-        });
+    // useEffect(() => {
+    //     logv('Monitoring disconnections');
+    //     const subscription = bleManager.onDisconnectPeripheral(() => {
+    //         logv('BLE not connected anymore!');
+    //         setConnectedDevice(null);
+    //     });
 
-        return () => {
-            console.log('Removing BLE disconnect subscription');
-            subscription.remove();
-        };
-    }, []);
+    //     return () => {
+    //         logv('Removing BLE disconnect subscription');
+    //         subscription.remove();
+    //     };
+    // }, []);
 
-    useEffect(() => {
-        if (!connectedDevice || connectedDevice.id === SIMULATION_DEVICE_ID) return;
+    // useEffect(() => {
+    //     if (!connectedDevice || connectedDevice.id === SIMULATION_DEVICE_ID) return;
 
-        console.log('Monitoring not-connected state');
-        const interval = setInterval(async () => {
-            console.log('checking');
-            const stillConnected = await bleManager.isPeripheralConnected(connectedDevice.id, []);
-            if (!stillConnected) {
-                console.log('Disconnected detected by polling!');
-                setConnectedDevice(null);
-            } else {
-                console.log('still connected!');
-            }
-        }, checkEveryMs);
+    //     logv('Monitoring not-connected state');
+    //     const interval = setInterval(async () => {
+    //         logv('checking');
+    //         const stillConnected = await bleManager.isPeripheralConnected(connectedDevice.id, []);
+    //         if (!stillConnected) {
+    //             logv('Disconnected detected by polling!');
+    //             setConnectedDevice(null);
+    //         } else {
+    //             logv('still connected!');
+    //         }
+    //     }, checkEveryMs);
 
-        return () => clearInterval(interval);
-    }, [connectedDevice]);
+    //     return () => clearInterval(interval);
+    // }, [connectedDevice]);
 
     return null; // no UI
 }

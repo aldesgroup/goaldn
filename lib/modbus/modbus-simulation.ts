@@ -5,6 +5,7 @@ import Config from 'react-native-config';
 import {connectedDeviceAtom} from '../bluetooth';
 import {sleep} from '../utils';
 import {ModbusResponse} from './modbus-frame';
+import {useLogV} from '../base';
 
 // Reactive storage for simulated registers
 export const simulatedRegistersAtom = atom<{[startAddress: number]: string}>({});
@@ -32,20 +33,19 @@ export class SimulatedBleModbusClient {
             if (value !== undefined) {
                 return {slaveId, functionCode: 0x03, stringData: value, success: true};
             } else {
-                throw new Error('No simulated value for this register');
+                throw new Error('No simulated value for register @' + startAddress);
             }
         });
     }
 
     // same signature as the real client
-    async writeMultipleRegisters(slaveId: number, startAddress: number, value: string): Promise<ModbusResponse> {
+    async writeMultipleRegisters(slaveId: number, startAddress: number, quantity: number, value: string): Promise<ModbusResponse> {
         return this._mutex.runExclusive(async () => {
             // we're waiting a bit more, to emulate a little bit a real transmission
             await sleep(3 * this.delay);
 
             // setting the value
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value}));
-            console.log('Written', value, 'in register ', startAddress);
 
             // Return a success response
             return {slaveId, functionCode: 0x10, success: true};
@@ -57,8 +57,14 @@ export class SimulatedBleModbusClient {
         const regs = this.store.get(simulatedRegistersAtom);
         if (!regs[startAddress]) {
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value.toString()}));
-            console.log('initialized simulated register', startAddress, 'with value', value);
         }
+    }
+
+    // completely reset all simulated registers
+    async resetAllRegisters(): Promise<void> {
+        return this._mutex.runExclusive(async () => {
+            this.store.set(simulatedRegistersAtom, {});
+        });
     }
 }
 
@@ -82,17 +88,27 @@ export const useSimulatedModbusClient = () => {
 
 // Hook to register the simulated client into the global atom so non-hook code can access it
 export const useRegisterSimulatedClient = () => {
-    const client = useSimulatedModbusClient();
+    const simulationClient = useSimulatedModbusClient();
     const setInstance = useSetAtom(simulatedClientInstanceAtom);
+    const logv = useLogV('MODBUS');
     useEffect(() => {
-        console.log('Setting the Simulated MODBUS client');
-        setInstance(client ?? null);
-    }, [client, setInstance]);
+        logv('Setting the Simulated MODBUS client');
+        setInstance(simulationClient ?? null);
+    }, [simulationClient, setInstance]);
 };
 
+// Hook to provide a function to initialize a register
 export const useModbusSimulationValueInitializer = () => {
     const simulationClient = useSimulatedModbusClient();
     return (startAddress: number, value: string | number) => {
         simulationClient?.initSimulationData(startAddress, value);
+    };
+};
+
+// Hook to reset all simulated registers (UI-friendly)
+export const useResetSimulatedRegisters = () => {
+    const simulationClient = useSimulatedModbusClient();
+    return async () => {
+        await simulationClient?.resetAllRegisters();
     };
 };

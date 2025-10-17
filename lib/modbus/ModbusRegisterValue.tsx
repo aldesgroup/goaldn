@@ -1,10 +1,10 @@
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
-import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
+import {X} from 'lucide-react-native';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, TextInput, View} from 'react-native';
-import {useModbusHoldingRegisters, useModbusWriteMultiple} from './modbus-hooks';
 import {InputLabel, Txt} from '../base';
 import {useDateFormatter} from '../utils';
-import {X} from 'lucide-react-native';
+import {useModbusHoldingRegisters, useModbusWriteMultiple} from './modbus-hooks';
 
 export type ModbusRegisterValueProps = {
     /* the slave ID of the device to read from */
@@ -30,7 +30,7 @@ export type ModbusRegisterValueProps = {
 export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refreshEveryMS, editable, verbose, state}: ModbusRegisterValueProps) {
     // --- shared state
     const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, addrInt, size, asHex);
-    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt);
+    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt, size);
     const formatDate = useDateFormatter(true);
     const [currentValue, setCurrentValue] = useState('');
     const [lastValue, setLastValue] = useState('');
@@ -106,9 +106,6 @@ export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refre
 
             // Set new debounce timeout
             debounceTimeout.current = setTimeout(async () => {
-                // OK for writing!
-                console.log(lastValue, '->', newText);
-
                 // writing
                 const success = await set(newText, verbose);
                 if (success) {
