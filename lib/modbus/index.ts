@@ -5,3 +5,4 @@ export * from './modbus-utils';
 export * from './ModbusDebug';
 export * from './ModbusRegisterButton';
 export * from './ModbusRegisterValue';
+export * from './ModbusClientMonitor';
