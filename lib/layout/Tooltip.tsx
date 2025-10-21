@@ -67,14 +67,14 @@ export function Tooltip({
     bgColor = colors.primary,
     textColor = colors.primaryForeground,
     triggerSize = 20,
-    borderWidth = 0.05,
+    borderWidth = 0.025,
     persistent,
 }: TooltipProps) {
     const [isVisible, setIsVisible] = useState(false);
     const triggerRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
     const {width: screenWidth} = Dimensions.get('window');
     const [triggerLayout, setTriggerLayout] = useState<layout | null>(null);
-    const tooltipWidth = (1 - 2 * borderWidth) * screenWidth; // the tooltip's width will be 80% of the screen's width
+    const tooltipWidth = (1 - 2 * borderWidth) * screenWidth; // the tooltip's width will be 95% of the screen's width
     const tooltipLeft = triggerLayout ? -(triggerLayout.x - borderWidth * screenWidth) : 0;
     const triggerHeight = triggerLayout ? triggerLayout.height : 0;
     const triggerWidth = triggerLayout ? triggerLayout.width : 0;
@@ -94,7 +94,6 @@ export function Tooltip({
     return (
         <View className={cn('relative inline-block', className)}>
             {/* The trigger, which should be an icon */}
-            {/* The trigger, which should be an icon */}
             {persistent ? (
                 <TouchableOpacity ref={triggerRef} onPress={() => setIsVisible(!isVisible)}>
                     {trigger}
@@ -113,30 +112,30 @@ export function Tooltip({
                         {left: tooltipLeft, width: tooltipWidth},
                         !!underTrigger ? {top: triggerHeight + triggerSize} : {bottom: triggerHeight + triggerSize},
                     ]}>
-                    {/* Upward pointer */}
-                    {underTrigger && (
-                        <View
-                            style={[
-                                {
-                                    position: 'absolute',
-                                    borderLeftWidth: triggerSize / 2,
-                                    borderRightWidth: triggerSize / 2,
-                                    top: -triggerSize,
-                                    borderLeftColor: 'transparent',
-                                    borderRightColor: 'transparent',
-                                    borderBottomWidth: triggerSize,
-                                    borderBottomColor: bgColor,
-                                    left: -tooltipLeft - triggerSize / 2 + triggerWidth / 2,
-                                },
-                            ]}
-                        />
-                    )}
-
                     {/* Tooltip main bit */}
                     <TouchableOpacity
                         style={{backgroundColor: bgColor}} //
                         className="rounded-xl p-3 shadow-xl shadow-black"
                         onPress={() => setIsVisible(false)}>
+                        {/* Upward pointer */}
+                        {underTrigger && (
+                            <View
+                                style={[
+                                    {
+                                        position: 'absolute',
+                                        borderLeftWidth: triggerSize / 2,
+                                        borderRightWidth: triggerSize / 2,
+                                        top: -triggerSize + 1,
+                                        borderLeftColor: 'transparent',
+                                        borderRightColor: 'transparent',
+                                        borderBottomWidth: triggerSize,
+                                        borderBottomColor: bgColor,
+                                        left: -tooltipLeft - triggerSize / 2 + triggerWidth / 2,
+                                    },
+                                ]}
+                            />
+                        )}
+
                         {children ? (
                             children
                         ) : (
@@ -144,27 +143,26 @@ export function Tooltip({
                                 {text}
                             </Txt>
                         )}
-                    </TouchableOpacity>
 
-                    {/* Downward pointer */}
-                    {!underTrigger && (
-                        <View
-                            style={[
-                                {
-                                    position: 'absolute',
-                                    // zIndex: 10,
-                                    borderLeftWidth: triggerSize / 2,
-                                    borderRightWidth: triggerSize / 2,
-                                    bottom: -triggerSize,
-                                    borderLeftColor: 'transparent',
-                                    borderRightColor: 'transparent',
-                                    borderTopWidth: triggerSize,
-                                    borderTopColor: bgColor,
-                                    left: -tooltipLeft - triggerSize / 2 + triggerWidth / 2,
-                                },
-                            ]}
-                        />
-                    )}
+                        {/* Downward pointer */}
+                        {!underTrigger && (
+                            <View
+                                style={[
+                                    {
+                                        position: 'absolute',
+                                        borderLeftWidth: triggerSize / 2,
+                                        borderRightWidth: triggerSize / 2,
+                                        bottom: -triggerSize + 1,
+                                        borderLeftColor: 'transparent',
+                                        borderRightColor: 'transparent',
+                                        borderTopWidth: triggerSize,
+                                        borderTopColor: bgColor,
+                                        left: -tooltipLeft - triggerSize / 2 + triggerWidth / 2,
+                                    },
+                                ]}
+                            />
+                        )}
+                    </TouchableOpacity>
                 </View>
             )}
         </View>
