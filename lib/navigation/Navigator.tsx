@@ -1,13 +1,14 @@
 import {Platform} from 'react-native';
 import {Txt} from '../base';
 import {MenuProps, ScreensProps} from './Navigator-utils';
+import {ReactNode} from 'react';
 
 /**
  * Main navigator for the main menu.
  * @param props - Contains the menu configuration with entries and icons
  * @category Navigation
  */
-export function MainNavigator(props: {menu: MenuProps}) {
+export function MainNavigator(props: {menu: MenuProps; children?: ReactNode}) {
     return <Txt>Not implemented on this {Platform.OS} platform!</Txt>;
 }
 

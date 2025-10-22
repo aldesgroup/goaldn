@@ -15,7 +15,7 @@ declare module 'react-native-config' {
         BLE_READ_CHAR_UUID?: string;
         /** the ID of the characteristic we'll write to */
         BLE_WRITE_CHAR_UUID?: string;
-        /** should be get the BLE responses through the notificartion mechanism? */
+        /** should be get the BLE responses through the notification mechanism? */
         BLE_USE_NOTIFY?: string;
         /** should we prepend something to the frames we'll send? */
         BLE_FRAME_PREFIX?: string;

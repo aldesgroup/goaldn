@@ -2,7 +2,7 @@ import {BottomTabBar, createBottomTabNavigator} from '@react-navigation/bottom-t
 import {DefaultTheme, getFocusedRouteNameFromRoute, NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator, NativeStackNavigationOptions} from '@react-navigation/native-stack';
 import {useAtomValue} from 'jotai';
-import React from 'react';
+import React, {ReactNode} from 'react';
 import {LogBox} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -89,7 +89,7 @@ function MenuNavigator(props: {menu: MenuProps}) {
  * @returns The main navigation container with theme and safe area provider
  * @category Navigation
  */
-export function MainNavigator(props: {menu: MenuProps}) {
+export function MainNavigator(props: {menu: MenuProps; children?: ReactNode}) {
     // shared state
     const colors = getColors();
     const theme = {
@@ -110,6 +110,7 @@ export function MainNavigator(props: {menu: MenuProps}) {
             <SafeAreaProvider>
                 <NavigationContainer theme={theme}>
                     <MenuNavigator menu={props.menu} />
+                    {props.children ? props.children : null}
                 </NavigationContainer>
             </SafeAreaProvider>
         </GestureHandlerRootView>
