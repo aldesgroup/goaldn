@@ -12,6 +12,8 @@ export type ModbusRegisterButtonProps = {
     label: string;
     /** the register address as an int */
     addrInt: number;
+    /* the size of the data to write (number of registers) */
+    size: number;
     /** activates native & JS logging */
     verbose?: boolean;
     /** the value to set to the register when clicking this button */
@@ -20,9 +22,9 @@ export type ModbusRegisterButtonProps = {
     then?: () => void;
 };
 
-export function ModbusRegisterButton({title, slaveId, label, addrInt, verbose, value, then}: ModbusRegisterButtonProps) {
+export function ModbusRegisterButton({title, slaveId, label, addrInt, size, verbose, value, then}: ModbusRegisterButtonProps) {
     // --- shared state
-    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt);
+    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt, size);
 
     // --- utils
     const dateFormat = useDateFormatter(true);

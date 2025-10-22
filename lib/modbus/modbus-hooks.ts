@@ -1,14 +1,17 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useModbusClient} from './modbus-client';
 import {ModbusResponse} from './modbus-frame';
+import {useLogV} from '../base';
 
 // Hooks providing a function to refresh a particular register's value, this value (once asynchronously refreshed), and reading stats
 export const useModbusHoldingRegisters = (label: string, slaveId: number, startAddress: number, quantity: number, asHex?: boolean) => {
     const client = useModbusClient();
     const [response, setResponse] = useState<ModbusResponse | null>(null);
+    const [val, setVal] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [readError, setReadError] = useState<string | null>(null);
     const [lastReadTime, setLastReadTime] = useState<Date | null>(null);
+    const logv = useLogV('MODBUS');
 
     const get = useCallback(
         async (verbose?: boolean): Promise<string | null> => {
@@ -21,9 +24,10 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
                 if (client) {
                     result = await client.readHoldingRegisters(slaveId, startAddress, quantity, asHex);
                     setResponse(result);
+                    setVal(result?.stringData ?? undefined); // making the returned val reactive
                     setLastReadTime(new Date());
                     if (verbose) {
-                        console.log("Read value for '" + label + "': ", result.stringData);
+                        logv("Read value for '" + label + "': ", result.stringData);
                     }
                     return result.stringData ? result.stringData : null;
                 } else {
@@ -43,7 +47,7 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
                 } else {
                     setReadError(`Communication failed: ${err.message}`);
                 }
-                if (err.stack) console.log(err.stack);
+                if (err.stack) logv(err.stack);
                 return null;
             } finally {
                 setLoading(false);
@@ -52,15 +56,16 @@ export const useModbusHoldingRegisters = (label: string, slaveId: number, startA
         [slaveId, startAddress, quantity, asHex, client, label],
     );
 
-    return {get, val: response?.stringData, response, loading, readError, lastReadTime};
+    return {get, val, response, loading, readError, lastReadTime};
 };
 
 // Hooks providing a function to write to a particular register, and writing stats
-export const useModbusWriteMultiple = (label: string, slaveId: number, startAddress: number, readQuantityToVerify?: number) => {
+export const useModbusWriteMultiple = (label: string, slaveId: number, startAddress: number, quantity: number, verify?: boolean) => {
     const client = useModbusClient();
     const [writing, setWriting] = useState(false);
     const [writeError, setWriteError] = useState<string | null>(null);
     const [lastWriteTime, setLastWriteTime] = useState<Date | null>(null);
+    const logv = useLogV('MODBUS');
 
     const set = useCallback(
         async (value: string, verbose?: boolean) => {
@@ -69,13 +74,13 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
 
             try {
                 if (client) {
-                    await client.writeMultipleRegisters(slaveId, startAddress, value);
+                    await client.writeMultipleRegisters(slaveId, startAddress, quantity, value);
                     setLastWriteTime(new Date());
                     if (verbose) {
-                        console.log(`Written value for '${label}' at address ${startAddress}: ${value}`);
+                        logv(`Written value for '${label}' at address ${startAddress}: ${value}`);
                     }
-                    if (readQuantityToVerify) {
-                        const result = await client.readHoldingRegisters(slaveId, startAddress, readQuantityToVerify);
+                    if (verify) {
+                        const result = await client.readHoldingRegisters(slaveId, startAddress, quantity);
                         return result.stringData === value;
                     }
                     return true;
@@ -94,4 +99,91 @@ export const useModbusWriteMultiple = (label: string, slaveId: number, startAddr
     );
 
     return {set, writing, writeError, lastWriteTime};
+};
+
+// Hook that polls a holding register on an interval and exposes a reactive value
+export const usePolledHoldingRegister = (
+    label: string,
+    slaveId: number,
+    startAddress: number,
+    quantity: number,
+    intervalMs: number,
+    asHex?: boolean,
+    verbose?: boolean,
+) => {
+    // --- shared state
+    const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, startAddress, quantity, asHex);
+
+    // --- local state
+    const [currentValue, setCurrentValue] = useState<string | undefined>(undefined);
+    const [previousVal, setPreviousVal] = useState<string | undefined>(undefined);
+    const [lastChangeTime, setLastChangeTime] = useState<Date | null>(null);
+
+    // --- local state (but more permanent)
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stoppedRef = useRef<boolean>(false);
+
+    // --- utils
+    const logv = useLogV('MODBUS');
+
+    const clearTimer = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+    };
+
+    const scheduleNext = () => {
+        clearTimer();
+        if (stoppedRef.current) return;
+        timerRef.current = setTimeout(loopOnce, intervalMs);
+    };
+
+    const loopOnce = async () => {
+        if (stoppedRef.current) return;
+        await get(verbose);
+        scheduleNext();
+    };
+
+    const start = useCallback(() => {
+        if (verbose) logv("Starting polling the value for '" + label + "' (" + startAddress + ') every ' + intervalMs + ' ms');
+
+        stoppedRef.current = false;
+        clearTimer();
+
+        // Always start immediately
+        void loopOnce();
+    }, []);
+
+    const stop = useCallback(() => {
+        if (verbose) logv("Stopping polling the value for '" + label + "' (" + startAddress + ')');
+
+        stoppedRef.current = true;
+        clearTimer();
+    }, []);
+
+    // --- effects
+
+    // Sync internal state when underlying value updates
+    useEffect(() => {
+        if (val !== undefined && val !== currentValue) {
+            setPreviousVal(currentValue);
+            setCurrentValue(val);
+            setLastChangeTime(new Date());
+        }
+    }, [val]);
+
+    // --- result
+    return {
+        val: currentValue,
+        previousVal,
+        hasChanged: currentValue !== previousVal,
+        lastChangeTime,
+        response,
+        loading,
+        readError,
+        lastReadTime,
+        start,
+        stop,
+    };
 };

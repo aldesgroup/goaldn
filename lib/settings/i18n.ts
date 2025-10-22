@@ -152,7 +152,7 @@ export const useTranslator = () => {
 
     const translate = (label?: string) => {
         if (!label || label === '') {
-            return {translation: label, missing: false};
+            return {translation: '', missing: false};
         }
 
         const state = navigation.getState();
@@ -169,15 +169,13 @@ export const useTranslator = () => {
 };
 
 /**
- * Translation function to use outside of React components.
- * @param label - The label to translate.
- * @param [options] - Optional parameters.
- * @param [options.ns] - An array of namespaces (routes).
- * @returns The translated string or the original label if no translation is found.
+ * Uses useTranslator but omits the "missing" flag
  * @category Settings
- *
- **/
-export const t = (label: string, options?: {ns: string[]}) => {
-    const {translation} = translateKeyAtRoutes(i18n.language, label, options?.ns);
-    return translation;
+ */
+export const useT = () => {
+    const translate = useTranslator();
+    return (label?: string) => {
+        const result = translate(label);
+        return result.translation;
+    };
 };

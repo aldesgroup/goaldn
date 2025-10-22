@@ -1,5 +1,6 @@
 import {atom, WritableAtom} from 'jotai';
 import {PixelRatio} from 'react-native';
+import Config from 'react-native-config';
 import * as RNLocalize from 'react-native-localize';
 import {storedAtom} from '../state-management';
 
@@ -45,7 +46,7 @@ export const detectFromScaleAtom = storedAtom('detect-from-scale', 1.3);
  * Atom that stores the threshold for pixel density to detect a small screen.
  * @category Settings
  */
-export const detectFromDensityAtom = storedAtom('detect-from-density', 2.75);
+export const detectFromDensityAtom = storedAtom('detect-from-density', 3.0);
 
 /**
  * Returns the current font scale of the device.
@@ -89,3 +90,14 @@ export const smallScreenAtom: WritableAtom<boolean | Promise<boolean>, any, any>
         // we don't provide a write method here, it's a purely derived atom
     },
 );
+
+//-----------------------------------------------------------------------------
+// Logging
+//-----------------------------------------------------------------------------
+
+/**
+ * Atom that stores the application's verbose mode.
+ * If true, then console.log calls can occur. This mode should not be used in production.
+ * @category Settings
+ */
+export const verboseAtom = atom(Config.ENVIRONMENT === 'development');

@@ -90,8 +90,7 @@ export function createModbusReadingFrame(slaveId: number, startAddress: number, 
     return buffer;
 }
 
-export function createModbusWritingFrame8bit(slaveId: number, startAddress: number, values: number[]): Buffer {
-    const quantity = values.length / 2; // number of 16-bit registers
+export function createModbusWritingFrame8bit(slaveId: number, startAddress: number, quantity: number, values: number[]): Buffer {
     const byteCount = values.length;
     const buffer = Buffer.alloc(7 + byteCount);
 

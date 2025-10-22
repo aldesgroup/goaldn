@@ -5,14 +5,14 @@ import {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
-import {Button, cn, Txt} from '../base';
+import {Button, cn, Txt, useLogV} from '../base';
 import {BottomView} from '../layout';
-import {useHideTabBar} from '../navigation/navigation-hooks';
+import {useResetSimulatedRegisters} from '../modbus';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
-import {checkAndRequestBlePermissions, checkBluetoothEnabled, permissionsGrantedAtom} from './bluetoothPermissions';
-import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, SIMULATION_DEVICE_ID, simulationPeripheral} from './bluetoothSimulation';
+import {permissionsGrantedAtom, useCheckAndRequestBlePermissions, useCheckBluetoothEnabled} from './bluetoothPermissions';
+import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, simulationPeripherals} from './bluetoothSimulation';
 
 /**
  * A screen component for managing Bluetooth Low Energy (BLE) device connections.
@@ -27,7 +27,6 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     // --- external, shared state
     // --------------------------------------------------------------------------------------------
-    // const bleManager = useAtomValue(bleManagerAtom);
     const bleManager = getBleManager();
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
     const isBondingRequired = useAtomValue(isBondingRequiredAtom);
@@ -36,6 +35,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const smallScreen = useAtomValue(smallScreenAtom);
     const isSimulationBleDeviceEnabled = useAtomValue(unwrap(isSimulationBleDeviceEnabledAtom));
     const setBleDeviceSimulated = useSetAtom(isBleDeviceSimulatedAtom);
+    const resetSimulatedRegisters = useResetSimulatedRegisters();
 
     // --------------------------------------------------------------------------------------------
     // internal state
@@ -52,9 +52,15 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const isScanStarted = useRef<boolean | null>(false);
 
     // --------------------------------------------------------------------------------------------
+    // --- utils
+    // --------------------------------------------------------------------------------------------
+    const checkAndRequestBlePermissions = useCheckAndRequestBlePermissions();
+    const checkBluetoothEnabled = useCheckBluetoothEnabled();
+    const logv = useLogV('BLECON');
+
+    // --------------------------------------------------------------------------------------------
     // effects
     // --------------------------------------------------------------------------------------------
-    useHideTabBar();
     useEffect(() => {
         // This BLE manager starts operations, that we have to listen to, to handle their result
         const listeners: any[] = [
@@ -72,7 +78,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             // but at least scanning should be stopped
             if (!isScanStarted.current) {
                 stopScan().then(() => {
-                    console.log('Scanning has been stopped!');
+                    logv('Scanning has been stopped!');
                 });
             }
 
@@ -114,6 +120,12 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                             if (aHasPrefix && !bHasPrefix) return -1;
                             if (!aHasPrefix && bHasPrefix) return 1;
 
+                            // If the name is the same, sort by signal strength
+                            if (a.name === b.name) {
+                                // Higher RSSI (closer to 0) should come first
+                                return (b.rssi || -Infinity) - (a.rssi || -Infinity);
+                            }
+
                             // Otherwise sort alphabetically
                             return (a.name || '').localeCompare(b.name || '');
                         })
@@ -123,11 +135,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     };
 
     const handleConnectPeripheral = (event: any) => {
-        console.log(`[handleConnectPeripheral][${event.peripheral}] connected.`);
+        logv(`[handleConnectPeripheral][${event.peripheral}] connected.`);
     };
 
     const handleDisconnectedPeripheral = (event: BleDisconnectPeripheralEvent) => {
-        console.debug(`[handleDisconnectedPeripheral][${event.peripheral}] disconnected.`);
+        logv(`[handleDisconnectedPeripheral][${event.peripheral}] disconnected.`);
     };
 
     // --------------------------------------------------------------------------------------------
@@ -144,7 +156,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             if (err instanceof Error) {
                 setError(`Permission error: ${err.message}`);
             } else {
-                console.log('Unknown error while checking permissions:', err);
+                logv('Unknown error while checking permissions:', err);
             }
             setPermissionStatus('error');
             setPermissionsGranted(false);
@@ -178,7 +190,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 return;
             }
 
-            console.log('device scanning will start');
+            logv('device scanning will start');
 
             // Check if Bluetooth is enabled (Android 12+ only)
             const isBluetoothEnabled = await checkBluetoothEnabled();
@@ -201,15 +213,19 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 // Making sure we're stopping the scan at the end
                 setTimeout(() => stopScan(), scanDurationSeconds * 1000);
 
-                // Adding a mock device
+                // Adding mock devices
                 if (isSimulationBleDeviceEnabled) {
-                    setTimeout(() => handleDiscoverPeripheral(simulationPeripheral), 800);
+                    setTimeout(() => {
+                        for (const simulationPeripheral of Object.values(simulationPeripherals)) {
+                            handleDiscoverPeripheral(simulationPeripheral);
+                        }
+                    }, 800);
                 }
             } catch (scanErr) {
                 if (scanErr instanceof Error) {
                     setError(`Error while scanning for BLE devices: ${scanErr.message}`);
                 } else {
-                    console.log('Unknown error while scanning for BLE devices:', scanErr);
+                    logv('Unknown error while scanning for BLE devices:', scanErr);
                 }
                 setIsScanning(false);
             }
@@ -225,11 +241,14 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
             // Keeping track of the currently connected device, if any
             let lastConnectedDevice = null;
+
+            // Resetting some stuff regarding the
             setBleDeviceSimulated(false);
+            resetSimulatedRegisters();
 
             // Disconnecting the current device if any
             if (connectedDevice) {
-                console.log('Dropping the connection to: ' + connectedDevice.id);
+                logv('Dropping the connection to: ' + connectedDevice.id);
 
                 // we'll probably need this
                 lastConnectedDevice = connectedDevice;
@@ -238,7 +257,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 setConnectingDevice(connectedDevice.id);
 
                 // actually disconnecting
-                if (connectedDevice.id === SIMULATION_DEVICE_ID) {
+                if (simulationPeripherals[connectedDevice.id]) {
                     // for now, nothing special to do with the mock device
                 } else {
                     // disconnecting the device
@@ -248,12 +267,15 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 // we're done
                 setConnectingDevice(null);
                 setConnectedDevice(null);
+
+                // Go back to the previous screen
+                navigation.goBack();
             }
 
             // Connecting to a new one, if any
             if (device) {
                 setConnectingDevice(device.id);
-                if (device.id === SIMULATION_DEVICE_ID) {
+                if (simulationPeripherals[device.id]) {
                     // keeping in mind we've a simulation device here
                     setBleDeviceSimulated(true);
                 } else {
@@ -272,7 +294,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                         // nope, let's do this
                         if (!alreadyBonded) {
                             await bleManager.createBond(device.id);
-                            console.log("Bonding '" + device.name + "' successful");
+                            logv("Bonding '" + device.name + "' successful");
                         }
                     }
 
@@ -286,7 +308,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                             Config.BLE_READ_CHAR_UUID &&
                             Config.BLE_READ_CHAR_UUID !== ''
                         ) {
-                            console.log('Started using BLE notifications');
+                            logv('Started using BLE notifications');
                             bleManager.startNotification(device.id, Config.BLE_SERVICE_UUID, Config.BLE_READ_CHAR_UUID);
                         } else {
                             // TODO scan to find the service ID
@@ -313,7 +335,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             if (connErr instanceof Error) {
                 setError(`Error while connecting to a BLE device: ${connErr.message}`);
             } else {
-                // console.log("Unknown error while connecting to a BLE device:", connErr);
+                // logv("Unknown error while connecting to a BLE device:", connErr);
                 setError('Unknown error while connecting to a BLE device:' + connErr);
             }
             setConnectedDevice(null);

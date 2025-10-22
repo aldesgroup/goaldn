@@ -1,9 +1,8 @@
-import {useFieldValue, useInputField} from 'form-atoms';
 import {useAtomValue} from 'jotai';
 import React, {useEffect} from 'react';
 import {View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
-import {FieldConfigAtom, getFieldValidationError, useFieldLastModified} from '../forms';
+import {Field, useField, useFieldLastModified, useFieldValidationError} from '../forms';
 import {smallScreenAtom, useTranslator} from '../settings';
 import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {Input} from '../ui/input';
@@ -13,8 +12,8 @@ import {Input} from '../ui/input';
  * Extends InputLabelProps and InputProps with additional string-specific properties.
  * @category Types
  */
-export type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends React.ComponentProps<typeof Input>> = {
-    /** The field configuration atom */
+export type StringFieldProps<T extends Field<any>, InputProps extends React.ComponentProps<typeof Input>> = {
+    /** The field */
     field: T;
     /** The placeholder text for the input */
     placeholder?: string;
@@ -37,41 +36,40 @@ export type StringFieldProps<T extends FieldConfigAtom<any>, InputProps extends 
  * A form field component that renders a string input with validation and error handling.
  * Supports different display modes (input, sheet, report) and handles various value types.
  *
- * @param {StringFieldProps<confAtom, InputProps>} props - The component props
+ * @param {StringFieldProps<T, InputProps>} props - The component props
  * @returns {JSX.Element} A string input field with label, validation, and optional unit
  * @category Forms
  */
-export function StringField<confAtom extends FieldConfigAtom<any>, InputProps extends React.ComponentProps<typeof Input>>({
+export function StringField<T extends Field<any>, InputProps extends React.ComponentProps<typeof Input>>({
+    field,
     mode = 'input',
     ...props
-}: StringFieldProps<confAtom, InputProps>) {
+}: StringFieldProps<T, InputProps>) {
     // --- local state
     const isReport = mode === 'report';
     const isSheet = mode === 'sheet';
     const isInput = mode === 'input';
 
     // --- shared state
-    const fieldConfig = useAtomValue(props.field);
-    const field = useInputField(fieldConfig.fieldAtom);
-    const value = useFieldValue(fieldConfig.fieldAtom);
-    const [lastModified, setLastModified] = useFieldLastModified(fieldConfig.stateAtom);
-    const disabled = fieldConfig.disabled ? fieldConfig.disabled() : false;
-    const visible = isReport || isSheet || (fieldConfig.visible ? fieldConfig.visible() : true);
-    const maxLength = fieldConfig.max || 0;
-    const validError = getFieldValidationError(props.field);
-    const mandatory = fieldConfig.mandatory && (typeof fieldConfig.mandatory === 'function' ? fieldConfig.mandatory() : fieldConfig.mandatory);
+    const [value, setValue] = useField(field);
+    const [lastModified, setLastModified] = useFieldLastModified(field);
+    const disabled = field.disabled ? field.disabled() : false;
+    const visible = isReport || isSheet || (field.visible ? field.visible() : true);
+    const maxLength = field.max || 0;
+    const validError = useFieldValidationError(field);
+    const mandatory = field.mandatory && (typeof field.mandatory === 'function' ? field.mandatory() : field.mandatory);
     const smallScreen = useAtomValue(smallScreenAtom);
 
     // --- shared state - syncing with another atom
-    const syncAtom = (props.syncWith ?? fieldConfig.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
+    const syncAtom = (props.syncWith ?? field.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
     const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
         ? useRefreshableAtom<Promise<string>, string>(syncAtom)
         : [undefined, undefined, undefined, undefined];
 
     // --- effects
-    if (fieldConfig.effects) {
+    if (field.effects) {
         // effects configured on the field
-        fieldConfig.effects.map(useEffect => useEffect());
+        field.effects.map(useEffect => useEffect());
     }
 
     // refreshing the synced value, if any
@@ -85,7 +83,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
         if (syncedVal && syncedVal !== value) {
             // if there is no last modified date, or the synced value is more recent, we set it
             if (!lastModified || syncedValLastModified > lastModified) {
-                field.actions.setValue(syncedVal);
+                setValue(syncedVal);
                 setLastModified(new Date());
             }
         }
@@ -102,7 +100,7 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     const updateValue = (text: string) => {
         // setting the value, but not allowing to exceed the configured maxlength, if there's one
         if (maxLength === 0 || text.length <= maxLength) {
-            field.actions.setValue(text);
+            setValue(text);
             setLastModified(new Date());
         }
     };
@@ -128,62 +126,60 @@ export function StringField<confAtom extends FieldConfigAtom<any>, InputProps ex
     };
 
     // --- rendering
-    return (
-        visible && (
-            <View className={cn('flex-col gap-2', props.className, isReport && !smallScreen && 'flex-row items-center')}>
-                {/* Label */}
-                <InputLabel
-                    label={props.label}
-                    labelClassName={cn(validError && 'text-destructive-foreground', props.labelClassName)}
-                    mode={mode}
-                    mandatory={mandatory}
-                    labelAppend={props.labelAppend}
-                />
+    return visible ? (
+        <View className={cn('flex-col gap-2', props.className, isReport && !smallScreen && 'flex-row items-center')}>
+            {/* Label */}
+            <InputLabel
+                label={props.label}
+                labelClassName={cn(validError && 'text-destructive-foreground', props.labelClassName)}
+                mode={mode}
+                mandatory={mandatory}
+                labelAppend={props.labelAppend}
+            />
 
-                {/* Input field */}
-                {!isInput ? (
-                    // No input in report mode
-                    <View className="flex-row items-center">
-                        <Txt
-                            raw={!isBoolean(value) && !props.translateValue}
-                            className={cn('text-foreground-light text-lg', props.inputClassName)}
-                            append={
-                                props.unit && (
-                                    <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>
-                                        {props.unit}
-                                    </Txt>
-                                )
-                            }>
-                            {getStringValue(value)}
-                        </Txt>
-                    </View>
-                ) : (
-                    // Now we're talking
-                    <>
-                        <Input
-                            {...props}
-                            className={cn(
-                                'border-border text-foreground',
-                                value ? 'bg-secondary' : 'bg-white',
-                                props.inputClassName,
-                                validError && 'text-destructive-foreground border-destructive-foreground',
-                                smallScreen && 'min-h-16',
-                            )}
-                            editable={!disabled}
-                            value={value}
-                            placeholder={placeholder} // making sure to put it after the ...props, to override them
-                            onChangeText={updateValue}
-                        />
-                        {validError && (
-                            <View className="flex-row gap-1">
-                                <Txt className="text-destructive-foreground flex-1" append={<ErrorAppend />}>
-                                    {validError.msg}
+            {/* Input field */}
+            {!isInput ? (
+                // No input in report mode
+                <View className="flex-row items-center">
+                    <Txt
+                        raw={!isBoolean(value) && !props.translateValue}
+                        className={cn('text-foreground-light text-lg', props.inputClassName)}
+                        append={
+                            props.unit && (
+                                <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>
+                                    {props.unit}
                                 </Txt>
-                            </View>
+                            )
+                        }>
+                        {getStringValue(value)}
+                    </Txt>
+                </View>
+            ) : (
+                // Now we're talking
+                <>
+                    <Input
+                        {...props}
+                        className={cn(
+                            'border-border text-foreground',
+                            value ? 'bg-secondary' : 'bg-white',
+                            props.inputClassName,
+                            validError && 'text-destructive-foreground border-destructive-foreground',
+                            smallScreen && 'min-h-16',
                         )}
-                    </>
-                )}
-            </View>
-        )
-    );
+                        editable={!disabled}
+                        value={value}
+                        placeholder={placeholder} // making sure to put it after the ...props, to override them
+                        onChangeText={updateValue}
+                    />
+                    {validError && (
+                        <View className="flex-row gap-1">
+                            <Txt className="text-destructive-foreground flex-1" append={<ErrorAppend />}>
+                                {validError.msg}
+                            </Txt>
+                        </View>
+                    )}
+                </>
+            )}
+        </View>
+    ) : null;
 }

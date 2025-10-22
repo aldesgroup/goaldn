@@ -1,6 +1,8 @@
 import {atom} from 'jotai';
 import {atomWithRefresh} from 'jotai/utils';
+import {getLogV} from '../base';
 import {isBleDeviceSimulatedAtom} from '../bluetooth';
+import {verboseAtom} from '../settings';
 import {RefreshableAtom} from '../state-management';
 import {realModbusClientAtom} from './modbus-client';
 import {ModbusResponse} from './modbus-frame';
@@ -28,6 +30,8 @@ export function newModbusRegisterAtom(
         const isSimulated = get(isBleDeviceSimulatedAtom);
         const realClient = get(realModbusClientAtom);
         const simulatedClient = get(simulatedClientInstanceAtom);
+        const verbose = get(verboseAtom);
+        const logv = getLogV(verbose, 'MB.ATOM');
 
         // --- local state
         let nextValue: string | undefined;
@@ -39,7 +43,7 @@ export function newModbusRegisterAtom(
             if (!response.stringData) {
                 throw new Error('No data present at register: ' + startAddress);
             } else {
-                console.log("Read value for '" + startAddress + "': ", response.stringData);
+                logv("Read value for '" + startAddress + "' (" + label + '): ', response.stringData);
             }
             nextValue = response.stringData;
         } else {
@@ -51,7 +55,7 @@ export function newModbusRegisterAtom(
                 if (!response.stringData) {
                     throw new Error('No data present at register: ' + startAddress);
                 } else {
-                    console.log("Read value for '" + startAddress + "': ", response.stringData);
+                    logv("Read value for '" + startAddress + "': ", response.stringData);
                 }
                 nextValue = response.stringData;
             } catch (err: any) {
@@ -90,8 +94,10 @@ export function newModbusRegisterAtom(
                 const simulatedClient = get(simulatedClientInstanceAtom);
 
                 if (isSimulated) {
-                    if (!simulatedClient) throw new Error('No simulated MODBUS client available');
-                    await simulatedClient.writeMultipleRegisters(slaveId, startAddress, newValue);
+                    if (!simulatedClient) {
+                        throw new Error('No simulated MODBUS client available');
+                    }
+                    await simulatedClient.writeMultipleRegisters(slaveId, startAddress, quantity, newValue);
                     // Optimistically update and conditionally refresh
                     const changed = lastValue !== newValue;
                     if (changed) {
@@ -103,7 +109,7 @@ export function newModbusRegisterAtom(
                     if (!realClient) {
                         throw new Error('No MODBUS client available');
                     }
-                    await realClient.writeMultipleRegisters(slaveId, startAddress, newValue);
+                    await realClient.writeMultipleRegisters(slaveId, startAddress, quantity, newValue);
                     // Optimistically update and conditionally refresh
                     const changed = lastValue !== newValue;
                     if (changed) {

@@ -41,6 +41,27 @@ export const useDateFormatter = (withTime?: boolean) => {
 };
 
 // ----------------------------------------------------------------------------
+// Time formatting
+// ----------------------------------------------------------------------------
+
+const onlyTimeFormatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+});
+
+/**
+ * Returns the given date in the HH:MM:SS.sss format
+ * @param date
+ * @returns
+ * @category Utils
+ */
+export const toMillisecondsString = (date: Date) => {
+    return onlyTimeFormatter.format(date) + '.' + date.getMilliseconds().toString().padStart(3, '0');
+};
+
+// ----------------------------------------------------------------------------
 // Misc
 // ----------------------------------------------------------------------------
 
