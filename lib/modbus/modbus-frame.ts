@@ -1,4 +1,5 @@
 import {Buffer} from 'buffer';
+import {RegisterProps} from './modbus-utils';
 
 // ----------------------------------------------------------------------------
 // Utils
@@ -33,7 +34,7 @@ export type ModbusRequest = {
     slaveId: number;
     functionCode: number;
     startAddress: number;
-    quantity?: number;
+    size?: number;
     value?: number | boolean;
     timeout?: number;
 };
@@ -47,7 +48,7 @@ export type ModbusResponse = {
     address?: number;
     rawValue?: number;
     startAddress?: number;
-    quantity?: number;
+    size?: number;
     success: boolean;
 };
 
@@ -57,7 +58,7 @@ export type ExpectedResponse = {
     address?: number;
     startAddress?: number;
     rawValue?: number | boolean;
-    quantity?: number;
+    size?: number;
 };
 
 function calculateCRC16(buffer: Buffer): number {
@@ -79,25 +80,27 @@ function calculateCRC16(buffer: Buffer): number {
 // Requests
 // ----------------------------------------------------------------------------
 
-export function createModbusReadingFrame(slaveId: number, startAddress: number, quantity: number): Buffer {
+export function createModbusReadingFrame(registerProps: RegisterProps): Buffer {
+    const {slaveId, startAddress, size} = registerProps;
     const buffer = Buffer.alloc(8);
     buffer.writeUInt8(slaveId, 0);
     buffer.writeUInt8(MODBUS_FUNCTIONS.READ_HOLDING_REGISTERS, 1);
     buffer.writeUInt16BE(startAddress, 2);
-    buffer.writeUInt16BE(quantity, 4);
+    buffer.writeUInt16BE(size, 4);
     const crc = calculateCRC16(buffer.slice(0, 6));
     buffer.writeUInt16LE(crc, 6);
     return buffer;
 }
 
-export function createModbusWritingFrame8bit(slaveId: number, startAddress: number, quantity: number, values: number[]): Buffer {
+export function createModbusWritingFrame8bit(registerProps: RegisterProps, values: number[]): Buffer {
+    const {slaveId, startAddress, size} = registerProps;
     const byteCount = values.length;
     const buffer = Buffer.alloc(7 + byteCount);
 
     buffer.writeUInt8(slaveId, 0);
     buffer.writeUInt8(MODBUS_FUNCTIONS.WRITE_MULTIPLE_REGISTERS, 1);
     buffer.writeUInt16BE(startAddress, 2);
-    buffer.writeUInt16BE(quantity, 4);
+    buffer.writeUInt16BE(size, 4);
     buffer.writeUInt8(byteCount, 6);
 
     for (let i = 0; i < values.length; i++) {
@@ -177,7 +180,7 @@ export function parseWriteMultipleResponse(buffer: Buffer, expectedResponse: Exp
     const slaveId = buffer[0];
     const functionCode = buffer[1];
     const startAddress = buffer.readUInt16BE(2);
-    const quantity = buffer.readUInt16BE(4);
+    const size = buffer.readUInt16BE(4);
 
     // For write multiple, success means the response confirms the write
     const success =
@@ -185,7 +188,7 @@ export function parseWriteMultipleResponse(buffer: Buffer, expectedResponse: Exp
         slaveId === expectedResponse.slaveId &&
         functionCode === expectedResponse.functionCode &&
         startAddress === expectedResponse.startAddress &&
-        quantity === expectedResponse.quantity;
+        size === expectedResponse.size;
 
     if (!success && expectedResponse) {
         throw new Error('Write confirmation mismatch - request not properly executed');
@@ -195,7 +198,7 @@ export function parseWriteMultipleResponse(buffer: Buffer, expectedResponse: Exp
         slaveId,
         functionCode,
         startAddress,
-        quantity,
+        size,
         success: true,
     };
 }

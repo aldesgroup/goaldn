@@ -92,36 +92,3 @@ export function useSetAllAtoms<Value>(atoms: (WritableAtom<Value, any, any> | un
 
     return setAllValues;
 }
-
-/**
- * Define a new atom type that is a writable atom, but its setter also supports the 'undefined' refresh trigger.
- * The read type surfaces a pair { value, lastModified }.
- * For async atoms, the Promise wraps that pair.
- * @category State Management
- */
-export type RefreshableAtom<VALUE, SETVALUE = VALUE> = WritableAtom<
-    VALUE extends Promise<infer T> ? Promise<{value: T; lastModified: Date}> : {value: VALUE; lastModified: Date},
-    [SETVALUE | undefined],
-    any
->;
-
-/**
- * A function to help make use of refreshable atoms in a more friendly way
- * @param refreshableAtom the refreshable atom to use
- * @category State Management
- */
-export function useRefreshableAtom<VALUE, SETVALUE = VALUE>(
-    refreshableAtom: RefreshableAtom<VALUE, SETVALUE>,
-): [Awaited<VALUE>, Date, () => void, (value: SETVALUE) => void] {
-    // Note: For async atoms, Suspense should resolve the promise before this returns.
-    const {value, lastModified} = useAtomValue(refreshableAtom) as any;
-
-    // Use useSetAtom to get the setter function.
-    const set = useSetAtom(refreshableAtom);
-
-    // Create a refresh function that calls the setter with 'undefined'.
-    // This triggers the refresh logic in the atom's setter.
-    const refresh = () => set(undefined as SETVALUE);
-
-    return [value as Awaited<VALUE>, lastModified as Date, refresh, set];
-}

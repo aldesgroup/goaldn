@@ -4,19 +4,12 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, TextInput, View} from 'react-native';
 import {InputLabel, Txt} from '../base';
 import {useDateFormatter} from '../utils';
-import {useModbusHoldingRegisters, useModbusWriteMultiple} from './modbus-hooks';
+import {useModbusRegisterRead, useModbusRegisterWrite} from './modbus-hooks';
+import {RegisterProps} from './modbus-utils';
 
 export type ModbusRegisterValueProps = {
-    /* the slave ID of the device to read from */
-    slaveId: number;
-    /* the register's label */
-    label: string;
-    /* the register address as an int */
-    addrInt: number;
-    /* the size of the data to fetch (number of registers) */
-    size: number;
-    /* returning the result as hexadecimal ? */
-    asHex?: boolean;
+    /* MODBUS register configuration */
+    register: RegisterProps;
     /* shall we frequently re-read the value? */
     refreshEveryMS?: number;
     /* allows to edit the value */
@@ -27,10 +20,10 @@ export type ModbusRegisterValueProps = {
     state?: any;
 };
 
-export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refreshEveryMS, editable, verbose, state}: ModbusRegisterValueProps) {
+export function ModbusRegisterValue({register, refreshEveryMS, editable, verbose, state}: ModbusRegisterValueProps) {
     // --- shared state
-    const {get, val, response, loading, readError, lastReadTime} = useModbusHoldingRegisters(label, slaveId, addrInt, size, asHex);
-    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt, size);
+    const {get, val, response, loading, readError, lastReadTime} = useModbusRegisterRead(register);
+    const {set, writing, writeError, lastWriteTime} = useModbusRegisterWrite(register);
     const formatDate = useDateFormatter(true);
     const [currentValue, setCurrentValue] = useState('');
     const [lastValue, setLastValue] = useState('');
@@ -121,12 +114,12 @@ export function ModbusRegisterValue({slaveId, label, addrInt, size, asHex, refre
         <View>
             {!editable ? (
                 <View className="flex-row">
-                    <InputLabel label={label} />
+                    <InputLabel label={register.label} />
                     {responseDisplay}
                 </View>
             ) : (
                 <View className="flex-row items-center gap-2">
-                    <InputLabel label={label} />
+                    <InputLabel label={register.label} />
                     <TextInput value={currentValue} onChangeText={handleTextChange} className="w-16 border" />
                     {writing ? <ActivityIndicator /> : <X onPress={() => setCurrentValue('')} />}
                 </View>

@@ -2,8 +2,7 @@ import Slider from '@react-native-community/slider';
 import {useEffect, useState} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
-import {Field, fieldDisplayMode, useField, useFieldLastModified} from '../forms';
-import {RefreshableAtom, useRefreshableAtom} from '../state-management';
+import {Field, fieldDisplayMode, useField} from '../forms';
 import {getColors} from '../styling';
 
 /**
@@ -25,8 +24,8 @@ export type SliderFieldProps<T extends Field<number>> = {
     unit?: string;
     /** The display mode for the field */
     mode?: fieldDisplayMode;
-    /** Should the field value be synchronized with the value of another atom? */
-    syncWith?: RefreshableAtom<Promise<string>, string>;
+    /** To disable the field */
+    disabled?: boolean;
 };
 
 /**
@@ -41,18 +40,10 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
     // shared state
     const colors = getColors();
     const [value, setValue] = useField(field);
-    const [lastModified, setLastModified] = useFieldLastModified(field);
-    const disabled = field.disabled ? field.disabled() : false;
+    const disabled = (field.disabled ? field.disabled() : false) || props.disabled;
     const visible = field.visible ? field.visible() : true;
     const minVal = field.min || 0;
     const maxVal = field.max || 1;
-
-    // --- shared state - syncing with another atom
-    const syncAtom = (props.syncWith ?? field.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
-    const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
-        ? useRefreshableAtom<Promise<string>, string>(syncAtom)
-        : [undefined, undefined, undefined, undefined];
-    const syncedValAsNum = syncedVal ? parseInt(syncedVal) : undefined;
 
     // --- local state
     const [displayedValue, setDisplayedValue] = useState(value);
@@ -68,23 +59,9 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
         field.effects.map(useEffect => useEffect());
     }
 
-    // refreshing the synced value, if any
     useEffect(() => {
-        if (refreshSyncedVal) refreshSyncedVal();
-    }, []);
-
-    // if the synced value has changed & is more recent, we set it
-    useEffect(() => {
-        // there is a synced value, and it's different from the local value
-        if (syncedValAsNum && syncedValLastModified && syncedValAsNum !== value) {
-            // if there is no last modified date, or the synced value is more recent, we set it
-            if (!lastModified || syncedValLastModified > lastModified) {
-                setValue(syncedValAsNum);
-                setDisplayedValue(syncedValAsNum);
-                setLastModified(new Date());
-            }
-        }
-    }, [syncedVal]);
+        setDisplayedValue(value);
+    }, [value]);
 
     // --- utils
 
@@ -122,7 +99,6 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
                     disabled={disabled}
                     onSlidingComplete={val => {
                         setValue(val);
-                        setLastModified(new Date());
                     }}
                     onValueChange={setDisplayedValue}
                     value={value}

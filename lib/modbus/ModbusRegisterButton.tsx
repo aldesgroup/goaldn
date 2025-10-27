@@ -1,19 +1,14 @@
 import {View} from 'react-native';
 import {Button, Txt} from '../base';
-import {useModbusWriteMultiple} from './modbus-hooks';
+import {useModbusRegisterWrite} from './modbus-hooks';
 import {useDateFormatter} from '../utils';
+import {RegisterProps} from './modbus-utils';
 
 export type ModbusRegisterButtonProps = {
     /** the button title */
     title: string;
-    /** the slave ID of the device to read from */
-    slaveId: number;
-    /** the register's label */
-    label: string;
-    /** the register address as an int */
-    addrInt: number;
-    /* the size of the data to write (number of registers) */
-    size: number;
+    /** MODBUS register configuration */
+    register: RegisterProps;
     /** activates native & JS logging */
     verbose?: boolean;
     /** the value to set to the register when clicking this button */
@@ -22,9 +17,9 @@ export type ModbusRegisterButtonProps = {
     then?: () => void;
 };
 
-export function ModbusRegisterButton({title, slaveId, label, addrInt, size, verbose, value, then}: ModbusRegisterButtonProps) {
+export function ModbusRegisterButton({title, register, verbose, value, then}: ModbusRegisterButtonProps) {
     // --- shared state
-    const {set, writing, writeError, lastWriteTime} = useModbusWriteMultiple(label, slaveId, addrInt, size);
+    const {set, writing, writeError, lastWriteTime} = useModbusRegisterWrite(register);
 
     // --- utils
     const dateFormat = useDateFormatter(true);

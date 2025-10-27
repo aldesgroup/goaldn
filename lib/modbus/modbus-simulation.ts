@@ -6,6 +6,7 @@ import {connectedDeviceAtom} from '../bluetooth';
 import {sleep} from '../utils';
 import {ModbusResponse} from './modbus-frame';
 import {useLogV} from '../base';
+import {RegisterProps} from './modbus-utils';
 
 // Reactive storage for simulated registers
 export const simulatedRegistersAtom = atom<{[startAddress: number]: string}>({});
@@ -22,10 +23,11 @@ export class SimulatedBleModbusClient {
     }
 
     // same signature as the real client
-    async readHoldingRegisters(slaveId: number, startAddress: number, quantity: number, asHex?: boolean): Promise<ModbusResponse> {
+    async readHoldingRegisters(register: RegisterProps): Promise<ModbusResponse> {
+        const {slaveId, startAddress, size, asHex} = register;
         return this._mutex.runExclusive(async () => {
             // we're waiting a bit more, to emulate a little bit a real transmission
-            await sleep(3 * this.delay);
+            await sleep(20 * this.delay);
 
             // finding the value and returning it wrapped in a ModbusResponse
             const regs = this.store.get(simulatedRegistersAtom);
@@ -39,10 +41,11 @@ export class SimulatedBleModbusClient {
     }
 
     // same signature as the real client
-    async writeMultipleRegisters(slaveId: number, startAddress: number, quantity: number, value: string): Promise<ModbusResponse> {
+    async writeMultipleRegisters(register: RegisterProps, value: string): Promise<ModbusResponse> {
+        const {slaveId, startAddress, size} = register;
         return this._mutex.runExclusive(async () => {
             // we're waiting a bit more, to emulate a little bit a real transmission
-            await sleep(3 * this.delay);
+            await sleep(20 * this.delay);
 
             // setting the value
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value}));

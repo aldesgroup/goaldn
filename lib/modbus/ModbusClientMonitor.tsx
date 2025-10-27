@@ -4,14 +4,11 @@ import {useEffect, useRef, useState} from 'react';
 import Config from 'react-native-config';
 import {useLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
-import {useModbusHoldingRegisters} from './modbus-hooks';
+import {useModbusRegisterRead} from './modbus-hooks';
+import {RegisterProps} from './modbus-utils';
 
 type ModbusClientMonitorProps = {
-    label?: string;
-    slaveId: number;
-    startAddress: number;
-    quantity?: number;
-    asHex?: boolean;
+    register: RegisterProps;
     checkEveryMs?: number;
     failureThreshold?: number;
     navToWhenFail: string;
@@ -28,11 +25,7 @@ type ModbusClientMonitorProps = {
  *
  * The component renders nothing.
  *
- * @param label Identifier used for logging and for the underlying read hook.
- * @param slaveId MODBUS slave/unit identifier.
- * @param startAddress Starting holding register address to read.
- * @param quantity Number of registers to read. Defaults to 1.
- * @param asHex When true, interpret data as hex string when applicable.
+ * @param register MODBUS register configuration.
  * @param checkEveryMs Polling interval in milliseconds. Defaults to 3000 ms.
  * @param failureThreshold Number of consecutive failures before triggering the
  * disconnect and navigation. Defaults to 3.
@@ -43,10 +36,12 @@ type ModbusClientMonitorProps = {
  * @example
  * ```tsx
  * <ModbusClientMonitor
- *   label="heartbeat"
- *   slaveId={1}
- *   startAddress={0}
- *   quantity={1}
+ *   register={{
+ *     label: "heartbeat",
+ *     slaveId: 1,
+ *     startAddress: 0,
+ *     quantity: 1
+ *   }}
  *   checkEveryMs={3000}
  *   failureThreshold={3}
  *   navToWhenFail="Invite to reconnect"
@@ -61,23 +56,14 @@ export function ModbusClientMonitor(props: ModbusClientMonitorProps) {
     return connectedDevice ? <InnerModbusClientMonitor {...props} /> : null;
 }
 
-function InnerModbusClientMonitor({
-    label = 'monitor',
-    slaveId,
-    startAddress,
-    quantity = 1,
-    asHex,
-    checkEveryMs = 3000,
-    failureThreshold = 4,
-    navToWhenFail,
-}: ModbusClientMonitorProps) {
+function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThreshold = 10, navToWhenFail}: ModbusClientMonitorProps) {
     // --- shared state - BLE / device
     const bleManager = getBleManager();
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
     const isBleDeviceSimulated = useAtomValue(isBleDeviceSimulatedAtom);
 
     // --- shared state - MODBUS
-    const {get: readRegister} = useModbusHoldingRegisters(label, slaveId, startAddress, quantity, asHex);
+    const {get: readRegister} = useModbusRegisterRead(register);
 
     // --- shared state - misc
     const navigation = useNavigation<any>();
@@ -129,7 +115,7 @@ function InnerModbusClientMonitor({
         return () => {
             clearTimer();
         };
-    }, [slaveId, startAddress, quantity, checkEveryMs, connectedDevice]);
+    }, [register, checkEveryMs, connectedDevice]);
 
     // reacting to too many failures
     useEffect(() => {

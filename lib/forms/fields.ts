@@ -1,8 +1,7 @@
 import {fieldAtom, formAtom, FormAtom, useFieldValue as getValue, RESET, useForm, useInputField, type FieldAtom} from 'form-atoms';
-import {atom, Atom, useAtom, useStore, WritableAtom} from 'jotai';
+import {atom, Atom, useAtom, useSetAtom, useStore, WritableAtom} from 'jotai';
 import {LucideIcon} from 'lucide-react-native';
 import {useCallback, useMemo} from 'react';
-import {RefreshableAtom} from '../state-management';
 
 // ------------------------------------------------------------------------------------------------
 // Base structure for defining a model
@@ -18,7 +17,7 @@ export type Model<T extends Record<string, Field<any>>> = T & {
     _URL: string;
     _fields: T;
     _form: FormAtom<{[K in keyof T]: FieldAtom<any>}>;
-    _states: FieldMetaAtom[];
+    _states: FieldMetaAtom<any>[];
 };
 
 /**
@@ -50,7 +49,7 @@ export function newModel<T extends Record<string, Field<any>>>(url: string, fiel
  */
 export type fieldState<Value> = {
     valueAtom: FieldAtom<Value>;
-    stateAtom: FieldMetaAtom;
+    stateAtom: FieldMetaAtom<Value>;
 };
 
 /**
@@ -70,7 +69,6 @@ export type fieldState<Value> = {
  * @property {Map<number, FieldOptionInfos>} [optionsInfos] - Extra metadata per option.
  * @property {boolean | (() => boolean)} [mandatory] - Whether a non-empty value is required.
  * @property {() => null | FieldValueError} [valid] - Custom validator; return null if valid.
- * @property {RefreshableAtom<Promise<Value>, Value>} [syncWith] - External source to sync the field value with.
  * @category Forms Utils
  */
 export type fieldSpecs<Value> = {
@@ -88,7 +86,6 @@ export type fieldSpecs<Value> = {
     optionsInfos?: Map<number, FieldOptionInfos>;
     mandatory?: boolean | (() => boolean);
     valid?: () => null | FieldValueError;
-    syncWith?: RefreshableAtom<Promise<Value>, Value>;
 };
 
 /**
@@ -112,29 +109,101 @@ export function newField<Value>(specs: fieldSpecs<Value>): Field<Value> {
 }
 
 // ------------------------------------------------------------------------------------------------
+// Hooks to get and set 1 field value
+// ------------------------------------------------------------------------------------------------
+
+/**
+ * Hook to get the value of a form field.
+ * @param {Field<Value>} conf - The field atom.
+ * @returns {Value} The value of the form field.
+ * @category Forms Utils
+ */
+export function useFieldValue<Value>(field: Field<Value>) {
+    const fieldValue = getValue(field.valueAtom);
+    return fieldValue;
+}
+
+/**
+ * Hook to set the value of a form field.
+ * @param {Field<Value>} conf - The field atom.
+ * @returns {Function} A function to set the value of the form field.
+ * @category Forms Utils
+ */
+export function useSetField<Value>(field: Field<Value>) {
+    // TODO : patch request to push the data into the cloud?
+    const inputField = useInputField(field.valueAtom);
+    return inputField.actions.setValue;
+}
+
+/**
+ * Hook to get and set the value of a form field, similar to useState.
+ * @param {Field<Value>} conf - The field atom.
+ * @returns {[Value, Function]} A tuple containing the value and a function to set the value.
+ * @category Forms Utils
+ */
+export function useField<Value>(field: Field<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
+    const inputField = useInputField(field.valueAtom);
+    const setState = useSetAtom(field.stateAtom);
+
+    // this way we always set the date the value was modified
+    const setValue = (value: typeof RESET | Value | ((prev: Value) => Value)) => {
+        inputField.actions.setValue(value);
+        setState((prev: FieldMeta<Value>) => ({
+            ...prev,
+            lastModified: new Date(),
+        }));
+    };
+
+    return [inputField.state.value, setValue];
+}
+
+// ------------------------------------------------------------------------------------------------
 // Handling field state
 // ------------------------------------------------------------------------------------------------
 
 /**
  * Some additional properties not available in the form-atoms library
  * @property {Date} lastModified - When the field's value was last modified
+ * @property {Value} lastModified - When the field's value was last modified
  * @category Forms Utils
  */
-export type FieldMeta = {lastModified: Date | null};
+export type FieldMeta<Value> = {
+    lastModified: Date | null; // the last time the user changed the value
+    lastSyncedVal: Value | null; // the value retrieved from the aforementioned external system
+};
 
 /**
  * Type for the atoms that we use to conceal additional properties associated with a field
  * @category Forms Utils
  */
-export type FieldMetaAtom = WritableAtom<FieldMeta, [FieldMeta | ((prev: FieldMeta) => FieldMeta)], void>;
+export type FieldMetaAtom<Value> = WritableAtom<FieldMeta<Value>, [FieldMeta<Value> | ((prev: FieldMeta<Value>) => FieldMeta<Value>)], void>;
 
 /**
  * Creates a field state atom, to associated with a field atom inside a field
  */
-export function stateAtom(): FieldMetaAtom {
-    return atom<FieldMeta>({
+export function stateAtom<Value>(): FieldMetaAtom<Value> {
+    return atom<FieldMeta<Value>>({
         lastModified: null,
+        lastSyncedVal: null,
     });
+}
+
+/**
+ * Hook to get and set the lastModified flag from a FieldMetaAtom.
+ * @param {Field<Value>} field - The field state atom containing lastModified.
+ * @returns {[Date | null, (date: Date) => void]} The current lastModified and a setter.
+ * @category Forms Utils
+ */
+// TODO automatically call it when setting the value of a field?!?
+export function useFieldMeta<Value>(field: Field<Value>): [FieldMeta<Value>, (syncedVal: Value) => void] {
+    const [state, setState] = useAtom(field.stateAtom);
+    const setSyncedVal = (syncedVal: Value) => {
+        setState(prev => ({
+            ...prev,
+            lastSyncedVal: syncedVal,
+        }));
+    };
+    return [state, setSyncedVal];
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -236,44 +305,6 @@ export function useModelValidationError<T extends Record<string, Field<any>>>(mo
 }
 
 // ------------------------------------------------------------------------------------------------
-// Hooks to get and set 1 field value
-// ------------------------------------------------------------------------------------------------
-
-/**
- * Hook to get the value of a form field.
- * @param {Field<Value>} conf - The field atom.
- * @returns {Value} The value of the form field.
- * @category Forms Utils
- */
-export function useFieldValue<Value>(field: Field<Value>) {
-    const fieldValue = getValue(field.valueAtom);
-    return fieldValue;
-}
-
-/**
- * Hook to set the value of a form field.
- * @param {Field<Value>} conf - The field atom.
- * @returns {Function} A function to set the value of the form field.
- * @category Forms Utils
- */
-export function useSetField<Value>(field: Field<Value>) {
-    // TODO : patch request to push the data into the cloud?
-    const inputField = useInputField(field.valueAtom);
-    return inputField.actions.setValue;
-}
-
-/**
- * Hook to get and set the value of a form field, similar to useState.
- * @param {Field<Value>} conf - The field atom.
- * @returns {[Value, Function]} A tuple containing the value and a function to set the value.
- * @category Forms Utils
- */
-export function useField<Value>(field: Field<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
-    const inputField = useInputField(field.valueAtom);
-    return [inputField.state.value, inputField.actions.setValue];
-}
-
-// ------------------------------------------------------------------------------------------------
 // Hooks to get and set field values, for fields of the same type
 // ------------------------------------------------------------------------------------------------
 
@@ -357,24 +388,6 @@ export function useSetAllFormFields<Value>(fields: Field<Value>[]) {
     return setAllValues;
 }
 
-/**
- * Hook to get and set the lastModified flag from a FieldMetaAtom.
- * @param {Field<Value>} field - The field state atom containing lastModified.
- * @returns {[Date | null, (date: Date) => void]} The current lastModified and a setter.
- * @category Forms Utils
- */
-// TODO automatically call it when setting the value of a field?!?
-export function useFieldLastModified<Value>(field: Field<Value>): [Date | null, (date: Date | null) => void] {
-    const [state, setState] = useAtom(field.stateAtom);
-    const setLastModified = (date: Date | null) => {
-        setState(prev => ({
-            ...prev,
-            lastModified: date,
-        }));
-    };
-    return [state.lastModified, setLastModified];
-}
-
 // ------------------------------------------------------------------------------------------------
 // Hooks / functions to work with models
 // ------------------------------------------------------------------------------------------------
@@ -399,7 +412,7 @@ export function useResetModel<T extends Record<string, Field<any>>>(model: Model
         if (!model) return;
         form.reset();
         model._states.forEach(stateAtom => {
-            store.set(stateAtom, (prev: FieldMeta) => ({...prev, lastModified: null}));
+            store.set(stateAtom, (prev: FieldMeta<any>) => ({...prev, lastModified: null}));
         });
     }, [form, store, model]);
 }
