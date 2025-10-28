@@ -256,20 +256,26 @@ export function useFieldValidationError<Value>(field: Field<Value>) {
     }
 
     if (typeof value === 'number') {
-        const min = field.min || 0;
-        const max = field.max || 0;
-        // special case of enums
         if (field.options) {
+            // special case of enums
             const options = field.optionsOnly ? field.optionsOnly : field.options.map(option => option.value);
             if (value) {
                 if (!options.some(val => val === value)) {
-                    return {msg: 'This value is not allowed', param: min};
+                    return {msg: 'This value is not allowed', param: field.min || 0};
                 }
             } else if (mandatory) {
                 return {msg: 'A value must be provided here'};
             }
         } else {
-            //TODO "normal" numbers
+            if (typeof field.min === 'number' && value < field.min) {
+                return {msg: 'Must be greater than or equal to', param: field.min};
+            }
+            if (typeof field.max === 'number' && value > field.max) {
+                return {msg: 'Must be less than or equal to', param: field.max};
+            }
+            if (mandatory && !value && value !== 0) {
+                return {msg: 'A value must be provided here'};
+            }
         }
     } else if (typeof value === 'string') {
         const min = field.min || 0;
