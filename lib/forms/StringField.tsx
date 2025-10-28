@@ -29,6 +29,8 @@ export type StringFieldProps<T extends Field<any>, InputProps extends React.Comp
     translateValue?: boolean;
     /** Should the field value be synchronized with the value of another atom? */
     syncWith?: RefreshableAtom<Promise<string>, string>;
+    /** Set type to 'number' to enable the numeric keyboard and the number validation (natural numbers only) */
+    type?: 'number';
 } & InputLabelProps &
     InputProps;
 
@@ -83,8 +85,7 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
         if (syncedVal && syncedVal !== value) {
             // if there is no last modified date, or the synced value is more recent, we set it
             if (!lastModified || syncedValLastModified > lastModified) {
-                setValue(syncedVal);
-                setLastModified(new Date());
+                updateValue(syncedVal);
             }
         }
     }, [syncedVal]);
@@ -100,7 +101,13 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
     const updateValue = (text: string) => {
         // setting the value, but not allowing to exceed the configured maxlength, if there's one
         if (maxLength === 0 || text.length <= maxLength) {
-            setValue(text);
+            if (props.type === 'number') {
+                const numberString = text.replace(/[^0-9]/g, '');
+                const number = Number(numberString);
+                setValue(numberString === '' || Number.isNaN(number) ? null : number);
+            } else {
+                setValue(text);
+            }
             setLastModified(new Date());
         }
     };
@@ -110,7 +117,7 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
     };
 
     const getStringValue = (val: any) => {
-        return isBoolean(val) ? (val ? 'Yes' : 'No') : val;
+        return isBoolean(val) ? (val ? 'Yes' : 'No') : String(val ?? '');
     };
 
     const ErrorAppend = () => {
@@ -143,10 +150,10 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
                 <View className="flex-row items-center">
                     <Txt
                         raw={!isBoolean(value) && !props.translateValue}
-                        className={cn('text-foreground-light text-lg', props.inputClassName)}
+                        className={cn('text-lg text-foreground-light', props.inputClassName)}
                         append={
                             props.unit && (
-                                <Txt raw className={cn('text-foreground-light flex-1 text-lg', props.inputClassName)}>
+                                <Txt raw className={cn('flex-1 text-lg text-foreground-light', props.inputClassName)}>
                                     {props.unit}
                                 </Txt>
                             )
@@ -158,22 +165,23 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
                 // Now we're talking
                 <>
                     <Input
+                        keyboardType={props.type === 'number' ? 'numeric' : 'default'}
                         {...props}
                         className={cn(
                             'border-border text-foreground',
                             value ? 'bg-secondary' : 'bg-white',
                             props.inputClassName,
-                            validError && 'text-destructive-foreground border-destructive-foreground',
+                            validError && 'border-destructive-foreground text-destructive-foreground',
                             smallScreen && 'min-h-16',
                         )}
                         editable={!disabled}
-                        value={value}
+                        value={getStringValue(value)}
                         placeholder={placeholder} // making sure to put it after the ...props, to override them
                         onChangeText={updateValue}
                     />
                     {validError && (
                         <View className="flex-row gap-1">
-                            <Txt className="text-destructive-foreground flex-1" append={<ErrorAppend />}>
+                            <Txt className="flex-1 text-destructive-foreground" append={<ErrorAppend />}>
                                 {validError.msg}
                             </Txt>
                         </View>
