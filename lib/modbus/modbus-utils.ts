@@ -1,4 +1,25 @@
 // ------------------------------------------------------------------------------------------------
+// --- MODBUS Types
+// ------------------------------------------------------------------------------------------------
+
+/**
+ * Properties for MODBUS register operations
+ * @property {string} label - Human-readable label for logs/diagnostics
+ * @property {number} slaveId - MODBUS slave identifier
+ * @property {number} startAddress - Starting register address
+ * @property {number} size - Number of 16-bits registers to read/write
+ * @property {boolean} [asHex] - Whether to interpret the register value as hexadecimal
+ * @category MODBUS
+ */
+export type RegisterProps = {
+    label: string;
+    slaveId: number;
+    startAddress: number;
+    size: number;
+    asHex?: boolean;
+};
+
+// ------------------------------------------------------------------------------------------------
 // --- string <-> []number conversion functions
 // ------------------------------------------------------------------------------------------------
 

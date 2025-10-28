@@ -25,6 +25,8 @@ export type CheckboxFieldProps<T extends Field<boolean>> = {
     boxClassName?: string;
     /** Array of associated fields for group behavior */
     associated?: T[];
+    /** To disable the field */
+    disabled?: boolean;
 };
 
 /**
@@ -40,7 +42,7 @@ export function CheckboxField<confAtom extends Field<boolean>>({field, label, la
     // --- shared state
     const colors = getColors();
     const [value, setValue] = useField(field);
-    const disabled = field.disabled ? field.disabled() : false;
+    const disabled = (field.disabled ? field.disabled() : false) || props.disabled;
     const visible = field.visible ? field.visible() : true;
     const allChecked = associated && useCheckAllFormFieldValues(associated, val => val);
     const allUnchecked = associated && useCheckAllFormFieldValues(associated, val => !val);

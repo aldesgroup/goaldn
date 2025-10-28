@@ -1,13 +1,11 @@
 import {RESET} from 'form-atoms';
 import {useAtomValue} from 'jotai';
 import {X} from 'lucide-react-native';
-import {useEffect} from 'react';
 import {Pressable, View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
 import {smallScreenAtom} from '../settings';
-import {RefreshableAtom, useRefreshableAtom} from '../state-management';
 import {getColors} from '../styling';
-import {Field, FieldOption, FieldOptionInfos, fieldDisplayMode, useField, useFieldLastModified, useFieldValue} from './fields';
+import {Field, fieldDisplayMode, FieldOption, FieldOptionInfos, useField, useFieldValue} from './fields';
 
 /**
  * Props for the EnumFieldValue component.
@@ -16,6 +14,8 @@ import {Field, FieldOption, FieldOptionInfos, fieldDisplayMode, useField, useFie
  * @property {string} [className] - Additional CSS classes for the value container
  * @property {FieldOptionInfos} [infos] - Additional information for the option
  * @property {fieldDisplayMode} [mode] - The display mode of the component
+ * @property {boolean} [disabledValue] - Should this value be disabled?
+ * @property {(val: number | typeof RESET) => void} [onChange] - Optional action performed on value change
  * @category Types
  */
 type EnumFieldValueProps = {
@@ -24,6 +24,8 @@ type EnumFieldValueProps = {
     className?: string;
     infos?: FieldOptionInfos;
     mode?: fieldDisplayMode;
+    disabledValue?: boolean;
+    onChange?: (val: number | typeof RESET) => void;
 };
 export type {EnumFieldValueProps};
 
@@ -35,11 +37,10 @@ export type {EnumFieldValueProps};
  * @returns {JSX.Element} A pressable badge showing the enum option
  * @category Forms
  */
-function EnumFieldValue({option, field, className, infos, mode = 'input'}: EnumFieldValueProps) {
+function EnumFieldValue({option, field, className, infos, mode = 'input', disabledValue, onChange}: EnumFieldValueProps) {
     // shared state
     const [value, setValue] = useField(field);
-    const [_, setLastModified] = useFieldLastModified(field);
-    const disabled = field.disabled ? field.disabled() : false;
+    const disabled = (field.disabled ? field.disabled() : false) || disabledValue;
     const colors = getColors();
 
     // local state
@@ -55,10 +56,11 @@ function EnumFieldValue({option, field, className, infos, mode = 'input'}: EnumF
                 if (isInput && !disabled) {
                     if (selected) {
                         setValue(RESET);
+                        onChange && onChange(RESET);
                     } else {
                         setValue(option.value);
+                        onChange && onChange(option.value);
                     }
-                    setLastModified(new Date());
                 }
             }}>
             <View
@@ -85,6 +87,7 @@ function EnumFieldValue({option, field, className, infos, mode = 'input'}: EnumF
  * @param {string} [props.className] - Additional CSS classes for the value container
  * @param {fieldDisplayMode} props.mode - The display mode of the component
  * @param {string} props.emptyValueLabel - Text to show when no value is selected
+ * @property {boolean} [disabledValue] - Should this value be disabled?
  * @returns {JSX.Element} A view showing the current selection or placeholder
  * @category Forms
  */
@@ -93,11 +96,13 @@ function CurrentEnumFieldValue({
     className,
     mode,
     emptyValueLabel,
+    disabledValue,
 }: {
     field: Field<number>;
     className?: string;
     mode: fieldDisplayMode;
     emptyValueLabel: string;
+    disabledValue?: boolean;
 }) {
     // shared state
     const value = useFieldValue(field);
@@ -108,7 +113,7 @@ function CurrentEnumFieldValue({
     // rendering
     return option ? (
         <View className="flex-wrap">
-            <EnumFieldValue field={field} className={className} option={option} mode={mode} infos={infos} />
+            <EnumFieldValue field={field} className={className} option={option} mode={mode} infos={infos} disabledValue={disabledValue} />
         </View>
     ) : (
         <Txt className="text-muted-foreground">{emptyValueLabel}</Txt>
@@ -127,8 +132,10 @@ type EnumFieldProps<T extends Field<number>> = {
     valueClassName?: string;
     /** Text to show when no value is selected */
     emptyValueLabel?: string;
-    /** Should the field value be synchronized with the value of another atom? */
-    syncWith?: RefreshableAtom<Promise<string>, string>;
+    /** To disable the field */
+    disabled?: boolean;
+    /**  Optional action performed on value change*/
+    onChange?: (val: number | typeof RESET) => void;
 } & InputLabelProps;
 export type {EnumFieldProps};
 
@@ -152,36 +159,10 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
     const mandatory = field.mandatory && (typeof field.mandatory === 'function' ? field.mandatory() : field.mandatory);
     const smallScreen = useAtomValue(smallScreenAtom);
 
-    // --- shared state - syncing with another atom
-    const [value, setValue] = useField(field);
-    const [lastModified, setLastModified] = useFieldLastModified(field);
-    const syncAtom = (props.syncWith ?? field.syncWith) as RefreshableAtom<Promise<string>, string> | undefined;
-    const [syncedVal, syncedValLastModified, refreshSyncedVal, _setSyncedVal] = syncAtom
-        ? useRefreshableAtom<Promise<string>, string>(syncAtom)
-        : [undefined, undefined, undefined, undefined];
-    const syncedValAsNum = syncedVal ? parseInt(syncedVal) : undefined;
-
     // --- effects
     if (field.effects) {
         field.effects.map(useEffect => useEffect());
     }
-
-    // refreshing the synced value, if any
-    useEffect(() => {
-        if (refreshSyncedVal) refreshSyncedVal();
-    }, []);
-
-    // if the synced value has changed & is more recent, we set it
-    useEffect(() => {
-        // there is a synced value, and it's different from the local value
-        if (syncedValAsNum && syncedValLastModified && syncedValAsNum !== value) {
-            // if there is no last modified date, or the synced value is more recent, we set it
-            if (!lastModified || syncedValLastModified > lastModified) {
-                setValue(syncedValAsNum);
-                setLastModified(new Date());
-            }
-        }
-    }, [syncedVal]);
 
     // --- utils
 
@@ -194,7 +175,13 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
             {/* Showing the available options */}
             {!isInput ? (
                 // Here, only showing the choosen value
-                <CurrentEnumFieldValue field={field} className={props.valueClassName} mode={mode} emptyValueLabel={emptyValueLabel} />
+                <CurrentEnumFieldValue
+                    field={field}
+                    className={props.valueClassName}
+                    mode={mode}
+                    emptyValueLabel={emptyValueLabel}
+                    disabledValue={props.disabled}
+                />
             ) : (
                 <View className="flex-row flex-wrap gap-3">
                     {field.optionsOnly
@@ -210,6 +197,8 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
                                               field={field}
                                               className={props.valueClassName}
                                               infos={field.optionsInfos?.get(option.value)}
+                                              disabledValue={props.disabled}
+                                              onChange={props.onChange}
                                           />
                                       ),
                               )
@@ -221,6 +210,8 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
                                   field={field}
                                   className={props.valueClassName}
                                   infos={field.optionsInfos?.get(option.value)}
+                                  disabledValue={props.disabled}
+                                  onChange={props.onChange}
                               />
                           ))}
                 </View>

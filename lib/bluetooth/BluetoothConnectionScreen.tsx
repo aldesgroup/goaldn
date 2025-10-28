@@ -62,6 +62,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // effects
     // --------------------------------------------------------------------------------------------
     useEffect(() => {
+        // We have to resolved if we're in a simulated mode or not
+        if (isSimulationBleDeviceEnabled === undefined) {
+            return;
+        }
+
         // This BLE manager starts operations, that we have to listen to, to handle their result
         const listeners: any[] = [
             bleManager.onDiscoverPeripheral(handleDiscoverPeripheral),
@@ -87,7 +92,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 listener.remove();
             }
         };
-    }, []);
+    }, [isSimulationBleDeviceEnabled]);
 
     // --------------------------------------------------------------------------------------------
     // utils - handlers for the listeners

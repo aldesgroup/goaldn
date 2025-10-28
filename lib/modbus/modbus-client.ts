@@ -8,6 +8,7 @@ import {getLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
 import {verboseAtom} from '../settings';
 import {sleep} from '../utils';
+import {RegisterProps} from './modbus-utils';
 import {createModbusReadingFrame, createModbusWritingFrame8bit, MODBUS_FUNCTIONS, ModbusResponse, parseModbusResponse} from './modbus-frame';
 import {useSimulatedModbusClient} from './modbus-simulation';
 import {registerValuesToString, stringToRegisterValues} from './modbus-utils';
@@ -94,11 +95,12 @@ export class BleModbusClient {
         });
     }
 
-    async readHoldingRegisters(slaveId: number, startAddress: number, quantity: number, asHex?: boolean): Promise<ModbusResponse> {
+    async readHoldingRegisters(registerProps: RegisterProps): Promise<ModbusResponse> {
+        const {slaveId, startAddress, size, asHex} = registerProps;
         // frame creation & sending
-        const frame = createModbusReadingFrame(slaveId, startAddress, quantity);
+        const frame = createModbusReadingFrame(registerProps);
         const functionCode = MODBUS_FUNCTIONS.READ_HOLDING_REGISTERS;
-        const expectedResponse = {slaveId, functionCode, startAddress, quantity};
+        const expectedResponse = {slaveId, functionCode, startAddress, size};
         const rawResponse = await this.sendFrame(frame);
 
         // response parsing
@@ -112,18 +114,19 @@ export class BleModbusClient {
         return response;
     }
 
-    async writeMultipleRegisters(slaveId: number, startAddress: number, quantity: number, value: string): Promise<ModbusResponse> {
+    async writeMultipleRegisters(registerProps: RegisterProps, value: string): Promise<ModbusResponse> {
+        const {slaveId, startAddress, size} = registerProps;
         // from string to bytes here - the number of bytes is the double of the number of 16-bits registers needed
-        const values = value !== '' && !isNaN(Number(value)) ? stringToRegisterValues(value, 2 * quantity) : [];
+        const values = value !== '' && !isNaN(Number(value)) ? stringToRegisterValues(value, 2 * size) : [];
 
         // frame creation & sending
-        const frame = createModbusWritingFrame8bit(slaveId, startAddress, quantity, values);
+        const frame = createModbusWritingFrame8bit(registerProps, values);
         const functionCode = MODBUS_FUNCTIONS.WRITE_MULTIPLE_REGISTERS;
         const expectedResponse = {
             slaveId,
             functionCode,
             startAddress,
-            quantity: quantity,
+            size: size,
         };
 
         const rawResponse = await this.sendFrame(frame);
