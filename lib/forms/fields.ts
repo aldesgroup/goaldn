@@ -43,11 +43,13 @@ export function newModel<T extends Record<string, Field<any>>>(url: string, fiel
 
 /**
  * "State" part of a field: holds the underlying atoms for the field's value and state.
+ * @property {string} name - The field name, which can come in handy in logging / debug situations
  * @property {FieldAtom<Value>} valueAtom - Form-atoms field atom that stores the current value.
  * @property {FieldStateAtom} stateAtom - Jotai atom holding auxiliary UI state for the field.
  * @category Forms Utils
  */
 export type fieldState<Value> = {
+    name: string;
     valueAtom: FieldAtom<Value>;
     stateAtom: FieldMetaAtom<Value>;
 };
@@ -100,8 +102,9 @@ export type Field<Value> = fieldState<Value> & fieldSpecs<Value>;
  * @returns {Field<Value>} Field composed of BaseField; extras can be merged by the caller.
  * @category Forms Utils
  */
-export function newField<Value>(specs: fieldSpecs<Value>): Field<Value> {
+export function newField<Value>(name: string, specs: fieldSpecs<Value>): Field<Value> {
     return {
+        name: name,
         valueAtom: fieldAtom({value: specs.initialValue}),
         stateAtom: stateAtom(),
         ...specs,
@@ -132,17 +135,6 @@ export function useFieldValue<Value>(field: Field<Value>) {
 export function useSetField<Value>(field: Field<Value>) {
     // TODO : patch request to push the data into the cloud?
     const inputField = useInputField(field.valueAtom);
-    return inputField.actions.setValue;
-}
-
-/**
- * Hook to get and set the value of a form field, similar to useState.
- * @param {Field<Value>} conf - The field atom.
- * @returns {[Value, Function]} A tuple containing the value and a function to set the value.
- * @category Forms Utils
- */
-export function useField<Value>(field: Field<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
-    const inputField = useInputField(field.valueAtom);
     const setState = useSetAtom(field.stateAtom);
 
     // this way we always set the date the value was modified
@@ -154,7 +146,19 @@ export function useField<Value>(field: Field<Value>): [Value, (value: typeof RES
         }));
     };
 
-    return [inputField.state.value, setValue];
+    return setValue;
+}
+
+/**
+ * Hook to get and set the value of a form field, similar to useState.
+ * @param {Field<Value>} conf - The field atom.
+ * @returns {[Value, Function]} A tuple containing the value and a function to set the value.
+ * @category Forms Utils
+ */
+export function useField<Value>(field: Field<Value>): [Value, (value: typeof RESET | Value | ((prev: Value) => Value)) => void] {
+    const value = useFieldValue(field);
+    const setValue = useSetField(field);
+    return [value, setValue];
 }
 
 // ------------------------------------------------------------------------------------------------

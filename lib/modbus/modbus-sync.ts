@@ -162,8 +162,8 @@ export function useSyncFieldFromRegister<Value>(mapping: FieldRegisterMapping<Va
         // no new value (yet) => no action
         if (syncedVal === undefined) return;
 
-        // unchanged value => no action
-        if (fieldValue === syncedVal) return;
+        // unchanged value => no action; except keeping track of the last synced val for next time
+        if (fieldValue === syncedVal) return setNewSyncedVal(syncedVal);
 
         // if there is no last modified date, or the synced value has changed, we use it
         if (!lastModified || syncedVal !== lastSyncedVal) {
