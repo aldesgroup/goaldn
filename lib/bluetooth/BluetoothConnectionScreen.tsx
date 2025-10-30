@@ -10,6 +10,7 @@ import {BottomView} from '../layout';
 import {useResetSimulatedRegisters} from '../modbus';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
+import {getReportError} from '../utils';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
 import {permissionsGrantedAtom, useCheckAndRequestBlePermissions, useCheckBluetoothEnabled} from './bluetoothPermissions';
 import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, simulationPeripherals} from './bluetoothSimulation';
@@ -43,7 +44,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const [isScanning, setIsScanning] = useState(false);
     const [connectingDevice, setConnectingDevice] = useState<string | null>(null);
     const [devices, setDevices] = useState<Peripheral[]>([]);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(''); // TODO handle better
     const [permissionStatus, setPermissionStatus] = useState('checking');
 
     // --------------------------------------------------------------------------------------------
@@ -57,6 +58,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const checkAndRequestBlePermissions = useCheckAndRequestBlePermissions();
     const checkBluetoothEnabled = useCheckBluetoothEnabled();
     const logv = useLogV('BLECON');
+    const reportError = getReportError();
 
     // --------------------------------------------------------------------------------------------
     // effects
@@ -158,13 +160,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             setPermissionStatus(granted ? 'granted' : 'denied');
             return granted;
         } catch (err) {
-            if (err instanceof Error) {
-                setError(`Permission error: ${err.message}`);
-            } else {
-                logv('Unknown error while checking permissions:', err);
-            }
+            setError('Error while checking the permissions'); // TODO handle i18n
+            logv('Error while checking the permissions:', err);
             setPermissionStatus('error');
             setPermissionsGranted(false);
+            reportError(err);
         }
     };
 
@@ -227,12 +227,10 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                     }, 800);
                 }
             } catch (scanErr) {
-                if (scanErr instanceof Error) {
-                    setError(`Error while scanning for BLE devices: ${scanErr.message}`);
-                } else {
-                    logv('Unknown error while scanning for BLE devices:', scanErr);
-                }
+                setError('Error while scanning for devices');
+                logv('Error while scanning for devices:', scanErr);
                 setIsScanning(false);
+                reportError(scanErr);
             }
         } finally {
             isScanStarted.current = false;
@@ -337,13 +335,10 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
             return true;
         } catch (connErr) {
-            if (connErr instanceof Error) {
-                setError(`Error while connecting to a BLE device: ${connErr.message}`);
-            } else {
-                // logv("Unknown error while connecting to a BLE device:", connErr);
-                setError('Unknown error while connecting to a BLE device:' + connErr);
-            }
+            setError('Error while connecting. Please try again.'); // TODO handle i18n
+            logv('Error while connecting:', connErr);
             setConnectedDevice(null);
+            reportError(connErr);
             return false;
         } finally {
             setConnectingDevice(null);

@@ -7,11 +7,10 @@ import Config from 'react-native-config';
 import {getLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
 import {verboseAtom} from '../settings';
-import {sleep} from '../utils';
-import {RegisterProps} from './modbus-utils';
+import {getReportError, sleep} from '../utils';
 import {createModbusReadingFrame, createModbusWritingFrame8bit, MODBUS_FUNCTIONS, ModbusResponse, parseModbusResponse} from './modbus-frame';
 import {useSimulatedModbusClient} from './modbus-simulation';
-import {registerValuesToString, stringToRegisterValues} from './modbus-utils';
+import {RegisterProps, registerValuesToString, stringToRegisterValues} from './modbus-utils';
 
 const bleManager = getBleManager();
 
@@ -90,6 +89,7 @@ export class BleModbusClient {
                     clearTimeout(timeoutId);
                     subscription.remove();
                     reject(new Error(`Failed to send request: ${err instanceof Error ? err.message : err}`));
+                    getReportError()(err);
                 }
             });
         });

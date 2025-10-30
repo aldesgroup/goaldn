@@ -28,6 +28,7 @@ export const useLogV = (prefix: string) => {
  * Returns a function that formats then logs a message with parameters, with a date and a chosen prefix
  * @param verbose are we in verbose mode?
  * @param prefix  a prefix to identify the log line
+ * @category Base
  */
 export const getLogV = (verbose: boolean, prefix: string) => {
     return (message?: any, ...optionalParams: any[]) => {

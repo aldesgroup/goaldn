@@ -3,6 +3,7 @@ import {Alert, Linking, Platform} from 'react-native';
 import {BleState} from 'react-native-ble-manager';
 import {check, PERMISSIONS, requestMultiple, RESULTS} from 'react-native-permissions';
 import {useT} from '../settings';
+import {getReportError} from '../utils';
 import {getBleManager} from './bluetoothAtoms';
 
 // Jotai atom for permission state
@@ -57,6 +58,7 @@ export const checkBlePermissions = async () => {
         return true;
     } catch (error) {
         console.error('Error checking permissions:', error);
+        getReportError()(error);
         return false;
     }
 };
@@ -67,7 +69,6 @@ export const checkBlePermissions = async () => {
  */
 export const useRequestBlePermissions = () => {
     const showPermissionAlert = useShowPermissionAlert();
-
     return async () => {
         try {
             const permissions = getRequiredPermissions();
@@ -91,6 +92,7 @@ export const useRequestBlePermissions = () => {
             return allGranted;
         } catch (error) {
             console.error('Error requesting permissions:', error);
+            getReportError()(error);
             return false;
         }
     };
@@ -122,7 +124,6 @@ export const useCheckAndRequestBlePermissions = () => {
  */
 export const useCheckBluetoothEnabled = () => {
     const showBluetoothAlert = useShowBluetoothAlert();
-
     return async () => {
         if (Platform.OS === 'android' && Platform.Version >= 31) {
             try {
@@ -136,6 +137,7 @@ export const useCheckBluetoothEnabled = () => {
                 return true;
             } catch (error) {
                 console.error('Error checking Bluetooth state:', error);
+                getReportError()(error);
                 return false;
             }
         }

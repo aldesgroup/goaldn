@@ -4,6 +4,7 @@ import {useEffect, useRef, useState} from 'react';
 import Config from 'react-native-config';
 import {useLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
+import {getReportError} from '../utils';
 import {useModbusRegisterRead} from './modbus-hooks';
 import {RegisterProps} from './modbus-utils';
 
@@ -98,6 +99,7 @@ function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThresho
             }
         } catch {
             setConsecutiveFailures(prev => prev + 1);
+            // not reporting here, readRegister already does it
         } finally {
             // if the calls start failing, we start checking more often
             timerRef.current = setTimeout(loopOnce, failedAgain ? 1000 : checkEveryMs);
@@ -137,6 +139,7 @@ function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThresho
                             logv(`Disconnected, and now navigating to '${navToWhenFail}'.`);
                         } catch (err) {
                             logv('Caught error while disconnecting:', err);
+                            getReportError()(err);
                         }
                     }
                 } finally {

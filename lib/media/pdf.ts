@@ -2,6 +2,7 @@ import {Alert, Platform} from 'react-native';
 import RNFS from 'react-native-fs';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
+import {getReportError} from '../utils';
 
 /**
  * Options for generating a PDF file.
@@ -38,6 +39,7 @@ async function generatePDF({htmlContent, fileName = 'generated-file', directory 
         return file.filePath;
     } catch (error) {
         console.error('Error generating PDF:', error);
+        getReportError()(error);
         throw error;
     }
 }
@@ -58,6 +60,7 @@ export async function sharePDF(options: PDFGenerationOptions): Promise<void> {
             failOnCancel: false,
         });
     } catch (error) {
+        getReportError()(error);
         Alert.alert('Share Error', (error as Error).message);
     }
 }
@@ -82,6 +85,7 @@ export async function savePDF(options: PDFGenerationOptions): Promise<string | n
         Alert.alert('PDF Saved', `File saved at:\n${destPath}`);
         return destPath;
     } catch (error) {
+        getReportError()(error);
         Alert.alert('Save Error', (error as Error).message);
         return null;
     }
