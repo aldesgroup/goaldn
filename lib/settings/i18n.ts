@@ -4,6 +4,7 @@ import {useAtom} from 'jotai';
 import {useEffect} from 'react';
 import {initReactI18next} from 'react-i18next';
 import {deviceLng, languageAtom} from '../settings';
+import {getReportWarning} from '../utils';
 
 /**
  * Initializes the i18n instance with the provided resources.
@@ -121,6 +122,7 @@ const translateKeyAtRoutes = (language: string, label: string, routes?: string[]
     const missing = translation === '';
     if (missing) {
         translation = '(' + label + ')';
+        getReportWarning()('Missing a translation for ' + translation);
     }
 
     return {translation, missing};
@@ -135,7 +137,7 @@ export function useInitAndSyncLanguage() {
 
     useEffect(() => {
         if (i18n.language !== language) {
-            i18n.changeLanguage(language).catch(console.error);
+            i18n.changeLanguage(language).catch(getReportWarning());
         }
     }, [language]);
 }

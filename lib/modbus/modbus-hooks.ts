@@ -1,9 +1,10 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {useLogV} from '../base';
+import {getReportError, getReportWarning} from '../utils';
 import {useModbusClient} from './modbus-client';
 import {ModbusResponse} from './modbus-frame';
-import {useLogV} from '../base';
-import {RegisterProps} from './modbus-utils';
 import {useModbusSimulationValueInitializer} from './modbus-simulation';
+import {RegisterProps} from './modbus-utils';
 
 // Hooks providing a function to refresh a particular register's value, this value (once asynchronously refreshed), and reading stats
 export const useModbusRegisterRead = (register: RegisterProps) => {
@@ -35,6 +36,7 @@ export const useModbusRegisterRead = (register: RegisterProps) => {
                     return result.stringData ? result.stringData : null;
                 } else {
                     setReadError('No MODBUS client available');
+                    getReportError()('No MODBUS client available');
                     return null;
                 }
             } catch (err: any) {
@@ -51,6 +53,7 @@ export const useModbusRegisterRead = (register: RegisterProps) => {
                     setReadError(`Communication failed: ${err.message}`);
                 }
                 if (err.stack) logv(err.stack);
+                getReportWarning()(err);
                 return null;
             } finally {
                 setLoading(false);
@@ -93,6 +96,7 @@ export const useModbusRegisterWrite = (register: RegisterProps, verify?: boolean
                 }
             } catch (error: any) {
                 setWriteError(`Write failed: ${error.message}, for register '${register.label}'`);
+                getReportWarning()(error);
                 return false;
             } finally {
                 setWriting(false);
