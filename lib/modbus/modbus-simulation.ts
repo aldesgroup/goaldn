@@ -1,11 +1,11 @@
 import {Mutex} from 'async-mutex';
-import {atom, useAtomValue, useStore, useSetAtom} from 'jotai';
-import {useEffect, useMemo} from 'react';
+import {atom, useAtomValue, useStore} from 'jotai';
+import {useMemo} from 'react';
 import Config from 'react-native-config';
+import {useLogV} from '../base';
 import {connectedDeviceAtom} from '../bluetooth';
 import {sleep} from '../utils';
 import {ModbusResponse} from './modbus-frame';
-import {useLogV} from '../base';
 import {RegisterProps} from './modbus-utils';
 
 // Reactive storage for simulated registers
@@ -26,13 +26,14 @@ export class SimulatedBleModbusClient {
     async readHoldingRegisters(register: RegisterProps): Promise<ModbusResponse> {
         const {slaveId, startAddress, size, asHex} = register;
         return this._mutex.runExclusive(async () => {
-            // we're waiting a bit more, to emulate a little bit a real transmission
-            await sleep(20 * this.delay);
+            // we start waiting a bit first, before doing anything
+            await sleep(this.delay);
 
             // finding the value and returning it wrapped in a ModbusResponse
             const regs = this.store.get(simulatedRegistersAtom);
             const value = regs[startAddress];
             if (value !== undefined) {
+                await sleep(this.delay); // emulating some process time on the device's side
                 return {slaveId, functionCode: 0x03, stringData: value, success: true};
             } else {
                 throw new Error('No simulated value for register @' + startAddress);
@@ -44,13 +45,14 @@ export class SimulatedBleModbusClient {
     async writeMultipleRegisters(register: RegisterProps, value: string): Promise<ModbusResponse> {
         const {slaveId, startAddress, size} = register;
         return this._mutex.runExclusive(async () => {
-            // we're waiting a bit more, to emulate a little bit a real transmission
-            await sleep(20 * this.delay);
+            // we start waiting a bit first, before doing anything
+            await sleep(this.delay);
 
             // setting the value
             this.store.set(simulatedRegistersAtom, (prev: {[startAddress: number]: string}) => ({...prev, [startAddress]: value}));
 
             // Return a success response
+            await sleep(this.delay); // emulating some process time on the device's side
             return {slaveId, functionCode: 0x10, success: true};
         });
     }
@@ -71,33 +73,28 @@ export class SimulatedBleModbusClient {
     }
 }
 
-// A global atom to hold the simulated client instance (set from React via a hook)
-export const simulatedClientInstanceAtom = atom<SimulatedBleModbusClient | null>(null);
+let GLOBAL_SIMULATED_CLIENT: SimulatedBleModbusClient | null = null;
 
 // Hook to get the simulated client with proper store access
 export const useSimulatedModbusClient = () => {
     const store = useStore();
     const device = useAtomValue(connectedDeviceAtom);
+    const logv = useLogV('SIMMOD');
 
+    // Use useMemo to ensure the return value is stable across re-renders
     return useMemo(() => {
         if (!device) {
             return null;
         }
 
-        const delay = !Config.BLE_DELAY_MS || Config.BLE_DELAY_MS === '' ? 50 : Number(Config.BLE_DELAY_MS);
-        return new SimulatedBleModbusClient(delay, store);
-    }, [device, store]);
-};
+        if (!GLOBAL_SIMULATED_CLIENT) {
+            logv('Initialising the SIMULATED MODBUS client');
+            const delay = !Config.BLE_DELAY_MS || Config.BLE_DELAY_MS === '' ? 50 : Number(Config.BLE_DELAY_MS);
+            GLOBAL_SIMULATED_CLIENT = new SimulatedBleModbusClient(delay, store);
+        }
 
-// Hook to register the simulated client into the global atom so non-hook code can access it
-export const useRegisterSimulatedClient = () => {
-    const simulationClient = useSimulatedModbusClient();
-    const setInstance = useSetAtom(simulatedClientInstanceAtom);
-    const logv = useLogV('MODBUS');
-    useEffect(() => {
-        logv('Setting the Simulated MODBUS client');
-        setInstance(simulationClient ?? null);
-    }, [simulationClient, setInstance]);
+        return GLOBAL_SIMULATED_CLIENT;
+    }, [device, store]);
 };
 
 // Hook to provide a function to initialize a register
