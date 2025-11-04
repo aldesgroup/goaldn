@@ -2,7 +2,7 @@ import {useAtomValue} from 'jotai';
 import React from 'react';
 import {View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
-import {Field, useField, useFieldValidationError} from '../forms';
+import {Field, useField, useFieldMeta, useFieldValidationError} from '../forms';
 import {smallScreenAtom, useTranslator} from '../settings';
 import {Input} from '../ui/input';
 
@@ -30,6 +30,8 @@ export type StringFieldProps<T extends Field<any>, InputProps extends React.Comp
     disabled?: boolean;
     /** Set type to 'number' to enable the numeric keyboard and the number validation (natural numbers only) */
     type?: 'number';
+    /** If true, and the associated has a synced val, we use it instead of the field's main value */
+    useSyncedVal?: boolean;
 } & InputLabelProps &
     InputProps;
 
@@ -59,6 +61,7 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
     const validError = useFieldValidationError(field);
     const mandatory = field.mandatory && (typeof field.mandatory === 'function' ? field.mandatory() : field.mandatory);
     const smallScreen = useAtomValue(smallScreenAtom);
+    const [{lastSyncedVal}] = useFieldMeta(field);
 
     // --- effects
     if (field.effects) {
@@ -91,7 +94,11 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
         return typeof val === 'boolean';
     };
 
-    const getStringValue = (val: any) => {
+    const getStringValue = (valArg: any) => {
+        let val = valArg;
+        if (props.useSyncedVal && lastSyncedVal) {
+            val = lastSyncedVal;
+        }
         return isBoolean(val) ? (val ? 'Yes' : 'No') : String(val ?? '');
     };
 

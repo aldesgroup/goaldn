@@ -5,7 +5,7 @@ import {Pressable, View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
-import {Field, fieldDisplayMode, FieldOption, FieldOptionInfos, useField, useFieldValue} from './fields';
+import {Field, fieldDisplayMode, FieldOption, FieldOptionInfos, useField, useFieldMeta, useFieldValue} from './fields';
 
 /**
  * Props for the EnumFieldValue component.
@@ -97,15 +97,19 @@ function CurrentEnumFieldValue({
     mode,
     emptyValueLabel,
     disabledValue,
+    useSyncedVal,
 }: {
     field: Field<number>;
     className?: string;
     mode: fieldDisplayMode;
     emptyValueLabel: string;
     disabledValue?: boolean;
+    useSyncedVal?: boolean;
 }) {
     // shared state
-    const value = useFieldValue(field);
+    const fieldValue = useFieldValue(field);
+    const [{lastSyncedVal}] = useFieldMeta(field);
+    const value = useSyncedVal && lastSyncedVal ? lastSyncedVal : fieldValue;
     const selectedValue = field.optionsOnly ? field.optionsOnly.some(val => val === value) && value : value;
     const option = field.options?.find(item => item.value === selectedValue);
     const infos = option && field.optionsInfos?.get(option.value);
@@ -136,6 +140,8 @@ type EnumFieldProps<T extends Field<number>> = {
     disabled?: boolean;
     /**  Optional action performed on value change*/
     onChange?: (val: number | typeof RESET) => void;
+    /** If true, and the associated has a synced val, we use it instead of the field's main value */
+    useSyncedVal?: boolean;
 } & InputLabelProps;
 export type {EnumFieldProps};
 
@@ -181,6 +187,7 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
                     mode={mode}
                     emptyValueLabel={emptyValueLabel}
                     disabledValue={props.disabled}
+                    useSyncedVal={props.useSyncedVal}
                 />
             ) : (
                 <View className="flex-row flex-wrap gap-3">
