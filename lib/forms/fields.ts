@@ -422,7 +422,7 @@ export function useResetModel<T extends Record<string, Field<any>>>(model: Model
         if (!model) return;
         form.reset();
         model._states.forEach(stateAtom => {
-            store.set(stateAtom, (prev: FieldMeta<any>) => ({...prev, lastModified: null}));
+            store.set(stateAtom, (prev: FieldMeta<any>) => ({...prev, lastModified: null, lastSyncedVal: null}));
         });
     }, [form, store, model]);
 }
