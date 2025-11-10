@@ -11,7 +11,7 @@ import {storedAtom} from '../state-management';
  * Used for testing and development purposes.
  * @category Bluetooth
  */
-const SIMULATION_DEVICE_NAME_PFX = `${Config?.BLE_ID_PREFIX ?? ''}Dummy`;
+const SIMULATION_DEVICE_NAME_PFX = `Dummy`;
 
 /**
  * Flag indicating whether mock functionality is enabled.

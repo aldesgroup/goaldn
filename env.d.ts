@@ -7,8 +7,8 @@ declare module 'react-native-config' {
         // goaldn variables
         /** the current environment */
         ENVIRONMENT: 'development' | 'staging' | 'production';
-        /** what the devices we want to connect to start with */
-        BLE_ID_PREFIX?: string;
+        /** what the devices we want to connect to start with: prefix1|prefix2|prefix3|etc */
+        BLE_ID_PREFIXES?: string;
         /** the service ID we want to connect to */
         BLE_SERVICE_UUID?: string;
         /** the ID of the characteristic we'll read from */
