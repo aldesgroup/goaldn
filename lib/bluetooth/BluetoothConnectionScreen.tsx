@@ -1,6 +1,6 @@
 import {useAtom, useAtomValue, useSetAtom} from 'jotai';
 import {unwrap} from 'jotai/utils';
-import {Bluetooth, OptionIcon, RefreshCcw} from 'lucide-react-native';
+import {Bluetooth, RefreshCcw} from 'lucide-react-native';
 import {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
