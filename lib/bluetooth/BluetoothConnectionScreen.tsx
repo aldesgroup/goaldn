@@ -1,6 +1,6 @@
 import {useAtom, useAtomValue, useSetAtom} from 'jotai';
 import {unwrap} from 'jotai/utils';
-import {Bluetooth, RefreshCcw} from 'lucide-react-native';
+import {Bluetooth, OptionIcon, RefreshCcw} from 'lucide-react-native';
 import {useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
@@ -48,9 +48,14 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const [permissionStatus, setPermissionStatus] = useState('checking');
 
     // --------------------------------------------------------------------------------------------
-    // internal, but peristent, state
+    // internal, but persistent, state
     // --------------------------------------------------------------------------------------------
     const isScanStarted = useRef<boolean | null>(false);
+
+    // --------------------------------------------------------------------------------------------
+    // --- config
+    // --------------------------------------------------------------------------------------------
+    const blePrefixes = Config.BLE_ID_PREFIXES ? Config.BLE_ID_PREFIXES.split('|') : [];
 
     // --------------------------------------------------------------------------------------------
     // --- utils
@@ -59,6 +64,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const checkBluetoothEnabled = useCheckBluetoothEnabled();
     const logv = useLogV('BLECON');
     const reportError = getReportError();
+    const isNameWithConfiguredPrefix = (name: string) => blePrefixes.some(prefix => name.startsWith(prefix));
 
     // --------------------------------------------------------------------------------------------
     // effects
@@ -120,8 +126,8 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                     updatedDevices
                         // .filter((d: Peripheral) => d.name) // Remove unnamed devices
                         .sort((a, b: Peripheral) => {
-                            const aHasPrefix = Config.BLE_ID_PREFIX && (a.name || '').startsWith(Config.BLE_ID_PREFIX);
-                            const bHasPrefix = Config.BLE_ID_PREFIX && (b.name || '').startsWith(Config.BLE_ID_PREFIX);
+                            const aHasPrefix = isNameWithConfiguredPrefix(a.name || '');
+                            const bHasPrefix = isNameWithConfiguredPrefix(b.name || '');
 
                             // If one has prefix and the other doesn't, prioritize the one with prefix
                             if (aHasPrefix && !bHasPrefix) return -1;
