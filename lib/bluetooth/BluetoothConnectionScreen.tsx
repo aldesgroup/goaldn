@@ -67,7 +67,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const isNameWithConfiguredPrefix = (name: string) => blePrefixes.some(prefix => name.startsWith(prefix));
 
     // --------------------------------------------------------------------------------------------
-    // effects
+    // effects - setting listeners & auto-starting the scan
     // --------------------------------------------------------------------------------------------
     useEffect(() => {
         // We have to resolved if we're in a simulated mode or not
@@ -107,7 +107,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     // --------------------------------------------------------------------------------------------
     const handleDiscoverPeripheral = (peripheral: Peripheral, forceReappear?: boolean) => {
         // only considering the devices with a name
-        if (peripheral.name) {
+        if (getDeviceName(peripheral)) {
             // Add device to the list, then apply filtering and sorting
             setDevices(prevDevices => {
                 // Check if device is already in the list
@@ -120,29 +120,27 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 // Create new array with the current device
                 const updatedDevices = [...prevDevices, peripheral];
 
-                // 1) Filter out devices with no name
-                // 2 & 3) Sort devices - put "MyPrefix_" devices first, then sort alphabetically
-                return (
-                    updatedDevices
-                        // .filter((d: Peripheral) => d.name) // Remove unnamed devices
-                        .sort((a, b: Peripheral) => {
-                            const aHasPrefix = isNameWithConfiguredPrefix(a.name || '');
-                            const bHasPrefix = isNameWithConfiguredPrefix(b.name || '');
+                // Sort devices - put devices with names starting with a recognised prefix first,
+                // then sort alphabetically, or by signal strength for devices with the same name
+                return updatedDevices.sort((a, b: Peripheral) => {
+                    const aName = getDeviceName(a);
+                    const aHasPrefix = isNameWithConfiguredPrefix(aName || '');
+                    const bName = getDeviceName(b);
+                    const bHasPrefix = isNameWithConfiguredPrefix(bName || '');
 
-                            // If one has prefix and the other doesn't, prioritize the one with prefix
-                            if (aHasPrefix && !bHasPrefix) return -1;
-                            if (!aHasPrefix && bHasPrefix) return 1;
+                    // If one has prefix and the other doesn't, prioritize the one with prefix
+                    if (aHasPrefix && !bHasPrefix) return -1;
+                    if (!aHasPrefix && bHasPrefix) return 1;
 
-                            // If the name is the same, sort by signal strength
-                            if (a.name === b.name) {
-                                // Higher RSSI (closer to 0) should come first
-                                return (b.rssi || -Infinity) - (a.rssi || -Infinity);
-                            }
+                    // If the name is the same, sort by signal strength
+                    if (aName === bName) {
+                        // Higher RSSI (closer to 0) should come first
+                        return (b.rssi || -Infinity) - (a.rssi || -Infinity);
+                    }
 
-                            // Otherwise sort alphabetically
-                            return (a.name || '').localeCompare(b.name || '');
-                        })
-                );
+                    // Otherwise sort alphabetically
+                    return (aName || '').localeCompare(bName || '');
+                });
             });
         }
     };
@@ -156,7 +154,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     };
 
     // --------------------------------------------------------------------------------------------
-    // utils - the rest
+    // utils - permissions & scanning
     // --------------------------------------------------------------------------------------------
     const checkPermissions = async () => {
         setPermissionStatus('checking');
@@ -242,6 +240,18 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             isScanStarted.current = false;
         }
     };
+
+    const getDeviceName = (device: Peripheral) => {
+        if (device.advertising && device.advertising.localName) {
+            return device.advertising.localName;
+        }
+
+        return device.name;
+    };
+
+    // --------------------------------------------------------------------------------------------
+    // utils - connecting
+    // --------------------------------------------------------------------------------------------
 
     const connectToDevice = async (device?: Peripheral) => {
         try {
@@ -351,20 +361,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         }
     };
 
-    /**
-     * Props for the device item component in the device list.
-     * @property {Peripheral} item - The BLE peripheral device to display
-     */
-    interface deviceItemProps {
-        item: Peripheral;
-    }
+    // --------------------------------------------------------------------------------------------
+    // utils - rendering
+    // --------------------------------------------------------------------------------------------
 
-    /**
-     * Renders a single device item in the device list.
-     * @param {deviceItemProps} props - The device item props
-     * @returns {JSX.Element} A touchable device item component
-     */
-    const RenderDeviceItem = ({item}: deviceItemProps) => {
+    const RenderDeviceItem = ({item}: {item: Peripheral}) => {
         const device = item;
         const isDeviceConnected = (connectedDevice && connectedDevice.id === device.id) || false;
 
@@ -382,7 +383,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                     <Bluetooth color={colors.secondaryForeground} size={24} />
                     <View className="">
                         <Txt raw className="">
-                            {device.name || 'Unnamed Device'}
+                            {getDeviceName(device)}
                         </Txt>
                         <Txt raw className={cn('text-sm')}>
                             {device.id}
@@ -409,7 +410,10 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         );
     };
 
-    // TODO handle error... cf. theo3.gg... neverthrow.. ?
+    // --------------------------------------------------------------------------------------------
+    // view
+    // --------------------------------------------------------------------------------------------
+
     return (
         <BottomView headerTitle="Connect a Bluetooth device" onClose={quitScreen} h={smallScreen ? 'h-5/6' : 'h-2/3'}>
             {/* Displaying error messages */}
