@@ -1,8 +1,9 @@
-import {Pressable, View} from 'react-native';
-import {useNavigation, NavigationProp, ParamListBase} from '@react-navigation/native';
-import {atom, useAtom} from 'jotai';
+import {NavigationProp, ParamListBase, useNavigation} from '@react-navigation/native';
+import {atom, useAtom, useAtomValue} from 'jotai';
 import {ChevronDown, ChevronUp, CircleUserRound, LucideIcon} from 'lucide-react-native';
+import {Pressable, View} from 'react-native';
 import {cn, Txt} from '../base';
+import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
 
 // Atom to control the visibility of the header menu
@@ -47,6 +48,7 @@ export function HeaderMenu({menu}: {menu: HeaderMenuData}) {
     // ParamListBase means any route with any params
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
     const [open, setOpen] = useAtom(openHeaderMenuAtom);
+    const smallScreen = useAtomValue(smallScreenAtom);
 
     const handlePress = ({navigateTo, onPress}: HeaderMenuEntry) => {
         setOpen(false);
@@ -68,7 +70,7 @@ export function HeaderMenu({menu}: {menu: HeaderMenuData}) {
                     onPress={() => handlePress(entry)}
                     className="active:bg-secondary flex flex-row items-center gap-3 rounded-xl p-3">
                     {entry.icon && <entry.icon size={24} color={getColors().foregroundLight} />}
-                    <Txt className="text-foreground-light text-lg">{entry.name}</Txt>
+                    <Txt className={cn('text-foreground-light text-lg', smallScreen && 'text-sm')}>{entry.name}</Txt>
                 </Pressable>
             ))}
         </View>
