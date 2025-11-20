@@ -1,6 +1,5 @@
 import {fieldAtom, formAtom, FormAtom, useFieldValue as getValue, RESET, useForm, useInputField, type FieldAtom} from 'form-atoms';
 import {atom, Atom, useAtom, useSetAtom, useStore, WritableAtom} from 'jotai';
-import {LucideIcon} from 'lucide-react-native';
 import {useCallback, useMemo} from 'react';
 
 // ------------------------------------------------------------------------------------------------
@@ -228,7 +227,7 @@ export type FieldOption = {value: number; label: string};
  * @property {LucideIcon} [icon] - An icon associated with the option.
  * @category Forms Utils
  */
-export type FieldOptionInfos = {disabled?: Atom<boolean>; icon?: LucideIcon};
+export type FieldOptionInfos = {disabled?: Atom<boolean>};
 
 // ------------------------------------------------------------------------------------------------
 // Field value error

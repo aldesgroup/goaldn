@@ -1,8 +1,8 @@
 import {useAtomValue} from 'jotai';
 import React, {ReactNode} from 'react';
 import {View} from 'react-native';
+import {fieldDisplayMode} from '../carots';
 import {cn} from '../base';
-import {fieldDisplayMode} from '../forms';
 import {smallScreenAtom} from '../settings';
 import {Txt} from './Txt';
 

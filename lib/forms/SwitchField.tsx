@@ -1,7 +1,7 @@
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
+import {Field, useField} from '../carots';
 import {Switch} from '../ui/switch';
-import {Field, useField} from './fields';
 
 /**
  * Props for the SwitchField component.

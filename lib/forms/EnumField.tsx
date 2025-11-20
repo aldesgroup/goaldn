@@ -1,11 +1,11 @@
 import {RESET} from 'form-atoms';
 import {useAtomValue} from 'jotai';
-import {X} from 'lucide-react-native';
+import {LucideIcon, X} from 'lucide-react-native';
 import {Pressable, View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
+import {Field, fieldDisplayMode, FieldOption, useField, useFieldMeta, useFieldValue} from '../carots';
 import {smallScreenAtom} from '../settings';
 import {getColors} from '../styling';
-import {Field, fieldDisplayMode, FieldOption, FieldOptionInfos, useField, useFieldMeta, useFieldValue} from './fields';
 
 /**
  * Props for the EnumFieldValue component.
@@ -22,7 +22,7 @@ type EnumFieldValueProps = {
     option: FieldOption;
     field: Field<number>;
     className?: string;
-    infos?: FieldOptionInfos;
+    icon?: LucideIcon;
     mode?: fieldDisplayMode;
     disabledValue?: boolean;
     onChange?: (val: number | typeof RESET) => void;
@@ -37,7 +37,7 @@ export type {EnumFieldValueProps};
  * @returns {JSX.Element} A pressable badge showing the enum option
  * @category Forms
  */
-function EnumFieldValue({option, field, className, infos, mode = 'input', disabledValue, onChange}: EnumFieldValueProps) {
+function EnumFieldValue({option, field, className, icon, mode = 'input', disabledValue, onChange}: EnumFieldValueProps) {
     // shared state
     const [value, setValue] = useField(field);
     const disabled = (field.disabled ? field.disabled() : false) || disabledValue;
@@ -45,7 +45,7 @@ function EnumFieldValue({option, field, className, infos, mode = 'input', disabl
 
     // local state
     const selected = value === option?.value;
-    const Icon = infos?.icon;
+    const Icon = icon ?? icon;
     const iconColor = disabled ? colors.mutedForeground : colors.primary;
     const isInput = mode === 'input';
 
@@ -82,12 +82,13 @@ function EnumFieldValue({option, field, className, infos, mode = 'input', disabl
  * A component that displays the currently selected enum value.
  * Shows a placeholder when no value is selected.
  *
- * @param {Object} props - The component props
- * @param {Field<number>} props.field - The field configuration
- * @param {string} [props.className] - Additional CSS classes for the value container
- * @param {fieldDisplayMode} props.mode - The display mode of the component
- * @param {string} props.emptyValueLabel - Text to show when no value is selected
- * @property {boolean} [disabledValue] - Should this value be disabled?
+ * @param field - The numeric enum field to display
+ * @param className - Optional CSS classes to apply to the component
+ * @param mode - Display mode for the field value
+ * @param emptyValueLabel - Label to show when no value is selected
+ * @param disabledValue - Whether the value display should be disabled
+ * @param useSyncedVal - If true, uses the last synced value instead of current field value
+ * @param icons - Optional mapping of enum values to Lucide icons
  * @returns {JSX.Element} A view showing the current selection or placeholder
  * @category Forms
  */
@@ -98,6 +99,7 @@ function CurrentEnumFieldValue({
     emptyValueLabel,
     disabledValue,
     useSyncedVal,
+    icons,
 }: {
     field: Field<number>;
     className?: string;
@@ -105,6 +107,7 @@ function CurrentEnumFieldValue({
     emptyValueLabel: string;
     disabledValue?: boolean;
     useSyncedVal?: boolean;
+    icons?: Record<number, LucideIcon>;
 }) {
     // shared state
     const fieldValue = useFieldValue(field);
@@ -112,12 +115,12 @@ function CurrentEnumFieldValue({
     const value = useSyncedVal && lastSyncedVal ? lastSyncedVal : fieldValue;
     const selectedValue = field.optionsOnly ? field.optionsOnly.some(val => val === value) && value : value;
     const option = field.options?.find(item => item.value === selectedValue);
-    const infos = option && field.optionsInfos?.get(option.value);
+    const icon = icons && icons[value];
 
     // rendering
     return option ? (
         <View className="flex-wrap">
-            <EnumFieldValue field={field} className={className} option={option} mode={mode} infos={infos} disabledValue={disabledValue} />
+            <EnumFieldValue field={field} className={className} option={option} mode={mode} icon={icon} disabledValue={disabledValue} />
         </View>
     ) : (
         <Txt className="text-muted-foreground">{emptyValueLabel}</Txt>
@@ -142,6 +145,8 @@ type EnumFieldProps<T extends Field<number>> = {
     onChange?: (val: number | typeof RESET) => void;
     /** If true, and the associated has a synced val, we use it instead of the field's main value */
     useSyncedVal?: boolean;
+    /** Icons to associate to each enum value*/
+    icons?: Record<number, LucideIcon>;
 } & InputLabelProps;
 export type {EnumFieldProps};
 
@@ -188,6 +193,7 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
                     emptyValueLabel={emptyValueLabel}
                     disabledValue={props.disabled}
                     useSyncedVal={props.useSyncedVal}
+                    icons={props.icons}
                 />
             ) : (
                 <View className="flex-row flex-wrap gap-3">
@@ -203,7 +209,7 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
                                               option={option}
                                               field={field}
                                               className={props.valueClassName}
-                                              infos={field.optionsInfos?.get(option.value)}
+                                              icon={props.icons && props.icons[option.value]}
                                               disabledValue={props.disabled}
                                               onChange={props.onChange}
                                           />
@@ -216,7 +222,7 @@ export function EnumField<T extends Field<number>>({field, mode = 'input', empty
                                   option={option}
                                   field={field}
                                   className={props.valueClassName}
-                                  infos={field.optionsInfos?.get(option.value)}
+                                  icon={props.icons && props.icons[option.value]}
                                   disabledValue={props.disabled}
                                   onChange={props.onChange}
                               />

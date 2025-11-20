@@ -2,8 +2,8 @@ import {RESET} from 'form-atoms';
 import {useAtom, useAtomValue, WritableAtom} from 'jotai';
 import {X} from 'lucide-react-native';
 import {Pressable, View} from 'react-native';
+import {fieldDisplayMode} from '../carots';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
-import {fieldDisplayMode} from '../forms';
 import {getColors} from '../styling';
 
 /**

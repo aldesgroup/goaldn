@@ -1,0 +1,11 @@
+cachedir: ../tmp
+lib:
+    srcdir: lib
+    install: npm i
+    develop: npm run dev
+vendors:
+    - repo: github.com/aldesgroup/carots
+      #   branch: feature/new-data-sync-mechanisms
+      version: latest
+      from: lib
+      to: lib
