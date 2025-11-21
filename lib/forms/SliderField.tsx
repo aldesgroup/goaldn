@@ -2,7 +2,7 @@ import Slider from '@react-native-community/slider';
 import {useEffect, useState} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
-import {Field, fieldDisplayMode, useField} from '../forms';
+import {Field, fieldDisplayMode, useField} from '../carots';
 import {getColors} from '../styling';
 
 /**

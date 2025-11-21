@@ -2,8 +2,8 @@ import {Check, Minus} from 'lucide-react-native';
 import {useEffect} from 'react';
 import {TouchableOpacity, View} from 'react-native';
 import {cn, Txt} from '../base';
+import {Field, useCheckAllFormFieldValues, useField, useSetAllFormFields} from '../carots';
 import {getColors} from '../styling';
-import {Field, useCheckAllFormFieldValues, useField, useSetAllFormFields} from './fields';
 
 /**
  * Props for the CheckboxField component.
