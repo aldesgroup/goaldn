@@ -372,7 +372,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         return (
             <View
                 className={cn(
-                    'bg-secondary mb-4 rounded-xl p-4',
+                    'mb-4 rounded-xl bg-secondary p-4',
                     // when not wrapped
                     !smallScreen && 'flex-row justify-between',
                     // when wrapped
@@ -395,7 +395,8 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 <View className={cn('flex-row justify-end', !smallScreen && 'flex-1')}>
                     <TouchableOpacity
                         className={cn('rounded-lg px-4 py-2', isDeviceConnected ? 'bg-info-foreground' : 'bg-primary')}
-                        onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}>
+                        onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}
+                        testID={`Connect-${device.id}`}>
                         {connectingDevice === device.id ? (
                             <View>
                                 <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnecting...' : 'Connecting...'}</Txt>
