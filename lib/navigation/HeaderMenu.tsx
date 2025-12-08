@@ -61,16 +61,16 @@ export function HeaderMenu({menu}: {menu: HeaderMenuData}) {
 
     return (
         <View
-            className={cn('border-border absolute right-4 top-2 z-10 flex flex-col rounded-xl border bg-white p-2', !open && 'hidden')}
+            className={cn('absolute right-4 top-2 z-10 flex flex-col rounded-xl border border-border bg-white p-2', !open && 'hidden')}
             // Using elevation to create shadow in Android as Nativewind shadow is not working
             style={{elevation: 6}}>
             {menu.entries.map((entry, index) => (
                 <Pressable
                     key={index}
                     onPress={() => handlePress(entry)}
-                    className="active:bg-secondary flex flex-row items-center gap-3 rounded-xl p-3">
+                    className="flex flex-row items-center gap-3 rounded-xl p-3 active:bg-secondary">
                     {entry.icon && <entry.icon size={24} color={getColors().foregroundLight} />}
-                    <Txt className={cn('text-foreground-light text-lg', smallScreen && 'text-sm')}>{entry.name}</Txt>
+                    <Txt className={cn('text-lg text-foreground-light', smallScreen && 'text-sm')}>{entry.name}</Txt>
                 </Pressable>
             ))}
         </View>
@@ -86,7 +86,7 @@ export function HeaderMenuTrigger() {
     const [menuOpen, setMenuOpen] = useAtom(openHeaderMenuAtom);
 
     return (
-        <Pressable className="flex-row gap-2 py-4" onPress={() => setMenuOpen(!menuOpen)}>
+        <Pressable className="flex-row gap-2 py-4" onPress={() => setMenuOpen(!menuOpen)} testID="HeaderMenuTrigger">
             <CircleUserRound color={color} />
             {menuOpen ? <ChevronUp color={color} /> : <ChevronDown color={color} />}
         </Pressable>
