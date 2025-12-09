@@ -160,6 +160,7 @@ export function StringField<T extends Field<any>, InputProps extends React.Compo
                         value={getStringValue(value)}
                         placeholder={placeholder} // making sure to put it after the ...props, to override them
                         onChangeText={updateValue}
+                        testID={props.testID ?? props.label}
                     />
                     {validError && (
                         <View className="flex-row gap-1">
