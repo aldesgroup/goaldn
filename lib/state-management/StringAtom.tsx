@@ -130,6 +130,7 @@ export function StringAtom<A extends WritableAtom<any | Promise<any>, any, any>,
                         value={getStringValue(value)}
                         placeholder={placeholder} // making sure to put it after the ...props, to override them
                         onChangeText={updateValue}
+                        testID={props.testID ?? props.label}
                     />
                 </>
             )}
