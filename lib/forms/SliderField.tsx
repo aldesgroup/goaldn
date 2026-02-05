@@ -26,7 +26,9 @@ export type SliderFieldProps<T extends Field<number>> = {
     mode?: fieldDisplayMode;
     /** To disable the field */
     disabled?: boolean;
-    /** Custom steps can be used to change the label shown on each step. For example, `[{value: 30, label: '30min'}, {value: 60, label: '1h'}]` */
+    /** Custom steps can have any value/label and are shown in the order provided.
+     *  Example: [{ value: 30, label: '30min' }, { value: 60, label: '1h' }]
+     */
     customSteps?: {value: number; label: string}[];
 };
 
