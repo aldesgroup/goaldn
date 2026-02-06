@@ -1,5 +1,5 @@
 import Slider from '@react-native-community/slider';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {View} from 'react-native';
 import {cn, Txt} from '../base';
 import {Field, fieldDisplayMode, useField} from '../carots';
@@ -26,7 +26,23 @@ export type SliderFieldProps<T extends Field<number>> = {
     mode?: fieldDisplayMode;
     /** To disable the field */
     disabled?: boolean;
+    /** Custom steps can have any value/label and are shown in the order provided.
+     *  Example: [{ value: 30, label: '30min' }, { value: 60, label: '1h' }]
+     */
+    customSteps?: {value: number; label: string}[];
 };
+
+function CurrentStep({stepMarked, label}: {stepMarked: boolean; label: string}) {
+    if (!stepMarked) return null;
+
+    return (
+        <View className="bottom-8">
+            <Txt raw className="text-lg font-bold text-primary">
+                {label}
+            </Txt>
+        </View>
+    );
+}
 
 /**
  * A form field component that renders a slider with a dynamic value display.
@@ -38,20 +54,23 @@ export type SliderFieldProps<T extends Field<number>> = {
  */
 export function SliderField<T extends Field<number>>({field, ...props}: SliderFieldProps<T>) {
     // shared state
-    const colors = getColors();
-    const [value, setValue] = useField(field);
-    const disabled = (field.disabled ? field.disabled() : false) || props.disabled;
-    const visible = field.visible ? field.visible() : true;
-    const minVal = field.min || 0;
-    const maxVal = field.max || 1;
+    const [fieldValue, setFieldValue] = useField(field);
 
     // --- local state
-    const [displayedValue, setDisplayedValue] = useState(value);
+    const customSteps = props.customSteps;
+    const [value, setValue] = useState(customSteps ? customSteps.findIndex(step => step.value === fieldValue) : fieldValue);
 
-    // --- local state - experimental! = slider position
-    const maxPct = 96.0; // we don't need to go further than that
-    const minPct = 5.0 + ((value + (props.unit || '')).length - 1) * 2.2; // finger measurement of the % where to put the thumb for the min value
-    const posPct = Math.ceil(minPct + ((maxPct - minPct) * (displayedValue - minVal)) / (maxVal - minVal)); // interpolating
+    const label = `${customSteps ? customSteps[value].label : value}${props.unit || ''}`;
+    const disabled = (field.disabled ? field.disabled() : false) || props.disabled;
+    const visible = field.visible ? field.visible() : true;
+    const step = props.customSteps ? 1 : field.step || 1;
+    const min = customSteps ? 0 : field.min || 0;
+    const max = customSteps ? customSteps.length - 1 : field.max || 1;
+    const minLabel = customSteps ? customSteps[0].label : min;
+    const maxLabel = customSteps ? customSteps[customSteps.length - 1].label : max;
+    const colors = getColors();
+
+    const handleSlidingComplete = (v: number) => setFieldValue(customSteps ? customSteps[v].value : v);
 
     // --- effects
     if (field.effects) {
@@ -59,49 +78,25 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
         field.effects.map(useEffect => useEffect());
     }
 
-    useEffect(() => {
-        setDisplayedValue(value);
-    }, [value]);
-
-    // --- utils
-
     // --- rendering
-    return visible ? (
+    if (!visible) return null;
+
+    return (
         <View className={cn('flex-col', props.className)}>
-            <Txt className={cn('text-foreground mb-3', props.labelClassName)}>{props.label}</Txt>
+            <Txt className={cn('mb-7 text-foreground', props.labelClassName)}>{props.label}</Txt>
             <View className="my-4">
-                {/* The value that should follow where the thumb of the slider is! */}
-                {/* The following solution "a la NativeWind" works only if:
-                    safelist: [
-                        ...Array.from({length: 100}, (_, i) => `w-[${i + 1}%]`)]
-                    is added to the client app Tailwind config*/}
-                {/* <View className={cn('items-end', `w-[${posPct}%]`)}> */}
-                {/* Instead we use the vanilla solution here: */}
-                <View className={cn('items-end')} style={{width: `${posPct}%`}}>
-                    <View className="flex-row">
-                        <Txt raw className="text-primary text-lg font-bold">
-                            {displayedValue}
-                        </Txt>
-                        {props.unit && (
-                            <Txt raw className="text-primary text-lg font-bold">
-                                {props.unit}
-                            </Txt>
-                        )}
-                    </View>
-                </View>
                 <Slider
-                    minimumValue={field.min}
-                    maximumValue={field.max}
-                    step={field.step}
+                    minimumValue={min}
+                    maximumValue={max}
+                    step={step}
                     minimumTrackTintColor={colors.primary}
                     maximumTrackTintColor={colors.mutedForeground}
                     thumbTintColor={colors.primary}
                     disabled={disabled}
-                    onSlidingComplete={val => {
-                        setValue(val);
-                    }}
-                    onValueChange={setDisplayedValue}
+                    onSlidingComplete={handleSlidingComplete}
+                    onValueChange={setValue}
                     value={value}
+                    StepMarker={({stepMarked}) => <CurrentStep stepMarked={stepMarked} label={label} />}
                 />
             </View>
             <View className="flex-row justify-between">
@@ -116,7 +111,7 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
                                 </Txt>
                             )
                         }>
-                        {field.min}
+                        {minLabel}
                     </Txt>
                 </View>
                 <View className="mr-4 flex-row">
@@ -130,10 +125,10 @@ export function SliderField<T extends Field<number>>({field, ...props}: SliderFi
                                 </Txt>
                             )
                         }>
-                        {field.max}
+                        {maxLabel}
                     </Txt>
                 </View>
             </View>
         </View>
-    ) : null;
+    );
 }
