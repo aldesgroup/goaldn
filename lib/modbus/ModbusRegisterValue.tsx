@@ -60,7 +60,7 @@ export function ModbusRegisterValue({register, refreshEveryMS, editable, verbose
 
     // handling the "auto-refresh" mode
     useEffect(() => {
-        let interval: number;
+        let interval: ReturnType<typeof setInterval> | undefined;
         // Only set up the interval if the screen is focused and refreshEveryMS is provided
         if (isFocused && refreshEveryMS) {
             interval = setInterval(() => {
