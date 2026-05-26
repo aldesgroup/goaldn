@@ -1,12 +1,30 @@
 import {useNavigation} from '@react-navigation/native';
-import {useAtom, useAtomValue} from 'jotai';
-import {useEffect, useRef, useState} from 'react';
+import {atom, useAtom, useAtomValue} from 'jotai';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import Config from 'react-native-config';
 import {useLogV} from '../base';
 import {connectedDeviceAtom, getBleManager, isBleDeviceSimulatedAtom} from '../bluetooth';
 import {getReportError} from '../utils';
 import {useModbusRegisterRead} from './modbus-hooks';
 import {RegisterProps} from './modbus-utils';
+
+// Atom flag to pause ModbusClientMonitor polling and reset failure counters.
+const modbusMonitoringPausedAtom = atom(false);
+
+// Controls for pausing/resuming Modbus connection monitoring.
+export function useModbusMonitoring() {
+    const [isPaused, setPaused] = useAtom(modbusMonitoringPausedAtom);
+
+    const pause = useCallback(() => {
+        setPaused(true);
+    }, [setPaused]);
+
+    const resume = useCallback(() => {
+        setPaused(false);
+    }, [setPaused]);
+
+    return {isPaused, pause, resume};
+}
 
 type ModbusClientMonitorProps = {
     register: RegisterProps;
@@ -62,6 +80,9 @@ function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThresho
     const bleManager = getBleManager();
     const [connectedDevice, setConnectedDevice] = useAtom(connectedDeviceAtom);
     const isBleDeviceSimulated = useAtomValue(isBleDeviceSimulatedAtom);
+    const isMonitoringPaused = useAtomValue(modbusMonitoringPausedAtom);
+    const pausedRef = useRef(isMonitoringPaused);
+    pausedRef.current = isMonitoringPaused;
 
     // --- shared state - MODBUS
     const {get: readRegister} = useModbusRegisterRead(register);
@@ -86,9 +107,18 @@ function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThresho
     };
 
     const loopOnce = async () => {
+        if (pausedRef.current) {
+            return;
+        }
+
         let failedAgain = true;
         try {
             const res = await readRegister(verbose);
+
+            if (pausedRef.current) {
+                return;
+            }
+
             if (res !== null) {
                 if (consecutiveFailures !== 0) {
                     setConsecutiveFailures(0);
@@ -98,9 +128,17 @@ function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThresho
                 setConsecutiveFailures(prev => prev + 1);
             }
         } catch {
+            if (pausedRef.current) {
+                return;
+            }
+
             setConsecutiveFailures(prev => prev + 1);
             // not reporting here, readRegister already does it
         } finally {
+            if (pausedRef.current) {
+                return;
+            }
+
             // if the calls start failing, we start checking more often
             timerRef.current = setTimeout(loopOnce, failedAgain ? 1000 : checkEveryMs);
         }
@@ -110,14 +148,21 @@ function InnerModbusClientMonitor({register, checkEveryMs = 3000, failureThresho
 
     // starting the checks
     useEffect(() => {
+        clearTimer();
+
+        if (isMonitoringPaused) {
+            logv('ModbusClientMonitor: monitoring paused');
+            setConsecutiveFailures(0);
+            return;
+        }
+
         logv(`ModbusClientMonitor: starting polling every ${checkEveryMs} ms`);
         handledRef.current = false;
-        clearTimer();
         timerRef.current = setTimeout(loopOnce, checkEveryMs);
         return () => {
             clearTimer();
         };
-    }, [register, checkEveryMs, connectedDevice]);
+    }, [register, checkEveryMs, connectedDevice, isMonitoringPaused]);
 
     // reacting to too many failures
     useEffect(() => {

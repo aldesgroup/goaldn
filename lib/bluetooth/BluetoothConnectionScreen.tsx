@@ -180,7 +180,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
 
     const quitScreen = async () => {
         await stopScan();
-        navigation.goBack();
+        navigation.popToTop();
     };
 
     const startOrStopScan = async () => {
