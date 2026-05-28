@@ -14,8 +14,8 @@ export function GetBluetoothLostConnectionScreen(reconnectScreen: string) {
             <BottomView headerTitle="Loss of connection with the device" onClose={() => navigation.popToTop()}>
                 <View className="flex-1">
                     <Txt>
-                        Your device has lost its connection to the device. Please reconnect to the device in order to perform further actions. Do not
-                        close the application while waiting for reconnection.
+                        Your device has lost its Bluetooth connection. Please reconnect to continue using the app. To reconnect, confirm the
+                        connection using the remote control.
                     </Txt>
                 </View>
                 <Button variant="default" onPress={() => navigation.replace(reconnectScreen)}>
