@@ -86,7 +86,7 @@ export function HeaderMenuTrigger() {
     const [menuOpen, setMenuOpen] = useAtom(openHeaderMenuAtom);
 
     return (
-        <Pressable className="flex-row gap-2 py-4" onPress={() => setMenuOpen(!menuOpen)} testID="HeaderMenuTrigger">
+        <Pressable className="flex-row gap-2" onPress={() => setMenuOpen(!menuOpen)} testID="HeaderMenuTrigger">
             <CircleUserRound color={color} />
             {menuOpen ? <ChevronUp color={color} /> : <ChevronDown color={color} />}
         </Pressable>
