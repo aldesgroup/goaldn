@@ -31,7 +31,7 @@ export const getRequiredPermissions = () => {
         // For iOS 13+, location permission is required for BLE scanning
         if (parseInt(Platform.Version, 10) >= 13) {
             //@ts-ignore
-            permissions.push(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+            // permissions.push(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
         }
 
         return permissions;
