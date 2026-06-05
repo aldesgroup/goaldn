@@ -392,7 +392,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 </View>
 
                 {/* Button */}
-                <View className={cn('flex-row justify-end', !smallScreen && 'flex-1')}>
+                <View className={cn('flex-row justify-end', !smallScreen && 'items-center')}>
                     <TouchableOpacity
                         className={cn('rounded-lg px-4 py-2', isDeviceConnected ? 'bg-info-foreground' : 'bg-primary')}
                         onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}
