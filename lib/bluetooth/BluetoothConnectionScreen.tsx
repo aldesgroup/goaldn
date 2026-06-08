@@ -379,20 +379,20 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                     smallScreen && 'flex-col gap-2',
                 )}>
                 {/* Device infos */}
-                <View className="flex-row items-center gap-4">
+                <View className={'flex-1 flex-row items-center gap-4'}>
                     <Bluetooth color={colors.secondaryForeground} size={24} />
-                    <View className="">
-                        <Txt raw className="">
+                    <View className="flex-1 pr-3">
+                        <Txt raw>
                             {getDeviceName(device)}
                         </Txt>
-                        <Txt raw className={cn('text-sm')}>
+                        <Txt raw className={cn('text-sm')} numberOfLines={1}>
                             {device.id}
                         </Txt>
                     </View>
                 </View>
 
                 {/* Button */}
-                <View className={cn('flex-row justify-end', !smallScreen && 'flex-1')}>
+                <View className={cn('flex-row justify-end', !smallScreen && 'items-center')}>
                     <TouchableOpacity
                         className={cn('rounded-lg px-4 py-2', isDeviceConnected ? 'bg-info-foreground' : 'bg-primary')}
                         onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}
