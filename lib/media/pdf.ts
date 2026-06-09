@@ -15,6 +15,8 @@ export type PDFGenerationOptions = {
     fileName?: string;
     /** The directory where the PDF file will be saved. */
     directory?: string;
+    /** Background color of the PDF page (iOS only). */
+    bgColor?: string;
 };
 
 /**
@@ -23,12 +25,13 @@ export type PDFGenerationOptions = {
  * @returns {Promise<string>} A promise that resolves to the file path of the generated PDF.
  * @category Media
  */
-async function generatePDF({htmlContent, fileName = 'generated-file', directory = 'Documents'}: PDFGenerationOptions): Promise<string> {
+async function generatePDF({htmlContent, fileName = 'generated-file', directory = 'Documents', bgColor = '#FFFFFF'}: PDFGenerationOptions): Promise<string> {
     try {
         const options = {
             html: htmlContent,
             fileName,
             directory,
+            bgColor,
         };
 
         const file = await RNHTMLtoPDF.convert(options);
