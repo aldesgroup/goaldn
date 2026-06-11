@@ -1,5 +1,5 @@
 import {useAtom, useAtomValue, WritableAtom} from 'jotai';
-import React from 'react';
+import React, {useState} from 'react';
 import {View} from 'react-native';
 import {cn, InputLabel, InputLabelProps, Txt} from '../base';
 import {smallScreenAtom, useTranslator} from '../settings';
@@ -25,6 +25,12 @@ type StringAtomProps<A extends WritableAtom<any | Promise<any>, any, any>, Input
     unit?: string;
     /** If true, clears the value if it matches GOALD_DEFAULT_STRING */
     clearDefault?: boolean;
+    /** Minimum length validation */
+    min?: number;
+    /** Maximum length validation */
+    max?: number;
+    /** Custom validation function. Receives the string value, returns an error message or null */
+    validate?: (value: string) => string | null;
 } & InputLabelProps &
     InputProps;
 export type {StringAtomProps};
@@ -47,6 +53,7 @@ export function StringAtom<A extends WritableAtom<any | Promise<any>, any, any>,
     const smallScreen = useAtomValue(smallScreenAtom);
 
     // local state
+    const [touched, setTouched] = useState(false);
     const isReport = mode === 'report';
     const isSheet = mode === 'sheet';
     const isInput = mode === 'input';
@@ -84,6 +91,31 @@ export function StringAtom<A extends WritableAtom<any | Promise<any>, any, any>,
         return val;
     };
 
+    const getValidationError = (val: any): {msg: string; param?: number | string} | null => {
+        if (!isInput) return null;
+
+        const strValue = typeof val === 'string' ? val : '';
+        if (strValue.length === 0) return null;
+
+        if (props.min !== undefined && strValue.length < props.min) {
+            return {msg: 'Minimum required length not reached', param: props.min};
+        }
+
+        if (props.max !== undefined && strValue.length > props.max) {
+            return {msg: 'Maximum required length exceeded', param: props.max};
+        }
+
+        if (props.validate) {
+            const err = props.validate(strValue);
+            return typeof err === 'string' ? {msg: err} : err;
+        }
+
+        return null;
+    };
+
+    const validationError = getValidationError(value);
+    const showError = touched && !!validationError;
+
     // rendering
     return (
         <View
@@ -96,7 +128,7 @@ export function StringAtom<A extends WritableAtom<any | Promise<any>, any, any>,
             {/* Label */}
             <InputLabel
                 label={props.label}
-                labelClassName={cn(props.labelClassName)}
+                labelClassName={cn(props.labelClassName, showError && 'text-destructive-foreground')}
                 mode={mode}
                 mandatory={mandatory}
                 labelAppend={props.labelAppend}
@@ -125,13 +157,30 @@ export function StringAtom<A extends WritableAtom<any | Promise<any>, any, any>,
                             'border-border text-foreground min-w-14',
                             value ? 'bg-secondary' : 'bg-white',
                             props.inputClassName,
+                            showError && 'border-destructive-foreground text-destructive-foreground',
                             smallScreen && 'min-h-16',
                         )}
                         value={getStringValue(value)}
                         placeholder={placeholder} // making sure to put it after the ...props, to override them
                         onChangeText={updateValue}
+                        onBlur={() => setTouched(true)}
                         testID={props.testID ?? props.label}
                     />
+                    {showError && (
+                        <View className="flex-row gap-1">
+                            <Txt
+                                className="text-destructive-foreground text-sm flex-1"
+                                append={
+                                    validationError.param != null ? (
+                                        <Txt className="text-destructive-foreground text-sm" raw prepend=" ">
+                                            ({validationError.param})
+                                        </Txt>
+                                    ) : undefined
+                                }>
+                                {validationError.msg}
+                            </Txt>
+                        </View>
+                    )}
                 </>
             )}
         </View>
