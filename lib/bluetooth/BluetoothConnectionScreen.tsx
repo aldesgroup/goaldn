@@ -1,7 +1,7 @@
 import {useAtom, useAtomValue, useSetAtom} from 'jotai';
 import {unwrap} from 'jotai/utils';
 import {Bluetooth, RefreshCcw} from 'lucide-react-native';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
@@ -14,6 +14,72 @@ import {getReportError} from '../utils';
 import {connectedDeviceAtom, getBleManager, isBondingRequiredAtom} from './bluetoothAtoms';
 import {permissionsGrantedAtom, useCheckAndRequestBlePermissions, useCheckBluetoothEnabled} from './bluetoothPermissions';
 import {isBleDeviceSimulatedAtom, isSimulationBleDeviceEnabledAtom, simulationPeripherals} from './bluetoothSimulation';
+
+const blePrefixes = Config.BLE_ID_PREFIXES ? Config.BLE_ID_PREFIXES.split('|') : [];
+
+const isNameWithConfiguredPrefix = (name: string) => blePrefixes.some(prefix => name.startsWith(prefix));
+
+function getDeviceName(device: Peripheral): string | undefined {
+    if (device.advertising && device.advertising.localName) {
+        return device.advertising.localName;
+    }
+
+    return device.name;
+}
+
+function DeviceCard({
+    device,
+    isDeviceConnected,
+    isConnecting,
+    onPress,
+}: {
+    device: Peripheral;
+    isDeviceConnected: boolean;
+    isConnecting: boolean;
+    onPress: (device?: Peripheral) => void;
+}) {
+    const colors = getColors();
+    const smallScreen = useAtomValue(smallScreenAtom);
+
+    return (
+        <View
+            className={cn(
+                'mb-4 rounded-xl bg-secondary p-4',
+                // when not wrapped
+                !smallScreen && 'flex-row justify-between',
+                // when wrapped
+                smallScreen && 'flex-col gap-2',
+            )}>
+            {/* Device infos */}
+            <View className={'flex-1 flex-row items-center gap-4'}>
+                <Bluetooth color={colors.secondaryForeground} size={24} />
+                <View className="flex-1 pr-3">
+                    <Txt raw>{getDeviceName(device)}</Txt>
+                    <Txt raw className={cn('text-sm')} numberOfLines={1}>
+                        {device.id}
+                    </Txt>
+                </View>
+            </View>
+
+            {/* Button */}
+            <View className={cn('flex-row justify-end', !smallScreen && 'items-center')}>
+                <TouchableOpacity
+                    className={cn('rounded-lg px-4 py-2', isDeviceConnected ? 'bg-info-foreground' : 'bg-primary')}
+                    onPress={() => onPress(isDeviceConnected ? undefined : device)}
+                    testID={`Connect-${device.id}`}>
+                    {isConnecting ? (
+                        <View>
+                            <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnecting...' : 'Connecting...'}</Txt>
+                            <ActivityIndicator size="small" color="white" />
+                        </View>
+                    ) : (
+                        <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnect' : 'Connect'}</Txt>
+                    )}
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
 
 /**
  * A screen component for managing Bluetooth Low Energy (BLE) device connections.
@@ -53,18 +119,12 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     const isScanStarted = useRef<boolean | null>(false);
 
     // --------------------------------------------------------------------------------------------
-    // --- config
-    // --------------------------------------------------------------------------------------------
-    const blePrefixes = Config.BLE_ID_PREFIXES ? Config.BLE_ID_PREFIXES.split('|') : [];
-
-    // --------------------------------------------------------------------------------------------
     // --- utils
     // --------------------------------------------------------------------------------------------
     const checkAndRequestBlePermissions = useCheckAndRequestBlePermissions();
     const checkBluetoothEnabled = useCheckBluetoothEnabled();
     const logv = useLogV('BLECON');
     const reportError = getReportError();
-    const isNameWithConfiguredPrefix = (name: string) => blePrefixes.some(prefix => name.startsWith(prefix));
 
     // --------------------------------------------------------------------------------------------
     // effects - setting listeners & auto-starting the scan
@@ -89,7 +149,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         return () => {
             // No cleanup here - BleManager is now a singleton that persists throughout the application lifecycle
             // but at least scanning should be stopped
-            if (!isScanStarted.current) {
+            if (isScanStarted.current) {
                 stopScan().then(() => {
                     logv('Scanning has been stopped!');
                 });
@@ -172,11 +232,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         }
     };
 
-    const stopScan = async () => {
+    const stopScan = useCallback(async () => {
         await bleManager.stopScan();
         setIsScanning(false);
         setError('');
-    };
+    }, [bleManager, setIsScanning, setError]);
 
     const quitScreen = async () => {
         await stopScan();
@@ -241,19 +301,11 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         }
     };
 
-    const getDeviceName = (device: Peripheral) => {
-        if (device.advertising && device.advertising.localName) {
-            return device.advertising.localName;
-        }
-
-        return device.name;
-    };
-
     // --------------------------------------------------------------------------------------------
     // utils - connecting
     // --------------------------------------------------------------------------------------------
 
-    const connectToDevice = async (device?: Peripheral) => {
+    const connectToDevice = useCallback(async (device?: Peripheral) => {
         try {
             // First, let's reset the situation a bit
             stopScan();
@@ -359,57 +411,35 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
         } finally {
             setConnectingDevice(null);
         }
-    };
+    }, [
+        stopScan,
+        connectedDevice,
+        setBleDeviceSimulated,
+        resetSimulatedRegisters,
+        bleManager,
+        isBondingRequired,
+        navigation,
+        setConnectedDevice,
+        reportError,
+        logv,
+    ]);
 
     // --------------------------------------------------------------------------------------------
     // utils - rendering
     // --------------------------------------------------------------------------------------------
 
-    const RenderDeviceItem = ({item}: {item: Peripheral}) => {
-        const device = item;
-        const isDeviceConnected = (connectedDevice && connectedDevice.id === device.id) || false;
+    const renderItem = useCallback(
+        ({item}: {item: Peripheral}) => (
+            <DeviceCard
+                device={item}
+                isDeviceConnected={item.id === connectedDevice?.id}
+                isConnecting={item.id === connectingDevice}
+                onPress={connectToDevice}
+            />
+        ),
+        [connectedDevice?.id, connectingDevice, connectToDevice],
+    );
 
-        return (
-            <View
-                className={cn(
-                    'mb-4 rounded-xl bg-secondary p-4',
-                    // when not wrapped
-                    !smallScreen && 'flex-row justify-between',
-                    // when wrapped
-                    smallScreen && 'flex-col gap-2',
-                )}>
-                {/* Device infos */}
-                <View className={'flex-1 flex-row items-center gap-4'}>
-                    <Bluetooth color={colors.secondaryForeground} size={24} />
-                    <View className="flex-1 pr-3">
-                        <Txt raw>
-                            {getDeviceName(device)}
-                        </Txt>
-                        <Txt raw className={cn('text-sm')} numberOfLines={1}>
-                            {device.id}
-                        </Txt>
-                    </View>
-                </View>
-
-                {/* Button */}
-                <View className={cn('flex-row justify-end', !smallScreen && 'items-center')}>
-                    <TouchableOpacity
-                        className={cn('rounded-lg px-4 py-2', isDeviceConnected ? 'bg-info-foreground' : 'bg-primary')}
-                        onPress={() => (isDeviceConnected ? connectToDevice() : connectToDevice(device))}
-                        testID={`Connect-${device.id}`}>
-                        {connectingDevice === device.id ? (
-                            <View>
-                                <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnecting...' : 'Connecting...'}</Txt>
-                                <ActivityIndicator size="small" color="white" />
-                            </View>
-                        ) : (
-                            <Txt className="font-medium text-white">{isDeviceConnected ? 'Disconnect' : 'Connect'}</Txt>
-                        )}
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    };
 
     // --------------------------------------------------------------------------------------------
     // view
@@ -432,11 +462,18 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             )}
 
             {/* Displaying the currently connected device on top */}
-            {connectedDevice && <RenderDeviceItem item={connectedDevice} />}
+            {connectedDevice && (
+                <DeviceCard
+                    device={connectedDevice}
+                    isDeviceConnected
+                    isConnecting={connectingDevice === connectedDevice.id}
+                    onPress={connectToDevice}
+                />
+            )}
 
             {/* Showing each found bluetooth device */}
             <View className="flex-1">
-                <FlatList data={Object.values(devices)} keyExtractor={item => item.id} renderItem={RenderDeviceItem} />
+                <FlatList data={devices} keyExtractor={item => item.id} renderItem={renderItem} />
             </View>
 
             {/* Actions */}
