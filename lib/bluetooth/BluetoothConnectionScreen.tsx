@@ -1,8 +1,8 @@
 import {useAtom, useAtomValue, useSetAtom} from 'jotai';
 import {unwrap} from 'jotai/utils';
 import {Bluetooth, RefreshCcw} from 'lucide-react-native';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, FlatList, TouchableOpacity, View} from 'react-native';
+import {memo, useCallback, useEffect, useRef, useState} from 'react';
+import {ActivityIndicator, ScrollView, TouchableOpacity, View} from 'react-native';
 import {BleDisconnectPeripheralEvent, Peripheral} from 'react-native-ble-manager';
 import Config from 'react-native-config';
 import {Button, cn, Txt, useLogV} from '../base';
@@ -27,7 +27,7 @@ function getDeviceName(device: Peripheral): string | undefined {
     return device.name;
 }
 
-function DeviceCard({
+const DeviceCard = memo(function DeviceCard({
     device,
     isDeviceConnected,
     isConnecting,
@@ -79,7 +79,7 @@ function DeviceCard({
             </View>
         </View>
     );
-}
+});
 
 /**
  * A screen component for managing Bluetooth Low Energy (BLE) device connections.
@@ -425,23 +425,6 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
     ]);
 
     // --------------------------------------------------------------------------------------------
-    // utils - rendering
-    // --------------------------------------------------------------------------------------------
-
-    const renderItem = useCallback(
-        ({item}: {item: Peripheral}) => (
-            <DeviceCard
-                device={item}
-                isDeviceConnected={item.id === connectedDevice?.id}
-                isConnecting={item.id === connectingDevice}
-                onPress={connectToDevice}
-            />
-        ),
-        [connectedDevice?.id, connectingDevice, connectToDevice],
-    );
-
-
-    // --------------------------------------------------------------------------------------------
     // view
     // --------------------------------------------------------------------------------------------
 
@@ -461,19 +444,27 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 </TouchableOpacity>
             )}
 
-            {/* Displaying the currently connected device on top */}
-            {connectedDevice && (
-                <DeviceCard
-                    device={connectedDevice}
-                    isDeviceConnected
-                    isConnecting={connectingDevice === connectedDevice.id}
-                    onPress={connectToDevice}
-                />
-            )}
-
             {/* Showing each found bluetooth device */}
             <View className="flex-1">
-                <FlatList data={devices} keyExtractor={item => item.id} renderItem={renderItem} />
+                <ScrollView>
+                    {connectedDevice && (
+                        <DeviceCard
+                            device={connectedDevice}
+                            isDeviceConnected
+                            isConnecting={connectingDevice === connectedDevice.id}
+                            onPress={connectToDevice}
+                        />
+                    )}
+                    {devices.map(device => (
+                        <DeviceCard
+                            key={device.id}
+                            device={device}
+                            isDeviceConnected={device.id === connectedDevice?.id}
+                            isConnecting={device.id === connectingDevice}
+                            onPress={connectToDevice}
+                        />
+                    ))}
+                </ScrollView>
             </View>
 
             {/* Actions */}
