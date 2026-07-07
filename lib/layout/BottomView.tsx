@@ -47,9 +47,9 @@ export function BottomView({
 
     // --- view
     return (
-        <View className="bg-foreground-light pb-safe flex-1">
+        <View className="bg-foreground-light flex-1">
             <View className={cn(voidHeight)}>{/* empty on purpose */}</View>
-            <View className={cn('rounded-t-3xl bg-white p-6 pt-10', h)}>
+            <View className={cn('rounded-t-3xl bg-white px-6 py-8', h)}>
                 {/* "Header" */}
                 <View className="flex-row justify-between pb-10">
                     <Txt className={cn('text-primary w-11/12 text-2xl font-bold')}>{headerTitle}</Txt>

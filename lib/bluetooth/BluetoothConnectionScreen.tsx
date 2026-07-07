@@ -468,7 +468,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             </View>
 
             {/* Actions */}
-            <View className="flex-row justify-between">
+            <View className="flex-row justify-between pt-4">
                 <Button variant="secondary" onPress={() => quitScreen()}>
                     <Txt>Cancel</Txt>
                 </Button>
