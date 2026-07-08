@@ -1,8 +1,8 @@
 import {HeaderHeightContext} from '@react-navigation/elements';
 import {useAtomValue} from 'jotai';
 import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
-import { ReactNode, useContext } from 'react';
-import {KeyboardAvoidingView, Platform, ScrollView, View} from 'react-native';
+import {ReactNode, useContext} from 'react';
+import {KeyboardAvoidingView, ScrollView, View} from 'react-native';
 import {Button, buttonVariantsType, cn, textColorForVariant, Txt} from '../base';
 import {smallScreenAtom} from '../settings';
 
@@ -68,9 +68,7 @@ export function ViewWithFooter({
 
     // --- view
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={headerHeight}
+        <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight}
             style={{flex: 1}}>
             {/* Anchoring the footer */}
             <View className="flex-1">
