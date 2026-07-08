@@ -68,40 +68,36 @@ export function ViewWithFooter({
 
     // --- view
     return (
-        <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight}
-            style={{flex: 1}}>
-            {/* Anchoring the footer */}
-            <View className="flex-1">
-                {/* Scrollable Content Area */}
-                <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', smallScreen && 'gap-9', contentClassName)}>
-                    {props.children}
-                </ScrollView>
+        <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={{flex: 1}}>
+            {/* Scrollable Content Area */}
+            <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', smallScreen && 'gap-9', contentClassName)}>
+                {props.children}
+            </ScrollView>
 
-                {/* Footer */}
-                <View
-                    className={cn(
-                        'flex-row justify-between rounded-t-2xl border border-gray-300 bg-white px-6 py-8',
-                        !props.leftButtonOnPress && 'justify-end',
-                        props.footerClassName,
-                    )}>
-                    {/* Left button */}
-                    {props.leftButtonOnPress && (
-                        <Button variant={leftButtonVariant} onPress={props.leftButtonOnPress} disabled={props.leftButtonDisabled}>
-                            <View className="flex-row items-center gap-3">
-                                {!smallScreen && <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />}
-                                <Txt>{leftButtonLabel}</Txt>
-                            </View>
-                        </Button>
-                    )}
-
-                    {/* Right button */}
-                    <Button variant={rightButtonVariant} onPress={props.rightButtonOnPress} disabled={props.rightButtonDisabled}>
+            {/* Footer */}
+            <View
+                className={cn(
+                    'flex-row justify-between rounded-t-2xl border border-gray-300 bg-white px-6 py-8',
+                    !props.leftButtonOnPress && 'justify-end',
+                    props.footerClassName,
+                )}>
+                {/* Left button */}
+                {props.leftButtonOnPress && (
+                    <Button variant={leftButtonVariant} onPress={props.leftButtonOnPress} disabled={props.leftButtonDisabled}>
                         <View className="flex-row items-center gap-3">
-                            <Txt>{rightButtonLabel}</Txt>
-                            {!smallScreen && <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} size={18} />}
+                            {!smallScreen && <LeftButtonIcon color={textColorForVariant(leftButtonVariant, props.leftButtonDisabled)} size={18} />}
+                            <Txt>{leftButtonLabel}</Txt>
                         </View>
                     </Button>
-                </View>
+                )}
+
+                {/* Right button */}
+                <Button variant={rightButtonVariant} onPress={props.rightButtonOnPress} disabled={props.rightButtonDisabled}>
+                    <View className="flex-row items-center gap-3">
+                        <Txt>{rightButtonLabel}</Txt>
+                        {!smallScreen && <RightButtonIcon color={textColorForVariant(rightButtonVariant, props.rightButtonDisabled)} size={18} />}
+                    </View>
+                </Button>
             </View>
         </KeyboardAvoidingView>
     );
