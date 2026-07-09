@@ -59,9 +59,11 @@ export function HeaderMenu({menu}: {menu: HeaderMenuData}) {
         }
     };
 
+    if (!open) return null;
+
     return (
         <View
-            className={cn('absolute right-4 top-2 z-10 flex flex-col rounded-xl border border-border bg-white p-2', !open && 'hidden')}
+            className="absolute right-4 top-2 z-10 flex flex-col rounded-xl border border-border bg-white p-2"
             // Using elevation to create shadow in Android as Nativewind shadow is not working
             style={{elevation: 6}}>
             {menu.entries.map((entry, index) => (
