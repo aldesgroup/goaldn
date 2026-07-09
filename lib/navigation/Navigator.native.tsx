@@ -46,7 +46,7 @@ function MenuNavigator(props: {menu: MenuProps}) {
                 const currentRoute = state.routes[state.index];
                 const focusedChild = getFocusedRouteNameFromRoute(currentRoute) || undefined;
                 const isOnRootOfStack = focusedChild === undefined || (typeof focusedChild === 'string' && focusedChild.startsWith('_'));
-                if (!isOnRootOfStack) return null;
+                if (props.menu.entries.length <= 1 || !isOnRootOfStack) return null;
                 return <BottomTabBar {...tabProps} />;
             }}>
             {props.menu.entries.map(menuItem => {
