@@ -1,6 +1,6 @@
 import {Alert, Platform} from 'react-native';
 import RNFS from 'react-native-fs';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import {generatePDF as convertHTMLToPDF, PDFOptions} from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import {getReportError} from '../utils';
 
@@ -25,16 +25,19 @@ export type PDFGenerationOptions = {
  * @returns {Promise<string>} A promise that resolves to the file path of the generated PDF.
  * @category Media
  */
-async function generatePDF({htmlContent, fileName = 'generated-file', directory = 'Documents', bgColor = '#FFFFFF'}: PDFGenerationOptions): Promise<string> {
+async function generatePDF({htmlContent, fileName = 'generated-file', bgColor = '#FFFFFF', directory}: PDFGenerationOptions): Promise<string> {
     try {
-        const options = {
+        const options: PDFOptions = {
             html: htmlContent,
             fileName,
-            directory,
             bgColor,
         };
 
-        const file = await RNHTMLtoPDF.convert(options);
+        if (directory) {
+            options.directory = directory;
+        }
+
+        const file = await convertHTMLToPDF(options);
         if (!file.filePath) {
             throw new Error('Failed to generate PDF file.');
         }

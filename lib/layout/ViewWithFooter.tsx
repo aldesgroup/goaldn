@@ -1,7 +1,8 @@
+import {HeaderHeightContext} from '@react-navigation/elements';
 import {useAtomValue} from 'jotai';
 import {LucideIcon, MoveLeft, MoveRight} from 'lucide-react-native';
-import React from 'react';
-import {ScrollView, View} from 'react-native';
+import {ReactNode, useContext} from 'react';
+import {KeyboardAvoidingView, ScrollView, View} from 'react-native';
 import {Button, buttonVariantsType, cn, textColorForVariant, Txt} from '../base';
 import {smallScreenAtom} from '../settings';
 
@@ -11,7 +12,7 @@ import {smallScreenAtom} from '../settings';
  */
 export type ViewWithFooterProps = {
     /** The content to display in the scrollable area */
-    children: React.ReactNode;
+    children: ReactNode;
     /** Additional CSS classes for the content area */
     contentClassName?: string;
     /** Additional CSS classes for the footer */
@@ -59,6 +60,7 @@ export function ViewWithFooter({
 }: ViewWithFooterProps) {
     // --- shared state
     const smallScreen = useAtomValue(smallScreenAtom);
+    const headerHeight = useContext(HeaderHeightContext) ?? 0;
 
     // --- local state
     const LeftButtonIcon = leftButtonIcon || (() => <></>);
@@ -66,8 +68,7 @@ export function ViewWithFooter({
 
     // --- view
     return (
-        // Anchoring the footer
-        <View className="pb-safe flex-1">
+        <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={{flex: 1}}>
             {/* Scrollable Content Area */}
             <ScrollView contentContainerClassName={cn('flex-grow flex-col gap-6', smallScreen && 'gap-9', contentClassName)}>
                 {props.children}
@@ -76,8 +77,7 @@ export function ViewWithFooter({
             {/* Footer */}
             <View
                 className={cn(
-                    'h-24 flex-row justify-between rounded-t-2xl border border-gray-300 bg-white p-6',
-                    smallScreen && 'h-32',
+                    'flex-row justify-between rounded-t-2xl border border-gray-300 bg-white px-6 py-8',
                     !props.leftButtonOnPress && 'justify-end',
                     props.footerClassName,
                 )}>
@@ -99,6 +99,6 @@ export function ViewWithFooter({
                     </View>
                 </Button>
             </View>
-        </View>
+        </KeyboardAvoidingView>
     );
 }

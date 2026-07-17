@@ -277,7 +277,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
                 const scanDurationSeconds = 10;
 
                 // Finding all the real devices
-                bleManager.scan([], scanDurationSeconds, false);
+                bleManager.scan({serviceUUIDs: [], seconds: scanDurationSeconds, allowDuplicates: false});
 
                 // Making sure we're stopping the scan at the end
                 setTimeout(() => stopScan(), scanDurationSeconds * 1000);
@@ -468,7 +468,7 @@ export function BluetoothConnectionScreen({navigation}: {navigation: any}) {
             </View>
 
             {/* Actions */}
-            <View className="flex-row justify-between">
+            <View className="flex-row justify-between pt-4">
                 <Button variant="secondary" onPress={() => quitScreen()}>
                     <Txt>Cancel</Txt>
                 </Button>
