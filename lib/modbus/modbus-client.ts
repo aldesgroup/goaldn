@@ -57,11 +57,52 @@ export class BleModbusClient {
         }
     }
 
+    // If the connection is lost, attempt to reconnect before sending the frame.
+    // This ensures the connection is automatically restored when the device returns to range.
+    private async ensureConnected(): Promise<Error | undefined> {
+        const timeoutMs = 10000;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        try {
+            const isConnected = await bleManager.isPeripheralConnected(this.device.id, []);
+            if (isConnected) {
+                return undefined;
+            }
+
+            await Promise.race([
+                (async () => {
+                    await bleManager.connect(this.device.id);
+                    await bleManager.retrieveServices(this.device.id);
+                    if (this.useNotifications) {
+                        await bleManager.startNotification(this.device.id, this.serviceUUID, this.readCharacteristicUUID);
+                    }
+                })(),
+                new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => reject(new Error('Reconnect timeout')), timeoutMs);
+                }),
+            ]);
+
+            return undefined;
+        } catch (err) {
+            // Cancel pending connect attempts and prevent half configured connections
+            await bleManager.disconnect(this.device.id).catch(() => {});
+
+            return new Error(`Failed to reconnect: ${err}`);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
     async sendFrameWithNotifications(frame: Buffer): Promise<Buffer> {
         return this._mutex.runExclusive<Buffer>(() => {
             return new Promise(async (resolve, reject) => {
                 // we start waiting a bit first, before doing anything
                 await sleep(this.delay);
+
+                const err = await this.ensureConnected();
+                if (err) {
+                    reject(err);
+                    return;
+                }
 
                 // setting a timeout
                 const timeoutId = setTimeout(() => {
