@@ -51,7 +51,7 @@ const DeviceCard = memo(function DeviceCard({
                 smallScreen && 'flex-col gap-2',
             )}>
             {/* Device infos */}
-            <View className={'flex-1 flex-row items-center gap-4'}>
+            <View className={cn('flex-row items-center gap-4', !smallScreen && 'flex-1')}>
                 <Bluetooth color={colors.secondaryForeground} size={24} />
                 <View className="flex-1 pr-3">
                     <Txt raw>{getDeviceName(device)}</Txt>
